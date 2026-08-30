@@ -11,16 +11,98 @@ datasource db {
 }
 
 // ---------------------------------------------------------------------------
-// Issue 3 — Create and seed IT request categories
-// Define a Category model with:
-//   id        Int      @id @default(autoincrement())
-//   name      String   @unique
-//   createdAt DateTime @default(now())
-// Then run:  npx prisma migrate dev --name init
-// TODO(Issue 3): add the Category model below.
+// Lab 2 — TokTickIT Requester Ticketing MVP Data Model
 // ---------------------------------------------------------------------------
+
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+enum TicketStatus {
+  NEW
+  IN_PROGRESS
+  RESOLVED
+}
+
+model RequesterUser {
+  id         Int      @id @default(autoincrement())
+  name       String
+  email      String   @unique
+  department String
+  isActive   Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  tickets            Ticket[]     @relation("TicketRequester")
+  uploadedAttachments Attachment[] @relation("AttachmentUploader")
+}
+
 model Category {
   id        Int      @id @default(autoincrement())
   name      String   @unique
+  isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
+
+  tickets Ticket[]
+}
+
+model RelatedSystem {
+  id        Int      @id @default(autoincrement())
+  name      String   @unique
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  tickets Ticket[]
+}
+
+model Ticket {
+  id                Int          @id @default(autoincrement())
+  ticketNo          String       @unique
+  summary           String
+  description       String
+  requestedPriority Priority
+  itPriority        Priority
+  currentStatus     TicketStatus @default(NEW)
+
+  requesterId       Int
+  requester         RequesterUser @relation("TicketRequester", fields: [requesterId], references: [id])
+
+  categoryId        Int
+  category          Category      @relation(fields: [categoryId], references: [id])
+
+  relatedSystemId   Int
+  relatedSystem     RelatedSystem @relation(fields: [relatedSystemId], references: [id])
+
+  // Reserved for Lab 3+. No IT Staff model exists yet, so no relation is declared.
+  ticketOwnerId     Int?
+
+  attachments       Attachment[]
+
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@index([requesterId, createdAt])
+}
+
+model Attachment {
+  id                   Int       @id @default(autoincrement())
+  ticketId             Int
+  ticket               Ticket    @relation(fields: [ticketId], references: [id])
+
+  fileName             String    // original name shown to the user
+  storedFileName        String    // safe, generated name on disk (see api-spec.md Section 5)
+  fileSize             Int       // bytes
+  mimeType             String
+
+  uploadedByRequesterId Int
+  uploadedBy            RequesterUser @relation("AttachmentUploader", fields: [uploadedByRequesterId], references: [id])
+
+  removedAt             DateTime?
+  removalReason         String?
+
+  createdAt             DateTime @default(now())
+
+  @@index([ticketId])
 }
