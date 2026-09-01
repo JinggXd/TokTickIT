@@ -2,7 +2,7 @@
 
 **Sprint:** TokTickIT Lab 2 (Requester Ticketing MVP)  
 **Phase:** Phase 1 — Data Layer  
-**Branch:** `feature/5-data-layer`  
+**Branch:** `feature/5-lab2-data-layer`  
 **Base Branch:** `lab2-staging`  
 **Date:** 2026-08-30 (Updated: 2026-09-01)  
 
@@ -17,7 +17,7 @@
 
 ### 2.1 แตก Branch สำหรับการพัฒนา
 - ดึงโค้ดล่าสุดจาก `lab2-staging`
-- สร้าง Feature branch: `feature/5-data-layer`
+- สร้าง Feature branch: `feature/5-lab2-data-layer`
 
 ### 2.2 TDD Step 1 — เขียน Unit Tests ให้ล้มก่อน (Red Phase)
 เขียนไฟล์ทดสอบ 4 ไฟล์ใน `server/tests/lab-02/`:
@@ -80,7 +80,7 @@
 ### 2.6 บันทึกและส่งโค้ดขึ้น GitHub (Commit & Push)
 - Staged ไฟล์ที่เกี่ยวข้องทั้งหมด
 - Commit ข้อความ: `feat: implement Lab 2 Data Layer with Prisma models, migrations, utils, and unit tests`
-- Push ขึ้น branch `feature/5-data-layer` บน GitHub เรียบร้อย
+- Push ขึ้น branch `feature/5-lab2-data-layer` บน GitHub เรียบร้อย
 
 ---
 
@@ -95,6 +95,6 @@
 1. ผ่านการทดสอบ Unit Tests ครบถ้วน 100% (6 Suites / 8 Tests: `UNIT-01` ถึง `UNIT-06` + Lab 1 tests) ผ่านคำสั่ง `npm --prefix server run test`
 2. โครงสร้าง Database Schema, Migration และ Idempotent Seed Data ใน PostgreSQL พร้อมใช้งานสมบูรณ์
 3. ปรับจูน Assertion และเอกสารสรุปผลทั้งหมดตรงตามข้อกำหนดของสัญญา `docs/lab-02/tests.md` ครบถ้วน
-4. พร้อมสำหรับการเปิด Pull Request ของ Feature Branch `feature/5-data-layer` เข้าสู่ `lab2-staging` บน GitHub
+4. พร้อมสำหรับการเปิด Pull Request ของ Feature Branch `feature/5-lab2-data-layer` เข้าสู่ `lab2-staging` บน GitHub
 
 

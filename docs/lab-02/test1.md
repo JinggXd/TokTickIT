@@ -1,7 +1,7 @@
 # Test Results — Phase 1: Data Layer (test1.md)
 
 **Sprint:** TokTickIT Lab 2 (Requester Ticketing MVP)  
-**Branch:** `feature/5-data-layer`  
+**Branch:** `feature/5-lab2-data-layer`  
 **Date:** 2026-08-30 (Updated: 2026-09-01)  
 **Overall Status:** ✅ **ALL PASSED (100%)**
 

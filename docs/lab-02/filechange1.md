@@ -2,7 +2,7 @@
 
 **Sprint:** TokTickIT Lab 2 (Requester Ticketing MVP)  
 **Phase:** Phase 1 — Data Layer  
-**Branch:** `feature/5-data-layer`  
+**Branch:** `feature/5-lab2-data-layer`  
 **Base Branch:** `lab2-staging`  
 **Date:** 2026-09-01  
 **Author:** AI Coding Agent & Human Reviewer  
