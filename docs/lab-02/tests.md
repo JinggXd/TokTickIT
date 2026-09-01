@@ -57,9 +57,9 @@ All three commands must exit `0` on the final `main` branch with **zero** skippe
 |---|---|---|---|---|
 | API-01 | AC-01 | `POST /api/tickets` valid data | `201`; response matches `api-spec.md` Section 6.4 shape; `ticketNo` matches `TKT-YYYY-XXXXXX` | `server/tests/lab-02/create-ticket.api.test.ts` |
 | API-02 | AC-04 | `POST /api/tickets` missing/short fields | `400`; `details` object names every invalid field in one response | `server/tests/lab-02/create-ticket.api.test.ts` |
-| API-03 | AC-18 | `POST /api/tickets` no `X-Requester-Id` | `401`, generic message, no `details` key | `server/tests/lab-02/create-ticket.api.test.ts` |
-| API-04 | AC-18 | `POST /api/tickets` malformed header (`X-Requester-Id: abc`) | `400` (not `401`) | `server/tests/lab-02/create-ticket.api.test.ts` |
-| API-05 | AC-18 | `POST /api/tickets` header referencing an inactive Requester | `401` | `server/tests/lab-02/create-ticket.api.test.ts` |
+| API-03 | AC-18 | `POST /api/tickets` no `X-Requester-Id` | `401`, generic message, no `details` key | `server/tests/lab-02/create-ticket.api.test.ts` (integration; unit-level middleware coverage in `requester-middleware.api.test.ts`, MW-03) |
+| API-04 | AC-18 | `POST /api/tickets` malformed header (`X-Requester-Id: abc`) | `400` (not `401`); response has no `details` key (distinguishes from API-02's validation-400 shape) | `server/tests/lab-02/create-ticket.api.test.ts` (integration; unit-level middleware coverage in `requester-middleware.api.test.ts`, MW-04) |
+| API-05 | AC-18 | `POST /api/tickets` header referencing an inactive Requester | `401` | `server/tests/lab-02/create-ticket.api.test.ts` (integration; unit-level middleware coverage in `requester-middleware.api.test.ts`, MW-05) |
 | API-06 | AC-10 | `GET /api/tickets` ownership scoping | Only rows where `requesterId` matches the header are returned, regardless of how many total tickets exist in the DB | `server/tests/lab-02/my-tickets.api.test.ts` |
 | API-07 | AC-11 | `GET /api/tickets` sorting | `sortBy=requestedPriority&sortOrder=asc` returns rows in the correct order | `server/tests/lab-02/my-tickets.api.test.ts` |
 | API-08 | AC-12 | `GET /api/tickets` pagination clamping | `page=9999` returns the last valid page, not an error or empty array | `server/tests/lab-02/my-tickets.api.test.ts` |
@@ -75,6 +75,11 @@ All three commands must exit `0` on the final `main` branch with **zero** skippe
 | API-18 | — | `DELETE /api/attachments/:id` already removed | `409` | `server/tests/lab-02/attachments.api.test.ts` |
 | API-19 | AC-17 | `GET /api/attachments/:id/download` on a removed file | `410`, no binary body | `server/tests/lab-02/attachments.api.test.ts` |
 | API-20 | AC-08 | `GET /api/attachments/:id/download` cross-Requester | `403` | `server/tests/lab-02/attachments.api.test.ts` |
+| API-21 | — | `POST /api/tickets` ticket-number retries exhausted (mocked collision) | `500`, generic message | `server/tests/lab-02/create-ticket.api.test.ts` |
+| API-22 | — | `GET /api/tickets` unsupported `sortBy`/`limit` | `400`, `details` key present | `server/tests/lab-02/my-tickets.api.test.ts` |
+| API-23 | AC-08 | `POST /api/tickets/:id/attachments` cross-Requester upload attempt | `403` | `server/tests/lab-02/attachments.api.test.ts` |
+| API-24 | — | `DELETE /api/attachments/:id` missing/short `removalReason` | `400`, `details.removalReason` | `server/tests/lab-02/attachments.api.test.ts` |
+| API-25 | AC-08 | `DELETE /api/attachments/:id` cross-Requester removal attempt | `403` | `server/tests/lab-02/attachments.api.test.ts` |
 
 ## 5. Planned Tests — UI Component
 
@@ -126,10 +131,10 @@ All three commands must exit `0` on the final `main` branch with **zero** skippe
 | AC-02 | Dev Requester route guard | UI-10, E2E-01 |
 | AC-03 | Requester field matches saved `requesterId` | API-01 |
 | AC-04 | Field-level validation | API-02, UI-01 |
-| AC-05 | Attachment client-side rejection | API-13, API-14, UI-04 |
+| AC-05 | Attachment client-side rejection | UI-04 |
 | AC-06 | Duplicate-submit prevention (busy button) | UI-02 |
 | AC-07 | API failure retains form data | UI-03, E2E-02 |
-| AC-08 | Ownership protection on detail/attachments | API-10, API-20, E2E-03 |
+| AC-08 | Ownership protection on detail/attachments | API-10, API-20, API-23, API-25, E2E-03 |
 | AC-09 | Ticket Detail fully read-only | API-12, UI-07 |
 | AC-10 | Search & filtering | API-06, API-09 |
 | AC-11 | Sorting | API-07 |
@@ -150,15 +155,15 @@ labsheet's Test-DD requirement.
 
 | BR | Covered by |
 |---|---|
-| BR-01 (ticket number format/uniqueness/retry) | UNIT-01, UNIT-02, API-01 |
-| BR-04 (ownership) | API-10, API-20, E2E-03 |
-| BR-06 (Requester header validation) | API-03, API-04, API-05 |
+| BR-01 (ticket number format/uniqueness/retry) | UNIT-01, UNIT-02, API-01, API-21 |
+| BR-04 (ownership) | API-10, API-20, API-23, API-25, E2E-03 |
+| BR-06 (Requester header validation) | MW-03, MW-04, MW-05 (Phase 2, middleware-level), API-03, API-04, API-05 (Phase 3, endpoint-level) |
 | BR-07 (attachment constraints) | API-13, API-14, API-15, UI-09 |
 | BR-08 (soft-removal blocks download) | API-19 |
 | BR-09 (trim + length validation) | UNIT-03, API-02 |
 | BR-10 (duplicate-submit prevention) | UI-02 |
 | BR-11 (data retention on failure) | UI-03, E2E-02 |
-| BR-12 (query/sort/pagination standard) | UNIT-06, API-07, API-08 |
+| BR-12 (query/sort/pagination standard) | UNIT-06, API-07, API-08, API-22 |
 | BR-13 (empty vs. no-results) | UI-05 |
 | BR-14 (Requester-switch invalidation) | UI-06, E2E-01 |
 | BR-18 (ticket/attachment transaction independence) | API-16 (manual/documented — see Section 11) |

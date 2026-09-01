@@ -1,11 +1,11 @@
 import { describe, it, expect, vi } from "vitest";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
-import App from "../../src/App.js";
+import Lab1App from "../../src/Lab1App.js";
 import * as api from "../../src/api.js";
 
 describe("App", () => {
   it("renders the TokTickIT heading", () => {
-    render(<App />);
+    render(<Lab1App />);
     expect(screen.getByText(/TokTickIT/i)).toBeInTheDocument();
   });
 
@@ -20,7 +20,7 @@ describe("App", () => {
       ],
     });
 
-    render(<App />);
+    render(<Lab1App />);
     fireEvent.click(screen.getByText("Check System"));
 
     await waitFor(() => {
@@ -34,7 +34,7 @@ describe("App", () => {
       new Error("Unable to connect to TokTickIT API")
     );
 
-    render(<App />);
+    render(<Lab1App />);
     fireEvent.click(screen.getByText("Check System"));
 
     await waitFor(() => {
