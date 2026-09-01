@@ -4,7 +4,7 @@
 **Phase:** Phase 1 — Data Layer  
 **Branch:** `feature/5-data-layer`  
 **Base Branch:** `lab2-staging`  
-**Date:** 2026-08-30  
+**Date:** 2026-08-30 (Updated: 2026-09-01)  
 
 ---
 
@@ -28,7 +28,7 @@
    - `UNIT-03` (BR-09): ตรวจสอบฟังก์ชัน Trim และเช็คความยาว Summary (5–100 ตัวอักษร) และ Description (10–2000 ตัวอักษร)
 3. `safe-filename.unit.test.ts`:
    - `UNIT-04` (BR-19): ตรวจสอบการตัด Path traversal (`/`, `\`, `..`), การแทนที่อักขระพิเศษด้วย `_` และการตัดความยาว Base name ไม่เกิน 100 ตัวอักษร
-   - `UNIT-05` (BR-19): ตรวจสอบนามสกุลที่อนุญาต (`.jpg`, `.jpeg`, `.png`, `.webp`, `.pdf`) และตรวจจับ Magic Bytes / MIME mismatch
+   - `UNIT-05` (BR-19): ตรวจสอบการตรวจจับ Magic Bytes / MIME mismatch (เช่น ไฟล์ชื่อ .jpg แต่ magic bytes จริงเป็น PDF)
 4. `pagination.unit.test.ts`:
    - `UNIT-06` (BR-12): ตรวจสอบการ Clamp เลขหน้า (เช่น หน้า 0 ปรับเป็น 1, หน้า 999 ปรับเป็นหน้าสุดท้าย) และตรวจ Limit `[5, 8, 10, 20]`
 
@@ -81,3 +81,20 @@
 - Staged ไฟล์ที่เกี่ยวข้องทั้งหมด
 - Commit ข้อความ: `feat: implement Lab 2 Data Layer with Prisma models, migrations, utils, and unit tests`
 - Push ขึ้น branch `feature/5-data-layer` บน GitHub เรียบร้อย
+
+---
+
+### 2.7 การปรับจูนขอบเขตการทดสอบให้ตรงตามสัญญา (Spec DD Alignment)
+- ตรวจสอบย้อนกลับ (Cross-check) กับ `docs/lab-02/tests.md` Section 3 & 10
+- ปรับ Scope และ Assertion ของ `UNIT-05` ใน `safe-filename.unit.test.ts` ให้ผูกกับ **`BR-19`** (Safe filename policy / MIME mismatch detector) ให้ตรงตามสัญญา 100% โดยแยกการตรวจจับ Extension Whitelist (BR-07) ไว้สำหรับ `API-14` และ `UI-09` (รวมถึง `API-13, API-15` ตาม Section 10 ใน `tests.md`) ใน Phase 3 และ Phase 5
+- บันทึกการเปลี่ยนแปลงอย่างละเอียดใน [`docs/lab-02/filechange1.md`](file:///d:/toktickit/docs/lab-02/filechange1.md)
+
+---
+
+## 3. ผลลัพธ์และสถานะปัจจุบัน (Current State)
+1. ผ่านการทดสอบ Unit Tests ครบถ้วน 100% (6 Suites / 8 Tests: `UNIT-01` ถึง `UNIT-06` + Lab 1 tests) ผ่านคำสั่ง `npm --prefix server run test`
+2. โครงสร้าง Database Schema, Migration และ Idempotent Seed Data ใน PostgreSQL พร้อมใช้งานสมบูรณ์
+3. ปรับจูน Assertion และเอกสารสรุปผลทั้งหมดตรงตามข้อกำหนดของสัญญา `docs/lab-02/tests.md` ครบถ้วน
+4. พร้อมสำหรับการเปิด Pull Request ของ Feature Branch `feature/5-data-layer` เข้าสู่ `lab2-staging` บน GitHub
+
+

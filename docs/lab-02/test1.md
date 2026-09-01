@@ -2,7 +2,7 @@
 
 **Sprint:** TokTickIT Lab 2 (Requester Ticketing MVP)  
 **Branch:** `feature/5-data-layer`  
-**Date:** 2026-08-30  
+**Date:** 2026-08-30 (Updated: 2026-09-01)  
 **Overall Status:** ✅ **ALL PASSED (100%)**
 
 ---
@@ -19,19 +19,20 @@ npm --prefix server run test
 > toktickit-server@1.0.0 test
 > vitest run
 
+
  RUN  v2.1.9 D:/toktickit/server
 
- ✓ tests/lab-02/ticket-number.unit.test.ts (2 tests) 5ms
- ✓ tests/lab-02/pagination.unit.test.ts (1 test) 4ms
- ✓ tests/lab-02/validation.unit.test.ts (1 test) 4ms
- ✓ tests/lab-02/safe-filename.unit.test.ts (2 tests) 5ms
- ✓ tests/lab-01/health.test.ts (1 test) 21ms
- ✓ tests/lab-01/categories.test.ts (1 test) 72ms
+ ✓ tests/lab-02/pagination.unit.test.ts (1 test) 3ms
+ ✓ tests/lab-02/ticket-number.unit.test.ts (2 tests) 4ms
+ ✓ tests/lab-02/validation.unit.test.ts (1 test) 3ms
+ ✓ tests/lab-02/safe-filename.unit.test.ts (2 tests) 4ms
+ ✓ tests/lab-01/health.test.ts (1 test) 15ms
+ ✓ tests/lab-01/categories.test.ts (1 test) 39ms
 
  Test Files  6 passed (6)
       Tests  8 passed (8)
-   Start at  22:14:33
-   Duration  789ms
+   Start at  18:35:27
+   Duration  592ms (transform 182ms, setup 0ms, collect 671ms, tests 67ms, environment 1ms, prepare 707ms)
 ```
 
 ---
@@ -44,7 +45,7 @@ npm --prefix server run test
 | **UNIT-02** | BR-01 | กลไก Retry เมื่อชนกัน (Collision) | Retry สูงสุด 3 ครั้ง หากยังซ้ำให้ throw `TicketNumberGenerationError` | ✅ **PASS** |
 | **UNIT-03** | BR-09 | Trim และตรวจสอบความยาวข้อมูลตั๋ว | ตัดช่องว่างหน้าหลัง, Summary (5–100), Description (10–2000), Priority | ✅ **PASS** |
 | **UNIT-04** | BR-19 | Sanitize ชื่อไฟล์และสกัด Path Traversal | Reject `/`, `\`, `..` และแปลงอักขระพิเศษเป็น `_` จำกัดความยาวไม่เกิน 100 ตัว | ✅ **PASS** |
-| **UNIT-05** | BR-19, BR-07 | ตรวจสอบประเภทไฟล์และ Magic Bytes | ตรวจนามสกุลที่อนุญาต และจับคู่ Extension กับ MIME/Bytes ป้องกันการปลอมแปลง | ✅ **PASS** |
+| **UNIT-05** | BR-19 | MIME/extension mismatch detector | ตรวจจับความไม่ตรงกันระหว่างนามสกุลไฟล์กับ Magic Bytes (เช่น .jpg แต่เนื้อในเป็น PDF) | ✅ **PASS** |
 | **UNIT-06** | BR-12 | Clamp การแบ่งหน้า (Pagination) | ปรับเลขหน้าที่เกินช่วงเป็น 1 หรือหน้าสุดท้าย และตรวจสอบ Limit `[5, 8, 10, 20]` | ✅ **PASS** |
 
 ---

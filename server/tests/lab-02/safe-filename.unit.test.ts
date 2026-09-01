@@ -20,26 +20,30 @@ describe("Safe Filename & MIME Sanitizer Unit Tests (BR-19, Section 5)", () => {
     expect(truncatedResult.sanitizedOriginalName.endsWith(".png")).toBe(true);
   });
 
-  it("UNIT-05: verifies allowed extensions and flags MIME / magic bytes mismatch", () => {
-    // Valid PNG file (PNG magic bytes: 89 50 4E 47)
+  it("UNIT-05: flags MIME / magic bytes mismatch detector (BR-19)", () => {
+    // 1. Valid files with matching magic bytes
     const validPngBuffer = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
     const validPng = validateAttachmentType("image.png", "image/png", validPngBuffer);
     expect(validPng.isValid).toBe(true);
 
-    // Valid PDF file (%PDF magic bytes: 25 50 44 46)
     const validPdfBuffer = Buffer.from([0x25, 0x50, 0x44, 0x46, 0x2d]);
     const validPdf = validateAttachmentType("document.pdf", "application/pdf", validPdfBuffer);
     expect(validPdf.isValid).toBe(true);
 
-    // Disallowed extension (e.g. .exe)
-    const exeResult = validateAttachmentType("program.exe", "application/x-msdownload");
-    expect(exeResult.isValid).toBe(false);
-    expect(exeResult.error).toBe("Only JPG, JPEG, PNG, WEBP, and PDF files are allowed");
+    const validJpegBuffer = Buffer.from([0xff, 0xd8, 0xff, 0xe0]);
+    const validJpeg = validateAttachmentType("photo.jpg", "image/jpeg", validJpegBuffer);
+    expect(validJpeg.isValid).toBe(true);
 
-    // Spoofed extension: named .jpg but magic bytes are PDF
-    const spoofedBuffer = Buffer.from([0x25, 0x50, 0x44, 0x46, 0x2d]); // PDF magic bytes
-    const spoofedResult = validateAttachmentType("fake_photo.jpg", "image/jpeg", spoofedBuffer);
-    expect(spoofedResult.isValid).toBe(false);
-    expect(spoofedResult.error).toMatch(/mismatch/i);
+    // 2. Spoofed extension: named .jpg but magic bytes are PDF (%PDF)
+    const spoofedPdfBuffer = Buffer.from([0x25, 0x50, 0x44, 0x46, 0x2d]);
+    const spoofedJpgResult = validateAttachmentType("fake_photo.jpg", "image/jpeg", spoofedPdfBuffer);
+    expect(spoofedJpgResult.isValid).toBe(false);
+    expect(spoofedJpgResult.error).toMatch(/mismatch/i);
+
+    // 3. Spoofed extension: named .png but magic bytes are JPEG (FF D8 FF)
+    const spoofedJpegBuffer = Buffer.from([0xff, 0xd8, 0xff, 0xe0]);
+    const spoofedPngResult = validateAttachmentType("fake_image.png", "image/png", spoofedJpegBuffer);
+    expect(spoofedPngResult.isValid).toBe(false);
+    expect(spoofedPngResult.error).toMatch(/mismatch/i);
   });
 });
