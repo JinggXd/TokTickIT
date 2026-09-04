@@ -1,6 +1,6 @@
 # Lab 2 Test Plan and Results
 
-**Plan version:** `1.1.0` (updated 2026-09-04)
+**Plan version:** `1.1.1` (updated 2026-09-04 — adds strict validation for Phase 4 query parameters)
 
 Companion to `docs/lab-02/specification.md` and `docs/lab-02/api-spec.md`. Written and approved
 **before** implementation (Test-DD, labsheet Section 9) — the coding agent must make these tests
@@ -90,7 +90,7 @@ All three commands must exit `0` on the final `main` branch with **zero** skippe
 | API-19 | AC-17 | `GET /api/attachments/:id/download` on a removed file | `410`, no binary body | `server/tests/lab-02/attachments.api.test.ts` |
 | API-20 | AC-08 | `GET /api/attachments/:id/download` cross-Requester | `403` | `server/tests/lab-02/attachments.api.test.ts` |
 | API-21 | — | `POST /api/tickets` ticket-number retries exhausted (mocked collision) | `500`, generic message | `server/tests/lab-02/create-ticket.api.test.ts` |
-| API-22 | — | `GET /api/tickets` unsupported `sortBy`/`limit` | `400`, `details` key present | `server/tests/lab-02/my-tickets.api.test.ts` |
+| API-22 | — | `GET /api/tickets` unsupported query parameters (`sortBy`, `sortOrder`, `limit`, `categoryId`, `requestedPriority`, `itPriority`, `status`) | `400`, `details` key present | `server/tests/lab-02/my-tickets.api.test.ts` |
 | API-23 | AC-08 | `POST /api/tickets/:id/attachments` cross-Requester upload attempt | `403` | `server/tests/lab-02/attachments.api.test.ts` |
 | API-24 | — | `DELETE /api/attachments/:id` missing/short `removalReason` | `400`, `details.removalReason` | `server/tests/lab-02/attachments.api.test.ts` |
 | API-25 | AC-08 | `DELETE /api/attachments/:id` cross-Requester removal attempt | `403` | `server/tests/lab-02/attachments.api.test.ts` |

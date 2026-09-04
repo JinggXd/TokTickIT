@@ -76,6 +76,25 @@ body {
   cursor: not-allowed;
 }
 
+.btn-secondary-zen {
+  background-color: #FFFFFF !important;
+  border: 1px solid var(--zg-border) !important;
+  color: var(--zg-text-primary) !important;
+  font-weight: 500;
+}
+
+.btn-secondary-zen:hover:not(:disabled) {
+  background-color: #F8FAFC !important;
+  color: var(--zg-text-primary) !important;
+}
+
+.btn-secondary-zen:disabled {
+  background-color: #E2E8F0 !important;
+  border-color: #E2E8F0 !important;
+  color: #94A3B8 !important;
+  cursor: not-allowed;
+}
+
 .card-zen {
   background-color: var(--zg-surface);
   border: 1px solid var(--zg-border);

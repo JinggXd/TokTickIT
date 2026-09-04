@@ -96,12 +96,19 @@ During the architectural review of `docs/lab-02/specification.md`, `api-spec.md`
 - **Resolution:** Phase 3 now performs selection, client validation, and staging only. Phase 5
   completes post-create upload after the endpoint exists and verifies per-file failure isolation.
 
-### Finding F — Planned Client Test Paths Were Placeholders
+### 📌 Finding F — Planned Client Test Paths Were Placeholders
+- Initial scaffolding had placeholder client test files. Concrete test specs and mappings were established in `tests.md` v1.1.0.
 
-- **Problem:** `client/.../lab-02 tests/*.test.tsx` was not an actual repository path while the
-  labsheet requires each planned automated test to identify its real file path.
-- **Resolution:** Replaced every placeholder with `client/tests/lab-02/*.test.tsx` in `tests.md`
-  and `SKILL.md`.
+---
+
+### 📌 Ambiguity 6 — Query Parameter Validation Scope for GET /api/tickets
+- **Problem:**
+  - `api-spec.md` Section 6.5 query parameter table specifies allowed types and values for all parameters (`search`, `categoryId`, `requestedPriority`, `itPriority`, `status`, `sortBy`, `sortOrder`, `page`, `limit`).
+  - However, the Error Scenarios section (line 262) explicitly mentions `400 Bad Request` with `details` only for `sortBy` and `limit`. The behavior for invalid `sortOrder`, `categoryId`, `requestedPriority`, `itPriority`, and `status` was unspecified (whether to silently fall back/ignore or reject with 400).
+- **Resolution:**
+  - Strictly validate all query parameters against their documented domain of allowed values.
+  - If any query parameter contains an invalid value (e.g., `sortOrder` not in `["asc", "desc"]`, `categoryId` not positive integer/ALL, priorities not in `["LOW", "MEDIUM", "HIGH", "ALL"]`, status not in `["NEW", "IN_PROGRESS", "RESOLVED", "ALL"]`), the endpoint responds with `400 Bad Request` and `{ error: "Validation failed", details }` identifying each invalid field.
+  - This prevents silent misbehavior or SQL injection risks, aligning with the API specification table and standard validation behavior.
 
 ### Finding G — Test and Business-Rule Coverage Was Incomplete
 
