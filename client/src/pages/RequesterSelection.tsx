@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useRequester } from "../context/RequesterContext.js";
 import { RequesterUser } from "../types.js";
+import { fetchActiveRequesters } from "../api.js";
 
 interface RequesterSelectionProps {
   onSuccess?: () => void;
@@ -17,11 +18,7 @@ export const RequesterSelection: React.FC<RequesterSelectionProps> = ({ onSucces
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch("/api/requesters/active");
-      if (!res.ok) {
-        throw new Error("Unable to load Development Requesters. Please try again.");
-      }
-      const data: RequesterUser[] = await res.json();
+      const data = await fetchActiveRequesters();
       setRequesters(data);
       if (data.length > 0 && !selectedId) {
         setSelectedId(String(data[0].id));

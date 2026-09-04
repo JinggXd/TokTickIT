@@ -17,7 +17,7 @@ describe("RequesterSelection Component (ui-spec.md Section 10.1, BR-03, BR-05)",
   });
 
   it("renders loading state initially and then shows active requesters", async () => {
-    global.fetch = vi.fn().mockImplementation(() =>
+    globalThis.fetch = vi.fn().mockImplementation(() =>
       Promise.resolve({
         ok: true,
         json: () => Promise.resolve(mockRequesters),
@@ -36,6 +36,9 @@ describe("RequesterSelection Component (ui-spec.md Section 10.1, BR-03, BR-05)",
       expect(screen.getByTestId("requester-form")).toBeInTheDocument();
     });
 
+    expect(globalThis.fetch).toHaveBeenCalledWith(
+      "http://localhost:3000/api/requesters/active"
+    );
     expect(screen.getByText("Select Development Requester")).toBeInTheDocument();
     expect(screen.getByText(/This is for testing only and is not a login screen/i)).toBeInTheDocument();
     expect(screen.getByTestId("requester-dropdown")).toBeInTheDocument();
@@ -47,7 +50,7 @@ describe("RequesterSelection Component (ui-spec.md Section 10.1, BR-03, BR-05)",
     const user = userEvent.setup();
     const onSuccess = vi.fn();
 
-    global.fetch = vi.fn().mockImplementation(() =>
+    globalThis.fetch = vi.fn().mockImplementation(() =>
       Promise.resolve({
         ok: true,
         json: () => Promise.resolve(mockRequesters),
@@ -75,7 +78,7 @@ describe("RequesterSelection Component (ui-spec.md Section 10.1, BR-03, BR-05)",
   });
 
   it("renders empty state when no active requesters exist", async () => {
-    global.fetch = vi.fn().mockImplementation(() =>
+    globalThis.fetch = vi.fn().mockImplementation(() =>
       Promise.resolve({
         ok: true,
         json: () => Promise.resolve([]),
@@ -98,7 +101,7 @@ describe("RequesterSelection Component (ui-spec.md Section 10.1, BR-03, BR-05)",
   });
 
   it("renders failure state when API fails with retry option", async () => {
-    global.fetch = vi.fn().mockImplementation(() =>
+    globalThis.fetch = vi.fn().mockImplementation(() =>
       Promise.resolve({
         ok: false,
         status: 500,

@@ -1,3 +1,5 @@
+import type { RequesterUser } from "./types.js";
+
 const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:3000";
 
 export interface Category {
@@ -27,4 +29,13 @@ export async function checkSystem(): Promise<SystemStatus> {
   }
   const categories: Category[] = await categoriesRes.json();
   return { online: true, categories };
+}
+
+export async function fetchActiveRequesters(): Promise<RequesterUser[]> {
+  const response = await fetch(`${API_URL}/api/requesters/active`);
+  if (!response.ok) {
+    throw new Error("Unable to load Development Requesters. Please try again.");
+  }
+
+  return response.json();
 }

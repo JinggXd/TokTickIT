@@ -27,7 +27,7 @@ export async function requireRequester(
 
   // 1. Missing header -> 401 Unauthorized
   if (headerVal === undefined || headerVal === null || headerVal === "") {
-    res.status(401).json({ error: "Unauthorized: Active Requester ID required" });
+    res.status(401).json({ error: "Requester context is missing or invalid" });
     return;
   }
 
@@ -49,7 +49,7 @@ export async function requireRequester(
 
     // 4. Nonexistent or inactive -> 401 Unauthorized
     if (!user || !user.isActive) {
-      res.status(401).json({ error: "Unauthorized: Inactive or nonexistent Requester" });
+      res.status(401).json({ error: "Requester context is missing or invalid" });
       return;
     }
 

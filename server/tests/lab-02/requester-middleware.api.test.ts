@@ -15,6 +15,7 @@ import request from "supertest";
 import { describe, it, expect, beforeAll } from "vitest";
 
 import { requireRequester } from "../../src/middleware/requireRequester.js";
+import { getPrisma } from "../../src/prisma.js";
 
 describe("X-Requester-Id validation middleware (MW-03, MW-04, MW-05)", () => {
   let app: express.Express;
@@ -33,6 +34,7 @@ describe("X-Requester-Id validation middleware (MW-03, MW-04, MW-05)", () => {
     const res = await request(app).post("/test").send({});
 
     expect(res.status).toBe(401);
+    expect(res.body).toEqual({ error: "Requester context is missing or invalid" });
     expect(res.body).not.toHaveProperty("details");
   });
 
@@ -49,24 +51,31 @@ describe("X-Requester-Id validation middleware (MW-03, MW-04, MW-05)", () => {
 
   // MW-05 — AC-18: header references a real but inactive Requester -> 401
   it("MW-05 (API-05 equivalent): rejects a header referencing an inactive Requester with 401", async () => {
-    // Robert Wilson is the seeded inactive requester (id: 5)
-    const inactiveRequesterId = "5";
+    const inactiveRequester = await getPrisma().requesterUser.findUniqueOrThrow({
+      where: { email: "robert.w@example.com" },
+      select: { id: true },
+    });
 
     const res = await request(app)
       .post("/test")
-      .set("X-Requester-Id", inactiveRequesterId)
+      .set("X-Requester-Id", String(inactiveRequester.id))
       .send({});
 
     expect(res.status).toBe(401);
+    expect(res.body).toEqual({ error: "Requester context is missing or invalid" });
     expect(res.body).not.toHaveProperty("details");
   });
 
   // Valid active requester passes through with 200 OK
   it("passes when a valid active Requester ID is provided", async () => {
-    // Jennifer Anderson is an active requester (id: 1)
+    const activeRequester = await getPrisma().requesterUser.findUniqueOrThrow({
+      where: { email: "jennifer.a@example.com" },
+      select: { id: true },
+    });
+
     const res = await request(app)
       .post("/test")
-      .set("X-Requester-Id", "1")
+      .set("X-Requester-Id", String(activeRequester.id))
       .send({});
 
     expect(res.status).toBe(200);

@@ -3,7 +3,8 @@
 **Sprint:** TokTickIT Lab 2 (Requester Ticketing MVP)  
 **Governance:** `AGENTS.md` Hard Rule #1 (Contract Ambiguity Surfacing & Resolution)  
 **Date:** 2026-09-01  
-**Status:** ✅ Confirmed by Reviewer & Integrated into Contract Files  
+**Updated:** 2026-09-04 (`1.1.0` contract audit)
+**Status:** Contract corrections applied locally; reviewer/PR evidence still required
 
 ---
 
@@ -88,6 +89,43 @@ During the architectural review of `docs/lab-02/specification.md`, `api-spec.md`
 
 ---
 
+### Finding E — Phase 3 Referred to a Phase 5 Attachment Endpoint
+
+- **Problem:** Phase 3 instructed the Create Ticket form to upload staged files even though the
+  upload endpoint is not implemented until Phase 5, conflicting with the no-skip-ahead rule.
+- **Resolution:** Phase 3 now performs selection, client validation, and staging only. Phase 5
+  completes post-create upload after the endpoint exists and verifies per-file failure isolation.
+
+### Finding F — Planned Client Test Paths Were Placeholders
+
+- **Problem:** `client/.../lab-02 tests/*.test.tsx` was not an actual repository path while the
+  labsheet requires each planned automated test to identify its real file path.
+- **Resolution:** Replaced every placeholder with `client/tests/lab-02/*.test.tsx` in `tests.md`
+  and `SKILL.md`.
+
+### Finding G — Test and Business-Rule Coverage Was Incomplete
+
+- **Problem:** The plan claimed every BR was directly covered while BR-02, BR-03, BR-05, BR-15,
+  BR-16, and BR-17 were absent from the cross-check; BR-18 pointed to a successful-upload test that
+  did not prove failure isolation. Active download, unknown Requester, filters, default sorting,
+  missing attachment resources, and required UI states also lacked named evidence.
+- **Resolution:** Added DATA-01/02, MW-06, API-26 through API-34, UI-11 through UI-18, complete BR
+  mappings, and AC-21 for a successful owned active-attachment download.
+
+### Finding H — Playwright and Final-Main Verification Were Underspecified
+
+- **Problem:** The E2E spec file was mislabeled as Playwright configuration, setup files were
+  omitted, and Phase 9 stopped verification at `lab2-staging` although final evidence must come
+  from `main`.
+- **Resolution:** Phase 7 now names the root package/lockfile, `playwright.config.ts`, E2E spec, and
+  screenshots separately and requires approval before a new dependency. Phase 9 reruns all suites
+  and builds after the reviewer merges the release PR into final `main`.
+
+---
+
 ## 3. Impact Assessment & Status
 
-All changes maintain 100% backward compatibility with Lab 1 and eliminate any blocker or ambiguity for Phase 2 through Phase 9. All contract updates are committed and ready for execution.
+Version 1.1.0 keeps the Lab 2 product scope unchanged while making implementation and evidence
+requirements internally consistent. These edits are local working-tree changes until they are
+assigned to the correct Issue/branch, committed, pushed, reviewed, and merged; this document does
+not claim those GitHub steps have already occurred.

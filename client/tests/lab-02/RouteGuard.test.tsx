@@ -24,7 +24,7 @@ describe("UI-10 (AC-02): RouteGuard Component", () => {
   beforeEach(() => {
     localStorage.clear();
     // Mock global fetch for RequesterSelection
-    global.fetch = vi.fn().mockImplementation(() =>
+    globalThis.fetch = vi.fn().mockImplementation(() =>
       Promise.resolve({
         ok: true,
         json: () =>
