@@ -10,6 +10,10 @@ export interface ValidationResult<T> {
   isValid: boolean;
   data?: T;
   errors: Record<string, string>;
+  candidates?: {
+    categoryId?: number;
+    relatedSystemId?: number;
+  };
 }
 
 export interface ValidatedTicketData {
@@ -22,9 +26,23 @@ export interface ValidatedTicketData {
 
 /**
  * Trims and validates ticket creation input according to BR-09 and API spec 6.4.
+ * Strictly verifies types (categoryId & relatedSystemId must be positive integer numbers, not strings or booleans).
  */
 export function validateTicketInput(input: TicketInput): ValidationResult<ValidatedTicketData> {
   const errors: Record<string, string> = {};
+
+  if (!input || typeof input !== "object" || Array.isArray(input)) {
+    return {
+      isValid: false,
+      errors: {
+        summary: "Summary is required",
+        description: "Description is required",
+        categoryId: "Category is required",
+        relatedSystemId: "Related system is required",
+        requestedPriority: "Requested priority must be LOW, MEDIUM, or HIGH",
+      },
+    };
+  }
 
   // Summary validation
   let trimmedSummary = "";
@@ -48,26 +66,28 @@ export function validateTicketInput(input: TicketInput): ValidationResult<Valida
     }
   }
 
-  // Category validation
-  let parsedCategoryId = 0;
-  if (input.categoryId === undefined || input.categoryId === null) {
+  // Category validation (Strict type check: number, integer, > 0)
+  let parsedCategoryId: number | undefined = undefined;
+  if (
+    typeof input.categoryId !== "number" ||
+    !Number.isInteger(input.categoryId) ||
+    input.categoryId <= 0
+  ) {
     errors.categoryId = "Category is required";
   } else {
-    parsedCategoryId = Number(input.categoryId);
-    if (!Number.isInteger(parsedCategoryId) || parsedCategoryId <= 0) {
-      errors.categoryId = "Category is required";
-    }
+    parsedCategoryId = input.categoryId;
   }
 
-  // Related System validation
-  let parsedRelatedSystemId = 0;
-  if (input.relatedSystemId === undefined || input.relatedSystemId === null) {
+  // Related System validation (Strict type check: number, integer, > 0)
+  let parsedRelatedSystemId: number | undefined = undefined;
+  if (
+    typeof input.relatedSystemId !== "number" ||
+    !Number.isInteger(input.relatedSystemId) ||
+    input.relatedSystemId <= 0
+  ) {
     errors.relatedSystemId = "Related system is required";
   } else {
-    parsedRelatedSystemId = Number(input.relatedSystemId);
-    if (!Number.isInteger(parsedRelatedSystemId) || parsedRelatedSystemId <= 0) {
-      errors.relatedSystemId = "Related system is required";
-    }
+    parsedRelatedSystemId = input.relatedSystemId;
   }
 
   // Priority validation
@@ -78,19 +98,21 @@ export function validateTicketInput(input: TicketInput): ValidationResult<Valida
 
   const isValid = Object.keys(errors).length === 0;
 
-  if (!isValid) {
-    return { isValid: false, errors };
-  }
-
   return {
-    isValid: true,
-    data: {
-      summary: trimmedSummary,
-      description: trimmedDescription,
+    isValid,
+    data: isValid
+      ? {
+          summary: trimmedSummary,
+          description: trimmedDescription,
+          categoryId: parsedCategoryId!,
+          relatedSystemId: parsedRelatedSystemId!,
+          requestedPriority: input.requestedPriority as "LOW" | "MEDIUM" | "HIGH",
+        }
+      : undefined,
+    errors,
+    candidates: {
       categoryId: parsedCategoryId,
       relatedSystemId: parsedRelatedSystemId,
-      requestedPriority: input.requestedPriority as "LOW" | "MEDIUM" | "HIGH",
     },
-    errors: {},
   };
 }

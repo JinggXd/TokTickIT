@@ -34,7 +34,7 @@ export function CreateTicket({ onSuccess, onCancel }: CreateTicketProps) {
   const [summary, setSummary] = useState<string>("");
   const [description, setDescription] = useState<string>("");
 
-  // Attachments state (Client staging only for Phase 3)
+  // Attachments state (Client staging only for Phase 3; backend upload is Phase 5 per SKILL.md)
   const [stagedFiles, setStagedFiles] = useState<File[]>([]);
   const [attachmentError, setAttachmentError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -78,14 +78,14 @@ export function CreateTicket({ onSuccess, onCancel }: CreateTicketProps) {
     };
   }, []);
 
-  // Handle file selection
+  // Handle file selection (Exact rejection messages per ui-spec.md Section 4.2)
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setAttachmentError(null);
     const files = Array.from(e.target.files || []);
     if (files.length === 0) return;
 
     if (stagedFiles.length + files.length > MAX_FILES) {
-      setAttachmentError(`Maximum of ${MAX_FILES} attachments allowed per ticket.`);
+      setAttachmentError("This ticket already has 5 active attachments.");
       if (fileInputRef.current) fileInputRef.current.value = "";
       return;
     }
@@ -93,17 +93,17 @@ export function CreateTicket({ onSuccess, onCancel }: CreateTicketProps) {
     const newValidFiles: File[] = [];
 
     for (const file of files) {
-      const ext = "." + file.name.split(".").pop()?.toLowerCase();
+      const lastDotIndex = file.name.lastIndexOf(".");
+      const ext = lastDotIndex !== -1 ? file.name.slice(lastDotIndex).toLowerCase() : "";
+
       if (!ALLOWED_EXTENSIONS.includes(ext)) {
-        setAttachmentError(
-          `Invalid file type: ${file.name}. Only JPG, PNG, WEBP, and PDF files are allowed.`
-        );
+        setAttachmentError("Only JPG, JPEG, PNG, WEBP, and PDF files are allowed.");
         if (fileInputRef.current) fileInputRef.current.value = "";
         return;
       }
 
       if (file.size > MAX_FILE_SIZE) {
-        setAttachmentError(`File size exceeds 5 MB limit: ${file.name}`);
+        setAttachmentError("File exceeds the 5 MB size limit.");
         if (fileInputRef.current) fileInputRef.current.value = "";
         return;
       }
@@ -207,37 +207,36 @@ export function CreateTicket({ onSuccess, onCancel }: CreateTicketProps) {
     setAttachmentError(null);
   };
 
-  // Success view (AC-01, UI-13)
+  // Success view (AC-01, UI-13) - Ticket Number is the prominent headline
   if (createdTicket) {
     return (
-      <div className="container py-4" style={{ maxWidth: 800 }}>
+      <div className="container py-4" style={{ maxWidth: 840 }}>
         <div className="card card-zen p-4 border-success">
-          <div className="d-flex align-items-center mb-3">
-            <span style={{ fontSize: "2rem", color: "var(--zg-success)" }} className="me-3">
-              ✓
+          <div className="mb-3">
+            <span className="badge bg-success-subtle text-success px-3 py-1 mb-2">
+              Ticket Submitted Successfully
             </span>
-            <div>
-              <h3 className="h4 fw-bold text-success mb-0">Ticket Submitted Successfully!</h3>
-              <p className="text-muted small mb-0">Your request has been received and queued.</p>
-            </div>
+            <h2
+              className="h3 fw-bold font-monospace text-success mb-1"
+              data-testid="success-ticket-no"
+            >
+              {createdTicket.ticketNo}
+            </h2>
+            <p className="text-muted small mb-0">Your support ticket has been received and queued.</p>
           </div>
 
           <hr />
 
           <div className="row g-3 my-2">
             <div className="col-md-6">
-              <label className="form-label small text-muted mb-1">Ticket Number</label>
-              <div className="fs-5 fw-bold font-monospace text-dark">{createdTicket.ticketNo}</div>
-            </div>
-            <div className="col-md-6">
               <label className="form-label small text-muted mb-1">Ticket Date</label>
-              <div className="text-dark">
+              <div className="text-dark fw-medium" data-testid="success-ticket-date">
                 {new Date(createdTicket.createdAt).toLocaleString()}
               </div>
             </div>
             <div className="col-md-6">
               <label className="form-label small text-muted mb-1">Requester</label>
-              <div className="fw-semibold text-dark">
+              <div className="fw-semibold text-dark" data-testid="success-requester">
                 {currentRequester?.name} ({currentRequester?.department})
               </div>
             </div>
@@ -248,6 +247,10 @@ export function CreateTicket({ onSuccess, onCancel }: CreateTicketProps) {
                   🔵 {createdTicket.currentStatus}
                 </span>
               </div>
+            </div>
+            <div className="col-md-6">
+              <label className="form-label small text-muted mb-1">Priority</label>
+              <div className="fw-semibold text-dark">{createdTicket.requestedPriority}</div>
             </div>
             <div className="col-12">
               <label className="form-label small text-muted mb-1">Summary</label>
@@ -340,9 +343,9 @@ export function CreateTicket({ onSuccess, onCancel }: CreateTicketProps) {
             </div>
           </div>
 
-          {/* Classification Controls Grid */}
+          {/* Classification Controls (Two-Column Grid per ui-spec.md Section 10.2) */}
           <div className="row g-3 mb-3">
-            <div className="col-md-4">
+            <div className="col-md-6">
               <label htmlFor="category-select" className="form-label fw-semibold small">
                 Category <span className="text-danger">*</span>
               </label>
@@ -352,7 +355,7 @@ export function CreateTicket({ onSuccess, onCancel }: CreateTicketProps) {
                 className={`form-select form-select-zen ${fieldErrors.categoryId ? "is-invalid" : ""}`}
                 value={categoryId}
                 onChange={(e) => setCategoryId(e.target.value)}
-                disabled={loadingRefs}
+                disabled={loadingRefs || isSubmitting}
               >
                 {loadingRefs && <option value="">Loading categories...</option>}
                 {categories.map((cat) => (
@@ -366,7 +369,7 @@ export function CreateTicket({ onSuccess, onCancel }: CreateTicketProps) {
               )}
             </div>
 
-            <div className="col-md-4">
+            <div className="col-md-6">
               <label htmlFor="system-select" className="form-label fw-semibold small">
                 Related System <span className="text-danger">*</span>
               </label>
@@ -378,7 +381,7 @@ export function CreateTicket({ onSuccess, onCancel }: CreateTicketProps) {
                 }`}
                 value={relatedSystemId}
                 onChange={(e) => setRelatedSystemId(e.target.value)}
-                disabled={loadingRefs}
+                disabled={loadingRefs || isSubmitting}
               >
                 {loadingRefs && <option value="">Loading systems...</option>}
                 {relatedSystems.map((sys) => (
@@ -392,7 +395,7 @@ export function CreateTicket({ onSuccess, onCancel }: CreateTicketProps) {
               )}
             </div>
 
-            <div className="col-md-4">
+            <div className="col-md-6">
               <label htmlFor="priority-select" className="form-label fw-semibold small">
                 Requested Priority <span className="text-danger">*</span>
               </label>
@@ -406,6 +409,7 @@ export function CreateTicket({ onSuccess, onCancel }: CreateTicketProps) {
                 onChange={(e) =>
                   setRequestedPriority(e.target.value as "LOW" | "MEDIUM" | "HIGH")
                 }
+                disabled={isSubmitting}
               >
                 <option value="LOW">LOW</option>
                 <option value="MEDIUM">MEDIUM</option>
@@ -431,6 +435,7 @@ export function CreateTicket({ onSuccess, onCancel }: CreateTicketProps) {
               value={summary}
               onChange={(e) => setSummary(e.target.value)}
               maxLength={100}
+              disabled={isSubmitting}
             />
             {fieldErrors.summary ? (
               <div className="text-danger small mt-1">{fieldErrors.summary}</div>
@@ -455,6 +460,7 @@ export function CreateTicket({ onSuccess, onCancel }: CreateTicketProps) {
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               maxLength={2000}
+              disabled={isSubmitting}
             />
             {fieldErrors.description ? (
               <div className="text-danger small mt-1">{fieldErrors.description}</div>
@@ -488,7 +494,7 @@ export function CreateTicket({ onSuccess, onCancel }: CreateTicketProps) {
               multiple
               className="form-control form-control-sm form-control-zen"
               accept=".jpg,.jpeg,.png,.webp,.pdf"
-              disabled={stagedFiles.length >= MAX_FILES}
+              disabled={stagedFiles.length >= MAX_FILES || isSubmitting}
               onChange={handleFileChange}
             />
 
@@ -512,6 +518,7 @@ export function CreateTicket({ onSuccess, onCancel }: CreateTicketProps) {
                       type="button"
                       className="btn btn-sm btn-outline-danger py-0 px-2"
                       onClick={() => handleRemoveFile(idx)}
+                      disabled={isSubmitting}
                     >
                       Remove
                     </button>

@@ -101,8 +101,8 @@ describe("Create Ticket Screen (UI-01 to UI-04, UI-12, UI-13, STYLE-01, STYLE-04
     );
   });
 
-  // UI-02 — AC-06: Busy button state on pending submit (BR-10)
-  it("UI-02: disables submit button and shows busy state during submission", async () => {
+  // UI-02 — AC-06: Busy button and read-only/disabled form state during submit (BR-10, Finding 5)
+  it("UI-02: disables submit button and all form controls during pending submission", async () => {
     let resolveSubmit: any;
     const submitPromise = new Promise((resolve) => {
       resolveSubmit = resolve;
@@ -126,18 +126,31 @@ describe("Create Ticket Screen (UI-01 to UI-04, UI-12, UI-13, STYLE-01, STYLE-04
 
     await waitFor(() => screen.getByRole("option", { name: "Hardware" }));
 
-    await user.selectOptions(screen.getByLabelText(/category/i), "2");
-    await user.selectOptions(screen.getByLabelText(/related system/i), "1");
-    await user.selectOptions(screen.getByLabelText(/requested priority/i), "HIGH");
-    await user.type(screen.getByLabelText(/summary/i), "Test summary text");
-    await user.type(screen.getByLabelText(/description/i), "Detailed description for test ticket.");
+    const categorySelect = screen.getByLabelText(/category/i);
+    const systemSelect = screen.getByLabelText(/related system/i);
+    const prioritySelect = screen.getByLabelText(/requested priority/i);
+    const summaryInput = screen.getByLabelText(/summary/i);
+    const descriptionInput = screen.getByLabelText(/description/i);
+    const attachmentInput = screen.getByTestId("attachment-input");
+
+    await user.selectOptions(categorySelect, "2");
+    await user.selectOptions(systemSelect, "1");
+    await user.selectOptions(prioritySelect, "HIGH");
+    await user.type(summaryInput, "Test summary text");
+    await user.type(descriptionInput, "Detailed description for test ticket.");
 
     const submitBtn = screen.getByRole("button", { name: /submit ticket/i });
     await user.click(submitBtn);
 
-    // Button should be disabled and show busy text
+    // Form inputs and submit button must be disabled during submission (Finding 5)
     expect(submitBtn).toBeDisabled();
     expect(screen.getByText(/submitting/i)).toBeInTheDocument();
+    expect(categorySelect).toBeDisabled();
+    expect(systemSelect).toBeDisabled();
+    expect(prioritySelect).toBeDisabled();
+    expect(summaryInput).toBeDisabled();
+    expect(descriptionInput).toBeDisabled();
+    expect(attachmentInput).toBeDisabled();
 
     // Resolve request
     resolveSubmit({
@@ -155,6 +168,10 @@ describe("Create Ticket Screen (UI-01 to UI-04, UI-12, UI-13, STYLE-01, STYLE-04
           requesterId: 1,
           createdAt: new Date().toISOString(),
         }),
+    });
+
+    await waitFor(() => {
+      expect(screen.getByTestId("success-ticket-no")).toHaveTextContent("TKT-2026-000101");
     });
   });
 
@@ -202,43 +219,74 @@ describe("Create Ticket Screen (UI-01 to UI-04, UI-12, UI-13, STYLE-01, STYLE-04
     expect(screen.getByLabelText(/related system/i)).toHaveValue("1");
   });
 
-  // UI-04 — AC-05, BR-07: Attachment client-side validation and rejection
-  it("UI-04: rejects invalid files client-side with inline error without staging or uploading", async () => {
+  // UI-04 — AC-05, BR-07: Attachment client-side validation, exact copies, and rejection (Finding 4)
+  it("UI-04: rejects invalid files with exact spec copy without staging or uploading", async () => {
     renderWithContext(<CreateTicket />);
 
     await waitFor(() => screen.getByRole("option", { name: "Hardware" }));
 
     const fileInput = screen.getByTestId("attachment-input") as HTMLInputElement;
 
-    // 1. Oversized file (> 5MB)
+    // 1. Oversized file (> 5MB) -> "File exceeds the 5 MB size limit."
     const oversizedFile = new File(["x".repeat(6 * 1024 * 1024)], "oversized.png", { type: "image/png" });
     Object.defineProperty(oversizedFile, "size", { value: 6 * 1024 * 1024 });
 
     fireEvent.change(fileInput, { target: { files: [oversizedFile] } });
 
     await waitFor(() => {
-      expect(screen.getByText(/file size exceeds 5 mb limit/i)).toBeInTheDocument();
+      expect(screen.getByText("⚠️ File exceeds the 5 MB size limit.")).toBeInTheDocument();
     });
+    expect(screen.queryByText("oversized.png")).not.toBeInTheDocument();
 
-    // 2. Disallowed extension (.exe)
+    // 2. Disallowed extension (.exe) -> "Only JPG, JPEG, PNG, WEBP, and PDF files are allowed."
     const badExtFile = new File(["sample content"], "malicious.exe", { type: "application/x-msdownload" });
     fireEvent.change(fileInput, { target: { files: [badExtFile] } });
 
     await waitFor(() => {
-      expect(screen.getByText(/invalid file type/i)).toBeInTheDocument();
+      expect(screen.getByText("⚠️ Only JPG, JPEG, PNG, WEBP, and PDF files are allowed.")).toBeInTheDocument();
     });
+    expect(screen.queryByText("malicious.exe")).not.toBeInTheDocument();
 
-    // Valid file is added to staged list
+    // 3. Extensionless file (e.g. "image_png") -> must be rejected
+    const dotlessFile = new File(["sample content"], "image_png", { type: "image/png" });
+    fireEvent.change(fileInput, { target: { files: [dotlessFile] } });
+
+    await waitFor(() => {
+      expect(screen.getByText("⚠️ Only JPG, JPEG, PNG, WEBP, and PDF files are allowed.")).toBeInTheDocument();
+    });
+    expect(screen.queryByText("image_png")).not.toBeInTheDocument();
+
+    // 4. Valid file is added to staged list
     const validFile = new File(["valid image content"], "screenshot.png", { type: "image/png" });
     fireEvent.change(fileInput, { target: { files: [validFile] } });
 
     await waitFor(() => {
       expect(screen.getByText("screenshot.png")).toBeInTheDocument();
     });
+
+    // 5. Exceeding 5 active files -> "This ticket already has 5 active attachments."
+    const extraFiles = [
+      new File(["1"], "doc1.pdf", { type: "application/pdf" }),
+      new File(["2"], "doc2.pdf", { type: "application/pdf" }),
+      new File(["3"], "doc3.pdf", { type: "application/pdf" }),
+      new File(["4"], "doc4.pdf", { type: "application/pdf" }),
+      new File(["5"], "doc5.pdf", { type: "application/pdf" }), // 1 + 5 = 6 > 5
+    ];
+    fireEvent.change(fileInput, { target: { files: extraFiles } });
+
+    await waitFor(() => {
+      expect(screen.getByText("⚠️ This ticket already has 5 active attachments.")).toBeInTheDocument();
+    });
+
+    // Verify NO upload/network call was made during file selection in Phase 3
+    expect(globalThis.fetch).not.toHaveBeenCalledWith(
+      expect.stringContaining("/attachments"),
+      expect.anything()
+    );
   });
 
-  // UI-13 — AC-01, AC-03: Success screen
-  it("UI-13: displays backend Ticket Number and Ticket Date on success and retains requester identity", async () => {
+  // UI-13 — AC-01, AC-03: Success screen with ticketNo headline, date, and requester (Finding 7)
+  it("UI-13: displays backend Ticket Number as headline, Ticket Date, and retains requester identity", async () => {
     const mockCreated = {
       id: 101,
       ticketNo: "TKT-2026-000101",
@@ -280,15 +328,23 @@ describe("Create Ticket Screen (UI-01 to UI-04, UI-12, UI-13, STYLE-01, STYLE-04
 
     await user.click(screen.getByRole("button", { name: /submit ticket/i }));
 
-    // Confirm success view renders official ticket number and date
+    // Confirm success view renders official ticket number as headline (Finding 7)
     await waitFor(() => {
-      expect(screen.getByText("TKT-2026-000101")).toBeInTheDocument();
-      expect(screen.getByText(/ticket submitted successfully/i)).toBeInTheDocument();
+      expect(screen.getByTestId("success-ticket-no")).toHaveTextContent("TKT-2026-000101");
     });
+
+    // Confirm ticket date and requester identity assertions
+    expect(screen.getByTestId("success-ticket-date")).toHaveTextContent(
+      new Date(mockCreated.createdAt).toLocaleString()
+    );
+    expect(screen.getByTestId("success-requester")).toHaveTextContent(
+      `${mockRequester.name} (${mockRequester.department})`
+    );
   });
 
   // STYLE-01 & STYLE-04: Zen Green tokens and accessible focus
-  it("STYLE-01 & STYLE-04: uses Zen Green classes and provides accessible focus rings", async () => {
+  it("STYLE-01 & STYLE-04: uses Zen Green classes and proves accessible keyboard tab navigation", async () => {
+    const user = userEvent.setup();
     renderWithContext(<CreateTicket />);
     await waitFor(() => screen.getByRole("option", { name: "Hardware" }));
 
@@ -297,5 +353,40 @@ describe("Create Ticket Screen (UI-01 to UI-04, UI-12, UI-13, STYLE-01, STYLE-04
 
     const summaryInput = screen.getByLabelText(/summary/i);
     expect(summaryInput).toHaveClass("form-control-zen");
+
+    const categorySelect = screen.getByLabelText(/category/i);
+    expect(categorySelect).toHaveClass("form-select-zen");
+
+    const systemSelect = screen.getByLabelText(/related system/i);
+    expect(systemSelect).toHaveClass("form-select-zen");
+
+    const prioritySelect = screen.getByLabelText(/requested priority/i);
+    expect(prioritySelect).toHaveClass("form-select-zen");
+
+    const descriptionInput = screen.getByLabelText(/description/i);
+    expect(descriptionInput).toHaveClass("form-control-zen");
+
+    // Readonly fields have readonly attribute and are skipped from tab order via tabIndex={-1}
+    const readOnlyFields = screen.getAllByDisplayValue(/will be assigned on save/i);
+    for (const field of readOnlyFields) {
+      expect(field).toHaveAttribute("readonly");
+      expect(field).toHaveAttribute("tabindex", "-1");
+    }
+
+    // Keyboard Tab navigation (STYLE-04)
+    await user.tab();
+    expect(document.activeElement).toBe(categorySelect);
+
+    await user.tab();
+    expect(document.activeElement).toBe(systemSelect);
+
+    await user.tab();
+    expect(document.activeElement).toBe(prioritySelect);
+
+    await user.tab();
+    expect(document.activeElement).toBe(summaryInput);
+
+    await user.tab();
+    expect(document.activeElement).toBe(descriptionInput);
   });
 });

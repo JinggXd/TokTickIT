@@ -13,7 +13,17 @@ void getPrisma;
 export const app = express();
 
 app.use(cors());          // already wired: lets the Vite dev server call this API
-app.use(express.json());
+app.use(express.json({ strict: false }));
+app.use((err: any, _req: Request, res: Response, next: express.NextFunction) => {
+  if (err instanceof SyntaxError && "status" in err && err.status === 400) {
+    res.status(400).json({
+      error: "Validation failed",
+      details: { body: "Invalid JSON payload" },
+    });
+    return;
+  }
+  next(err);
+});
 
 // ---------------------------------------------------------------------------
 // Issue 2 — API health check
@@ -86,40 +96,41 @@ app.post(
   "/api/tickets",
   requireRequester as express.RequestHandler,
   async (req: AuthenticatedRequesterRequest, res: Response): Promise<void> => {
-    // 1. Validate payload syntax and length (BR-09)
-    const validation = validateTicketInput(req.body);
-    const errors: Record<string, string> = { ...validation.errors };
-
-    // 2. Reference checks (DB existence & active status)
-    if (validation.data?.categoryId) {
-      const category = await getPrisma().category.findUnique({
-        where: { id: validation.data.categoryId },
-      });
-      if (!category || !category.isActive) {
-        errors.categoryId = "Category does not exist or is inactive";
-      }
-    }
-
-    if (validation.data?.relatedSystemId) {
-      const system = await getPrisma().relatedSystem.findUnique({
-        where: { id: validation.data.relatedSystemId },
-      });
-      if (!system || !system.isActive) {
-        errors.relatedSystemId = "Related system does not exist or is inactive";
-      }
-    }
-
-    if (Object.keys(errors).length > 0) {
-      res.status(400).json({
-        error: "Validation failed",
-        details: errors,
-      });
-      return;
-    }
-
-    // 3. Create ticket with ticket number generation and collision retries
     try {
+      // 1. Validate payload syntax and length (BR-09)
+      const validation = validateTicketInput(req.body);
+      const errors: Record<string, string> = { ...validation.errors };
+
       const prisma = getPrisma();
+
+      // 2. Reference checks: use candidate IDs so reference errors are collected alongside syntax errors
+      if (validation.candidates?.categoryId) {
+        const category = await prisma.category.findUnique({
+          where: { id: validation.candidates.categoryId },
+        });
+        if (!category || !category.isActive) {
+          errors.categoryId = "Category does not exist or is inactive";
+        }
+      }
+
+      if (validation.candidates?.relatedSystemId) {
+        const system = await prisma.relatedSystem.findUnique({
+          where: { id: validation.candidates.relatedSystemId },
+        });
+        if (!system || !system.isActive) {
+          errors.relatedSystemId = "Related system does not exist or is inactive";
+        }
+      }
+
+      if (Object.keys(errors).length > 0) {
+        res.status(400).json({
+          error: "Validation failed",
+          details: errors,
+        });
+        return;
+      }
+
+      // 3. Create ticket with ticket number generation and collision retries
       const requesterId = req.requester!.id;
       const { summary, description, categoryId, relatedSystemId, requestedPriority } = validation.data!;
 
@@ -195,4 +206,3 @@ app.post(
 );
 
 export default app;
-

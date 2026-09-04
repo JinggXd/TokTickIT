@@ -16,19 +16,19 @@ npm --prefix server run test
 Result:
 ```text
 Test Files  10 passed (10)
-Tests       28 passed (28)
+Tests       33 passed (33)
 ```
 
 Covered suites:
 - Lab 1 health and categories regression
 - UNIT-01/UNIT-02 ticket-number generation & collision retry
-- UNIT-03 trim & validate ticket input
+- UNIT-03 trim & validate ticket input (strict type validation for IDs)
 - UNIT-04/UNIT-05 safe filename policy
 - UNIT-06 pagination helper
 - MW-03/MW-04/MW-05/MW-06 shared requester middleware
 - Active requester API (API-26)
-- Reference data endpoints (API-27: categories & related systems)
-- Create ticket API (API-01, API-02, API-03, API-04, API-05, API-21, API-28, API-29)
+- Reference data endpoints (API-27: active categories & related systems, inactive exclusion)
+- Create ticket API (API-01, API-02 syntax/regression, API-03, API-04, API-05, API-21 retry 3x, API-28, API-29 reference + syntax)
 
 ---
 

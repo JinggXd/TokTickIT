@@ -2,7 +2,6 @@ import request from "supertest";
 import { describe, it, expect, vi, afterEach } from "vitest";
 import { app } from "../../src/app.js";
 import { getPrisma } from "../../src/prisma.js";
-import * as ticketNumberUtil from "../../src/utils/ticketNumber.js";
 
 describe("POST /api/tickets (API-01 to API-05, API-21, API-28, API-29)", () => {
   const prisma = getPrisma();
@@ -69,11 +68,13 @@ describe("POST /api/tickets (API-01 to API-05, API-21, API-28, API-29)", () => {
     expect(res.status).toBe(400);
     expect(res.body.error).toBe("Validation failed");
     expect(res.body).toHaveProperty("details");
-    expect(res.body.details).toHaveProperty("summary");
-    expect(res.body.details).toHaveProperty("description");
-    expect(res.body.details).toHaveProperty("categoryId");
-    expect(res.body.details).toHaveProperty("relatedSystemId");
-    expect(res.body.details).toHaveProperty("requestedPriority");
+    expect(res.body.details).toEqual({
+      summary: "Summary must be between 5 and 100 characters",
+      description: "Description must be between 10 and 2000 characters",
+      categoryId: "Category is required",
+      relatedSystemId: "Related system is required",
+      requestedPriority: "Requested priority must be LOW, MEDIUM, or HIGH",
+    });
   });
 
   // API-03 — AC-18: missing header -> 401 without details
@@ -89,8 +90,8 @@ describe("POST /api/tickets (API-01 to API-05, API-21, API-28, API-29)", () => {
       });
 
     expect(res.status).toBe(401);
+    expect(res.body).toEqual({ error: "Requester context is missing or invalid" });
     expect(res.body).not.toHaveProperty("details");
-    expect(res.body).toHaveProperty("error");
   });
 
   // API-04 — AC-18: malformed header -> 400 without details
@@ -107,8 +108,8 @@ describe("POST /api/tickets (API-01 to API-05, API-21, API-28, API-29)", () => {
       });
 
     expect(res.status).toBe(400);
+    expect(res.body).toEqual({ error: "Bad Request: Malformed X-Requester-Id header" });
     expect(res.body).not.toHaveProperty("details");
-    expect(res.body).toHaveProperty("error");
   });
 
   // API-05 — AC-18: header with inactive requester -> 401
@@ -128,8 +129,8 @@ describe("POST /api/tickets (API-01 to API-05, API-21, API-28, API-29)", () => {
       });
 
     expect(res.status).toBe(401);
+    expect(res.body).toEqual({ error: "Requester context is missing or invalid" });
     expect(res.body).not.toHaveProperty("details");
-    expect(res.body).toHaveProperty("error");
   });
 
   // API-28 — AC-18, BR-06: header with unknown requester ID -> 401
@@ -146,56 +147,148 @@ describe("POST /api/tickets (API-01 to API-05, API-21, API-28, API-29)", () => {
       });
 
     expect(res.status).toBe(401);
+    expect(res.body).toEqual({ error: "Requester context is missing or invalid" });
     expect(res.body).not.toHaveProperty("details");
-    expect(res.body).toHaveProperty("error");
   });
 
-  // API-29 — AC-04: nonexistent or inactive category or related system -> 400 with details
-  it("API-29: returns 400 with details when category or related system does not exist or is inactive", async () => {
+  // API-29 — AC-04: nonexistent, inactive, and simultaneous syntax + reference errors
+  it("API-29: returns 400 with details when category or related system does not exist or is inactive, collecting all errors", async () => {
     const requester = await prisma.requesterUser.findFirst({ where: { isActive: true } });
 
-    const res = await request(app)
+    // 1. Nonexistent IDs with simultaneous syntax error on summary (Finding 3)
+    const resNonexistent = await request(app)
       .post("/api/tickets")
       .set("X-Requester-Id", String(requester!.id))
       .send({
-        summary: "Valid summary here",
+        summary: "123", // syntax error: < 5 chars
         description: "Valid description with plenty of characters.",
-        categoryId: 999999, // nonexistent
-        relatedSystemId: 999999, // nonexistent
+        categoryId: 999999, // nonexistent reference
+        relatedSystemId: 999999, // nonexistent reference
         requestedPriority: "MEDIUM",
       });
 
-    expect(res.status).toBe(400);
-    expect(res.body.error).toBe("Validation failed");
-    expect(res.body).toHaveProperty("details");
-    expect(res.body.details.categoryId).toMatch(/exist|inactive/i);
-    expect(res.body.details.relatedSystemId).toMatch(/exist|inactive/i);
+    expect(resNonexistent.status).toBe(400);
+    expect(resNonexistent.body.error).toBe("Validation failed");
+    expect(resNonexistent.body.details).toEqual({
+      summary: "Summary must be between 5 and 100 characters",
+      categoryId: "Category does not exist or is inactive",
+      relatedSystemId: "Related system does not exist or is inactive",
+    });
+
+    // 2. Inactive Category & Inactive Related System (Finding 8)
+    const inactiveCat = await prisma.category.upsert({
+      where: { name: "Inactive Test Category" },
+      update: { isActive: false },
+      create: { name: "Inactive Test Category", isActive: false },
+    });
+    const inactiveSys = await prisma.relatedSystem.upsert({
+      where: { name: "Inactive Test System" },
+      update: { isActive: false },
+      create: { name: "Inactive Test System", isActive: false },
+    });
+
+    const resInactive = await request(app)
+      .post("/api/tickets")
+      .set("X-Requester-Id", String(requester!.id))
+      .send({
+        summary: "Valid summary for inactive test",
+        description: "Valid description for inactive category test.",
+        categoryId: inactiveCat.id,
+        relatedSystemId: inactiveSys.id,
+        requestedPriority: "LOW",
+      });
+
+    expect(resInactive.status).toBe(400);
+    expect(resInactive.body.error).toBe("Validation failed");
+    expect(resInactive.body.details.categoryId).toBe("Category does not exist or is inactive");
+    expect(resInactive.body.details.relatedSystemId).toBe("Related system does not exist or is inactive");
   });
 
-  // API-21 — BR-01: ticket-number collision retries exhausted -> 500
-  it("API-21: returns 500 when ticket-number generation retries are exhausted", async () => {
+  // API-21 — BR-01: ticket-number collision retries 3 times before 500
+  it("API-21: retries ticket creation 3 times on collision before returning 500", async () => {
     const requester = await prisma.requesterUser.findFirst({ where: { isActive: true } });
     const category = await prisma.category.findFirst({ where: { isActive: true } });
     const relatedSystem = await prisma.relatedSystem.findFirst({ where: { isActive: true } });
 
-    // Mock generateTicketNumber to throw TicketNumberGenerationError
-    vi.spyOn(ticketNumberUtil, "generateTicketNumber").mockRejectedValueOnce(
-      new ticketNumberUtil.TicketNumberGenerationError("Unable to generate a unique ticket number after 3 attempts")
-    );
+    // Mock prisma.ticket.create to simulate unique constraint collision (P2002 on ticketNo)
+    const p2002Collision = {
+      code: "P2002",
+      meta: { target: ["ticketNo"] },
+    };
+    const createSpy = vi.spyOn(prisma.ticket, "create").mockRejectedValue(p2002Collision);
 
     const res = await request(app)
       .post("/api/tickets")
       .set("X-Requester-Id", String(requester!.id))
       .send({
-        summary: "Another valid summary",
-        description: "Detailed description that passes validation.",
+        summary: "Collision test ticket",
+        description: "Detailed description that triggers collision retry.",
         categoryId: category!.id,
         relatedSystemId: relatedSystem!.id,
         requestedPriority: "LOW",
       });
 
     expect(res.status).toBe(500);
-    expect(res.body.error).toBe("Unable to create ticket. Please try again.");
+    expect(res.body).toEqual({ error: "Unable to create ticket. Please try again." });
+    expect(res.body).not.toHaveProperty("details");
+
+    // Verify it retried exactly 3 times before giving up
+    expect(createSpy).toHaveBeenCalledTimes(3);
+  });
+
+  // Regression: JSON null body returns 400 with details
+  it("API-02 (regression): returns 400 when body is null or array", async () => {
+    const requester = await prisma.requesterUser.findFirst({ where: { isActive: true } });
+    const res = await request(app)
+      .post("/api/tickets")
+      .set("X-Requester-Id", String(requester!.id))
+      .set("Content-Type", "application/json")
+      .send("null");
+
+    expect(res.status).toBe(400);
+    expect(res.body.error).toBe("Validation failed");
+    expect(res.body).toHaveProperty("details");
+    expect(res.body.details.summary).toBe("Summary is required");
+  });
+
+  // Regression: string and boolean categoryId / relatedSystemId rejected
+  it("API-02 (regression): rejects string and boolean categoryId and relatedSystemId", async () => {
+    const requester = await prisma.requesterUser.findFirst({ where: { isActive: true } });
+    const res = await request(app)
+      .post("/api/tickets")
+      .set("X-Requester-Id", String(requester!.id))
+      .send({
+        summary: "Valid summary here",
+        description: "Valid description here for testing.",
+        categoryId: "1",
+        relatedSystemId: true,
+        requestedPriority: "LOW",
+      });
+
+    expect(res.status).toBe(400);
+    expect(res.body.error).toBe("Validation failed");
+    expect(res.body.details.categoryId).toBe("Category is required");
+    expect(res.body.details.relatedSystemId).toBe("Related system is required");
+  });
+
+  // Regression: unexpected database error during lookup returns flat 500
+  it("API-02 (regression): returns flat 500 when category lookup fails unexpectedly", async () => {
+    const requester = await prisma.requesterUser.findFirst({ where: { isActive: true } });
+    vi.spyOn(prisma.category, "findUnique").mockRejectedValue(new Error("Database disconnected"));
+
+    const res = await request(app)
+      .post("/api/tickets")
+      .set("X-Requester-Id", String(requester!.id))
+      .send({
+        summary: "Valid summary here",
+        description: "Valid description here for testing.",
+        categoryId: 1,
+        relatedSystemId: 1,
+        requestedPriority: "LOW",
+      });
+
+    expect(res.status).toBe(500);
+    expect(res.body).toEqual({ error: "Unable to create ticket. Please try again." });
     expect(res.body).not.toHaveProperty("details");
   });
 });
