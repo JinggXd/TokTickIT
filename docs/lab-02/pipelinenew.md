@@ -27,9 +27,9 @@ main
   -> one release PR from lab2-staging into main
 ```
 
-The repository history proves that the main branch flow has started correctly, but the current
-working tree is not yet ready to move to `PR Review` because it contains uncommitted corrections
-and changes from more than one issue scope.
+The repository history proves that the main branch flow has started correctly. PR #18 remains in
+`Fixing` until its verified review corrections are published and the reviewer explicitly approves
+the mixed Phase 1/Phase 2 scope.
 
 ## 2. Required Kanban Pipeline
 
@@ -102,8 +102,8 @@ the labsheet.
 | Contract setup | PR #14 merge appears in Git history | Integrated into `lab2-staging` |
 | Phase 1 data layer | PR #16 merge appears on `origin/lab2-staging` | Integrated remotely |
 | Local `lab2-staging` | Local branch is behind `origin/lab2-staging` | Update before creating the next branch |
-| Phase 2 requester context | Commit `71425f1` exists locally and on its remote feature branch | Implemented but under correction |
-| Current audit corrections | Modified working-tree files are not committed | `Fixing`, not `PR Review` or `Done` |
+| Phase 2 requester context | Commits through `ec395c2` plus the verified review correction set | Implemented and awaiting reviewer confirmation |
+| Current review corrections | URL guard, context clearing, and regression-test fixes verified | `Fixing` until published/re-reviewed; not `Done` |
 | Phases 3-6 | Required API/UI/test files are not present | Backlog/Specified |
 | Playwright Phases 7-8 | No root package/config, Playwright binary, or `e2e/` directory exists | Not yet implemented |
 | Phase 9 docs | Required final `docs/lab-02/reviewer.md` and `docs/lab-02/ai-use.md` are absent | Must be completed with real human evidence |
@@ -128,13 +128,13 @@ Current working-tree verification on 2026-09-04:
 
 | Command/check | Result |
 |---|---|
-| `npm --prefix server run test` | PASS - 8 files, 15 tests |
-| `npm --prefix client run test` | PASS - 3 files, 9 tests |
+| `npm --prefix server run test` | PASS - 8 files, 18 tests |
+| `npm --prefix client run test` | PASS - 4 files, 12 tests |
 | `npm --prefix server run build` | PASS |
 | `npm --prefix client run build` | PASS |
 | skipped/disabled-test scan | None found |
 | `npx playwright test` | Not available yet; Playwright is a Phase 7-8 deliverable |
-| Version 1.1.0 regression tests | Planned but not yet implemented; must not be reported as passing |
+| Version 1.1.0 Phase 2 regression tests | MW-06, API-26 edge cases, UI-11, UI-17, and direct-URL coverage pass |
 
 These results prove the currently implemented scope only. They do not prove completion of Lab 2,
 the unimplemented Phase 3-8 acceptance criteria, visual screenshots, peer review, or final release.

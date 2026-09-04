@@ -3,6 +3,7 @@ import { render, screen } from "@testing-library/react";
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { RouteGuard } from "../../src/components/RouteGuard.js";
 import { RequesterProvider, useRequester } from "../../src/context/RequesterContext.js";
+import App from "../../src/App.js";
 
 // Helper component that allows setting a requester in context for testing
 const RequesterContextSetter: React.FC<{
@@ -23,6 +24,7 @@ const RequesterContextSetter: React.FC<{
 describe("UI-10 (AC-02): RouteGuard Component", () => {
   beforeEach(() => {
     localStorage.clear();
+    window.history.replaceState({}, "", "/");
     // Mock global fetch for RequesterSelection
     globalThis.fetch = vi.fn().mockImplementation(() =>
       Promise.resolve({
@@ -75,5 +77,32 @@ describe("UI-10 (AC-02): RouteGuard Component", () => {
     // Protected content MUST be rendered
     expect(await screen.findByTestId("protected-content")).toBeInTheDocument();
     expect(screen.getByText("Secret Protected Area")).toBeInTheDocument();
+  });
+
+  it("UI-10: redirects a direct protected URL to Requester Selection when context is empty", async () => {
+    window.history.replaceState({}, "", "/create-ticket");
+
+    render(<App />);
+
+    expect(await screen.findByText("Select Development Requester")).toBeInTheDocument();
+    expect(window.location.pathname).toBe("/select-requester");
+  });
+
+  it("restores the requested protected URL when a Requester context exists", async () => {
+    localStorage.setItem(
+      "toktickit_current_requester",
+      JSON.stringify({
+        id: 1,
+        name: "Jennifer Anderson",
+        email: "jennifer.a@example.com",
+        department: "Marketing",
+      })
+    );
+    window.history.replaceState({}, "", "/create-ticket");
+
+    render(<App />);
+
+    expect(await screen.findByText("Create Ticket Form")).toBeInTheDocument();
+    expect(window.location.pathname).toBe("/create-ticket");
   });
 });

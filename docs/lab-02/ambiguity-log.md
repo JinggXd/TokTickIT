@@ -1,8 +1,8 @@
 # Lab 2 Ambiguity & Resolution Log (ambiguity-log.md)
 
-**Sprint:** TokTickIT Lab 2 (Requester Ticketing MVP)  
-**Governance:** `AGENTS.md` Hard Rule #1 (Contract Ambiguity Surfacing & Resolution)  
-**Date:** 2026-09-01  
+**Sprint:** TokTickIT Lab 2 (Requester Ticketing MVP)<br>
+**Governance:** `AGENTS.md` Hard Rule #1 (Contract Ambiguity Surfacing & Resolution)<br>
+**Date:** 2026-09-01<br>
 **Updated:** 2026-09-04 (`1.1.0` contract audit)
 **Status:** Contract corrections applied locally; reviewer/PR evidence still required
 

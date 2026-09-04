@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { RequesterProvider, useRequester } from "./context/RequesterContext.js";
 import { AppShell } from "./components/AppShell.js";
 import { RequesterSelection } from "./pages/RequesterSelection.js";
@@ -6,17 +6,48 @@ import { RouteGuard } from "./components/RouteGuard.js";
 
 type TabType = "my-tickets" | "create-ticket" | "select-requester";
 
-function MainContent() {
-  const { currentRequester } = useRequester();
-  const [activeTab, setActiveTab] = useState<TabType>("my-tickets");
+const TAB_PATHS: Record<TabType, string> = {
+  "my-tickets": "/my-tickets",
+  "create-ticket": "/create-ticket",
+  "select-requester": "/select-requester",
+};
 
-  // If no requester is selected, force tab to selection
-  const currentView = !currentRequester ? "select-requester" : activeTab;
+function getTabFromPath(pathname = window.location.pathname): TabType {
+  if (pathname === TAB_PATHS["create-ticket"]) return "create-ticket";
+  if (pathname === TAB_PATHS["select-requester"]) return "select-requester";
+  return "my-tickets";
+}
+
+function MainContent() {
+  const { currentRequester, isLoading } = useRequester();
+  const [activeTab, setActiveTab] = useState<TabType>(() => getTabFromPath());
+
+  const navigate = useCallback((tab: TabType, replace = false) => {
+    const nextPath = TAB_PATHS[tab];
+    if (window.location.pathname !== nextPath) {
+      window.history[replace ? "replaceState" : "pushState"]({}, "", nextPath);
+    }
+    setActiveTab(tab);
+  }, []);
+
+  useEffect(() => {
+    const handlePopState = () => setActiveTab(getTabFromPath());
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, []);
+
+  useEffect(() => {
+    if (!isLoading && !currentRequester && activeTab !== "select-requester") {
+      navigate("select-requester", true);
+    }
+  }, [activeTab, currentRequester, isLoading, navigate]);
+
+  const currentView = !isLoading && !currentRequester ? "select-requester" : activeTab;
 
   return (
-    <AppShell currentTab={currentView} onTabChange={setActiveTab}>
+    <AppShell currentTab={currentView} onTabChange={navigate}>
       {currentView === "select-requester" && (
-        <RequesterSelection onSuccess={() => setActiveTab("my-tickets")} />
+        <RequesterSelection onSuccess={() => navigate("my-tickets")} />
       )}
 
       {currentView === "my-tickets" && (
@@ -29,7 +60,7 @@ function MainContent() {
               </div>
               <button
                 className="btn btn-primary-zen"
-                onClick={() => setActiveTab("create-ticket")}
+                onClick={() => navigate("create-ticket")}
                 data-testid="create-ticket-header-btn"
               >
                 + Create Ticket

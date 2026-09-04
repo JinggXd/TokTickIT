@@ -1,8 +1,8 @@
 # Phase 2 — AI Usage & Prompt Engineering Log (ai2.md)
 
-**Sprint:** TokTickIT Lab 2 (Requester Ticketing MVP)  
-**Phase:** Phase 2 — Requester Context (API + Selector Screen)  
-**Date:** 2026-09-01  
+**Sprint:** TokTickIT Lab 2 (Requester Ticketing MVP)<br>
+**Phase:** Phase 2 — Requester Context (API + Selector Screen)<br>
+**Date:** 2026-09-01
 
 ---
 
@@ -20,9 +20,9 @@
 
 ## 2. Engineering Reflection on Phase 2
 
-1. **Strict Spec-Driven & Contract-First Discipline:**  
+1. **Strict Spec-Driven & Contract-First Discipline:**<br>
    Identifying the contradiction in `API-03/04/05` before writing code prevented polluting Phase 2 with Phase 3 endpoints while keeping tests clean, isolated, and traceable.
-2. **Defensive Server-Side Security:**  
+2. **Defensive Server-Side Security:**<br>
    The `requireRequester` middleware enforces `400` vs `401` differentiation and active user checks entirely on the backend, satisfying the Hard Rule that frontend UI state alone is never treated as security.
-3. **Zen Green UI Component Reusability:**  
+3. **Zen Green UI Component Reusability:**<br>
    Establishing tokens in `zen-green.css` and the `AppShell` layout ensures subsequent screens (Create Ticket in Phase 3, My Tickets in Phase 4) maintain visual consistency with minimal duplication.

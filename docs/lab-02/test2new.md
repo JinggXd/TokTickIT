@@ -2,7 +2,7 @@
 
 **Branch:** `feature/6-lab2-requester-context`<br>
 **Run date:** 2026-09-04<br>
-**Result scope:** Current working tree, including uncommitted audit corrections
+**Result scope:** Current Phase 2 branch after the `ec395c2` audit commit and review corrections
 
 ---
 
@@ -18,7 +18,7 @@ Result:
 
 ```text
 Test Files  8 passed (8)
-Tests       15 passed (15)
+Tests       18 passed (18)
 ```
 
 Covered suites:
@@ -29,8 +29,8 @@ Covered suites:
 - UNIT-03 trim/validation;
 - UNIT-04/UNIT-05 safe filename behavior;
 - UNIT-06 pagination;
-- MW-03/MW-04/MW-05 and valid Requester middleware behavior; and
-- active Requester list behavior.
+- MW-03/MW-04/MW-05/MW-06 and valid Requester middleware behavior; and
+- active Requester list success, empty, ordering, and safe database-failure behavior.
 
 ## 2. Client Tests
 
@@ -43,15 +43,17 @@ npm --prefix client run test
 Result:
 
 ```text
-Test Files  3 passed (3)
-Tests       9 passed (9)
+Test Files  4 passed (4)
+Tests       12 passed (12)
 ```
 
 Covered suites:
 
 - Lab 1 application regression;
-- UI-10 RouteGuard selected/unselected behavior; and
-- Requester Selection loading, success, selection, empty, and API-failure behavior.
+- UI-10 RouteGuard selected/unselected and direct-URL behavior;
+- UI-11 Requester Selection loading, success, disabled/valid selection, empty, failure, and retry;
+  and
+- UI-17 AppShell identity display and immediate Change Requester context clearing.
 
 ## 3. Build Verification
 
@@ -85,15 +87,13 @@ integrated branch with zero skipped tests.
 |---|---|
 | FR-01 / BR-05 active-only Requester list | Passing API evidence |
 | FR-02 / AC-02 / UI-10 Requester selection guard | Passing UI evidence |
-| BR-06 / AC-18 middleware-level validation | MW-03, MW-04, MW-05 passing |
+| BR-06 / AC-18 middleware-level validation | MW-03, MW-04, MW-05, MW-06 passing |
 | API-03, API-04, API-05 on `POST /api/tickets` | Pending Phase 3 |
-| FR-03 / BR-14 stale ticket-data invalidation | Pending My Tickets UI-06 and E2E-01 |
+| FR-03 / BR-14 context invalidation | UI-17 passes; full ticket-row proof remains pending UI-06 and E2E-01 |
 | RESP-01..03 and E2E-01..03 | Pending Phases 7-8 |
 
-## 7. Version 1.1.0 Regression Work Still Pending
+## 7. Version 1.1.0 Regression Coverage
 
-The 15 server and 9 client results above predate the newly named contract-audit tests. They remain
-valid evidence for the tests that actually ran, but they do not mark DATA-01/DATA-02, MW-06,
-API-26's empty/failure cases, UI-11, or UI-17 as passing. Those tests must be implemented and run on
-the appropriate Issue/feature branch; no Red or Green output should be reconstructed after the
-fact.
+The review correction added and ran MW-06, API-26 empty/failure cases, UI-11 assertions, UI-17,
+and direct-URL RouteGuard coverage. Their real Red/Green runs were produced during the correction.
+DATA-01/DATA-02 remain Phase 1 audit follow-up items and are not claimed as Phase 2 evidence.

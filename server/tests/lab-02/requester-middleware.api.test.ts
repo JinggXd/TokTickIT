@@ -1,6 +1,6 @@
 // server/tests/lab-02/requester-middleware.api.test.ts
 //
-// Phase 2 — tests MW-03, MW-04, MW-05 (middleware-level equivalents of API-03/04/05)
+// Phase 2 — tests MW-03, MW-04, MW-05, MW-06 (middleware-level equivalents of API-03/04/05/28)
 // against the shared X-Requester-Id validation middleware directly, per SKILL.md Phase 2
 // item 1, rather than against POST /api/tickets (which doesn't exist until Phase 3).
 //
@@ -17,7 +17,7 @@ import { describe, it, expect, beforeAll } from "vitest";
 import { requireRequester } from "../../src/middleware/requireRequester.js";
 import { getPrisma } from "../../src/prisma.js";
 
-describe("X-Requester-Id validation middleware (MW-03, MW-04, MW-05)", () => {
+describe("X-Requester-Id validation middleware (MW-03, MW-04, MW-05, MW-06)", () => {
   let app: express.Express;
 
   beforeAll(() => {
@@ -59,6 +59,17 @@ describe("X-Requester-Id validation middleware (MW-03, MW-04, MW-05)", () => {
     const res = await request(app)
       .post("/test")
       .set("X-Requester-Id", String(inactiveRequester.id))
+      .send({});
+
+    expect(res.status).toBe(401);
+    expect(res.body).toEqual({ error: "Requester context is missing or invalid" });
+    expect(res.body).not.toHaveProperty("details");
+  });
+
+  it("MW-06 (API-28 equivalent): rejects an unknown Requester ID with 401", async () => {
+    const res = await request(app)
+      .post("/test")
+      .set("X-Requester-Id", "2147483647")
       .send({});
 
     expect(res.status).toBe(401);

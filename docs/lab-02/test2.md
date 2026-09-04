@@ -1,8 +1,8 @@
 # Phase 2 — Test Results Report (test2.md)
 
-**Branch:** `feature/6-lab2-requester-context`  
-**Date:** 2026-09-01  
-**Sprint:** TokTickIT Lab 2 (Requester Ticketing MVP)  
+**Branch:** `feature/6-lab2-requester-context`<br>
+**Date:** 2026-09-01<br>
+**Sprint:** TokTickIT Lab 2 (Requester Ticketing MVP)
 
 ---
 

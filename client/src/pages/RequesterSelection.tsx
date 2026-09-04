@@ -8,9 +8,9 @@ interface RequesterSelectionProps {
 }
 
 export const RequesterSelection: React.FC<RequesterSelectionProps> = ({ onSuccess }) => {
-  const { setRequester, currentRequester } = useRequester();
+  const { setRequester } = useRequester();
   const [requesters, setRequesters] = useState<RequesterUser[]>([]);
-  const [selectedId, setSelectedId] = useState<string>(currentRequester ? String(currentRequester.id) : "");
+  const [selectedId, setSelectedId] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -20,9 +20,6 @@ export const RequesterSelection: React.FC<RequesterSelectionProps> = ({ onSucces
     try {
       const data = await fetchActiveRequesters();
       setRequesters(data);
-      if (data.length > 0 && !selectedId) {
-        setSelectedId(String(data[0].id));
-      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load requesters");
     } finally {
@@ -108,6 +105,9 @@ export const RequesterSelection: React.FC<RequesterSelectionProps> = ({ onSucces
                 required
                 data-testid="requester-dropdown"
               >
+                <option value="" disabled>
+                  Select a Development Requester
+                </option>
                 {requesters.map((req) => (
                   <option key={req.id} value={req.id}>
                     {req.name} ({req.department}) — {req.email}

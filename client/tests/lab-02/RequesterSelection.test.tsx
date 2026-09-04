@@ -42,6 +42,7 @@ describe("RequesterSelection Component (ui-spec.md Section 10.1, BR-03, BR-05)",
     expect(screen.getByText("Select Development Requester")).toBeInTheDocument();
     expect(screen.getByText(/This is for testing only and is not a login screen/i)).toBeInTheDocument();
     expect(screen.getByTestId("requester-dropdown")).toBeInTheDocument();
+    expect(screen.getByTestId("continue-button")).toBeDisabled();
     expect(screen.getByText(/Jennifer Anderson \(Marketing\)/)).toBeInTheDocument();
     expect(screen.getByText(/Sarah Johnson \(Finance\)/)).toBeInTheDocument();
   });
@@ -101,12 +102,16 @@ describe("RequesterSelection Component (ui-spec.md Section 10.1, BR-03, BR-05)",
   });
 
   it("renders failure state when API fails with retry option", async () => {
-    globalThis.fetch = vi.fn().mockImplementation(() =>
-      Promise.resolve({
+    globalThis.fetch = vi
+      .fn()
+      .mockResolvedValueOnce({
         ok: false,
         status: 500,
       })
-    );
+      .mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve(mockRequesters),
+      });
 
     render(
       <RequesterProvider>
@@ -119,6 +124,12 @@ describe("RequesterSelection Component (ui-spec.md Section 10.1, BR-03, BR-05)",
     });
 
     expect(screen.getByText(/Failed to Load Requesters/i)).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /Try Again/i })).toBeInTheDocument();
+    const retryButton = screen.getByRole("button", { name: /Try Again/i });
+    expect(retryButton).toBeInTheDocument();
+
+    await userEvent.click(retryButton);
+
+    expect(await screen.findByTestId("requester-form")).toBeInTheDocument();
+    expect(globalThis.fetch).toHaveBeenCalledTimes(2);
   });
 });

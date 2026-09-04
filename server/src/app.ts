@@ -63,4 +63,3 @@ app.get("/api/requesters/active", async (_req: Request, res: Response) => {
 });
 
 export default app;
-

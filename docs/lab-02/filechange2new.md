@@ -47,7 +47,7 @@
 | `docs/lab-02/test2.md` | Added | Original Phase 2 test output |
 | `docs/lab-02/whatihavedone2.md` | Added | Original Phase 2 work summary |
 
-## 2. Current Uncommitted Correction Set
+## 2. Correction Set Committed in `ec395c2`
 
 | File | Correction | Scope |
 |---|---|---|
@@ -68,10 +68,21 @@
 
 ## 3. Audit Finding
 
-The changes are technically compatible and the available suite passes, but the current correction
-set mixes Phase 1, Phase 2, and cross-cutting documentation in one uncommitted working tree. This
-does not cleanly satisfy the one-Issue/one-feature-branch workflow. Split the scopes before PR, or
-record explicit reviewer approval for the combined scope.
+The changes are technically compatible and the available suite passes, but commit `ec395c2` mixes
+Phase 1, Phase 2, and cross-cutting documentation on the published Phase 2 branch. This does not
+cleanly satisfy the one-Issue/one-feature-branch workflow. The reviewer must explicitly approve
+and record the combined scope before merge.
+
+### 3.1 Review Corrections After `ec395c2`
+
+- `client/src/App.tsx` - URL-backed navigation and direct protected-route redirection;
+- `client/src/components/AppShell.tsx` - immediate requester-context clearing on Change;
+- `client/src/pages/RequesterSelection.tsx` - explicit selection placeholder and disabled Continue;
+- `client/tests/lab-02/AppShell.test.tsx` - UI-17 coverage;
+- `client/tests/lab-02/RequesterSelection.test.tsx` - UI-11 selection/retry coverage;
+- `client/tests/lab-02/RouteGuard.test.tsx` - direct-URL coverage;
+- `server/tests/lab-02/requester-middleware.api.test.ts` - MW-06 coverage; and
+- `server/tests/lab-02/requesters.api.test.ts` - API-26 empty/failure coverage.
 
 ## 4. Files Added by This Documentation Audit
 

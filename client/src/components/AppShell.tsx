@@ -15,6 +15,7 @@ export const AppShell: React.FC<AppShellProps> = ({
   const { currentRequester, clearRequester } = useRequester();
 
   const handleChangeRequester = () => {
+    clearRequester();
     onTabChange("select-requester");
   };
 
