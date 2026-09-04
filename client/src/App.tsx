@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useState } from "react";
 import { RequesterProvider, useRequester } from "./context/RequesterContext.js";
 import { AppShell } from "./components/AppShell.js";
 import { RequesterSelection } from "./pages/RequesterSelection.js";
+import { CreateTicket } from "./pages/CreateTicket.js";
 import { RouteGuard } from "./components/RouteGuard.js";
 
 type TabType = "my-tickets" | "create-ticket" | "select-requester";
@@ -81,21 +82,12 @@ function MainContent() {
 
       {currentView === "create-ticket" && (
         <RouteGuard>
-          <div className="container py-4" style={{ maxWidth: 800 }}>
-            <div className="mb-4">
-              <h1 className="h3 fw-bold mb-1">Create Ticket</h1>
-              <p className="text-muted small mb-0">Submit a new IT support request.</p>
-            </div>
-            <div className="card card-zen p-5 text-center">
-              <div className="py-4">
-                <span style={{ fontSize: "2.5rem" }}>➕</span>
-                <h5 className="mt-3 fw-bold">Create Ticket Form</h5>
-                <p className="text-muted small mb-0">
-                  New ticket submission form for <strong>{currentRequester?.name}</strong> will be built in Phase 3.
-                </p>
-              </div>
-            </div>
-          </div>
+          <CreateTicket
+            onSuccess={() => {
+              // Option to stay on success screen or navigate
+            }}
+            onCancel={() => navigate("my-tickets")}
+          />
         </RouteGuard>
       )}
     </AppShell>

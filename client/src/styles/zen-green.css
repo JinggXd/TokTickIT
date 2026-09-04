@@ -90,6 +90,12 @@ body {
   color: var(--zg-text-primary);
 }
 
+textarea.form-control-zen {
+  height: auto;
+  min-height: 100px;
+  resize: vertical;
+}
+
 .form-control-zen:focus, .form-select-zen:focus {
   border-color: var(--zg-secondary);
   box-shadow: 0 0 0 2px rgba(11, 122, 70, 0.25);

@@ -39,3 +39,69 @@ export async function fetchActiveRequesters(): Promise<RequesterUser[]> {
 
   return response.json();
 }
+
+export async function fetchCategories(): Promise<Category[]> {
+  const response = await fetch(`${API_URL}/api/categories`);
+  if (!response.ok) {
+    throw new Error("Unable to load categories. Please try again.");
+  }
+  return response.json();
+}
+
+export interface RelatedSystem {
+  id: number;
+  name: string;
+}
+
+export async function fetchRelatedSystems(): Promise<RelatedSystem[]> {
+  const response = await fetch(`${API_URL}/api/related-systems`);
+  if (!response.ok) {
+    throw new Error("Unable to load related systems. Please try again.");
+  }
+  return response.json();
+}
+
+export interface CreateTicketPayload {
+  summary: string;
+  description: string;
+  categoryId: number;
+  relatedSystemId: number;
+  requestedPriority: "LOW" | "MEDIUM" | "HIGH";
+}
+
+export interface CreatedTicket {
+  id: number;
+  ticketNo: string;
+  summary: string;
+  description: string;
+  requestedPriority: "LOW" | "MEDIUM" | "HIGH";
+  itPriority: "LOW" | "MEDIUM" | "HIGH";
+  currentStatus: "NEW" | "IN_PROGRESS" | "RESOLVED";
+  requesterId: number;
+  createdAt: string;
+}
+
+export async function createTicket(
+  payload: CreateTicketPayload,
+  requesterId: number
+): Promise<CreatedTicket> {
+  const response = await fetch(`${API_URL}/api/tickets`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-Requester-Id": String(requesterId),
+    },
+    body: JSON.stringify(payload),
+  });
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    const error: any = new Error(data.error || "Unable to create ticket. Please try again.");
+    error.status = response.status;
+    error.details = data.details;
+    throw error;
+  }
+
+  return data;
+}
