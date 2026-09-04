@@ -2,6 +2,7 @@
 **Course:** CPE 334 — Introduction to Software Engineering in the Age of AI Agents
 **Project:** TokTickIT — Requester Ticketing MVP with UI Foundation
 **Branch flow:** `feature/*` → `lab2-staging` → `main`
+**Contract version:** `1.1.0` (updated 2026-09-04)
 **Status:** Draft for approval before implementation (Spec-Driven Development, Section 8.9 of the labsheet)
 
 > This document is the engineering contract for Lab 2. It is deliberately more explicit than the
@@ -72,7 +73,7 @@ labeled as such everywhere it appears so nobody mistakes it for security.
 | FR-02 | The system lets the tester select a Development Requester, establishing it as the current Requester context for the rest of the session. |
 | FR-03 | The system lets the tester switch to a different Development Requester at any time via a **Change Requester** action, which invalidates all previously loaded ticket data (see BR-14). |
 | FR-04 | The system lets the current Requester create a new ticket by supplying Summary, Description, Category, Related System, Requested Priority, and (optionally) up to 5 attachments in the same submission. |
-| FR-05 | On successful creation, the backend generates a unique, correctly formatted Ticket Number and returns it to the client; the client never invents or guesses this value. |
+| FR-05 | On successful creation, the backend generates a unique, correctly formatted Ticket Number and creation timestamp, returns both to the client, and the UI displays the timestamp as the read-only Ticket Date; the client never invents or guesses either value. |
 | FR-06 | The system retrieves and displays **only** the tickets owned by the current Requester in the My Tickets list. |
 | FR-07 | The system lets the Requester search their own tickets by Ticket Number or Summary (case-insensitive, partial match). |
 | FR-08 | The system lets the Requester filter their own tickets by Category, Requested Priority, IT Priority, and Current Status, independently and in combination. |
@@ -296,7 +297,7 @@ Given/When/Then criteria. `Part N` references the labsheet's submission-evidence
 |---|---|---|
 | AC-01 | **Given** valid ticket data, **when** the Requester submits Create Ticket, **then** the ticket is saved and the backend-generated Ticket Number (e.g. `TKT-2026-000001`) is displayed. | Part 6 |
 | AC-02 | **Given** no Development Requester is selected, **when** the user tries to open My Tickets or Create Ticket directly, **then** the app redirects to the Requester Selection screen. | Part 5/6 |
-| AC-03 | **Given** a Requester is selected, **when** Create Ticket loads, **then** the Requester name shown is the selected identity, and the saved ticket's `requesterId` matches it exactly. | Part 6 |
+| AC-03 | **Given** a Requester is selected, **when** Create Ticket loads, **then** Ticket Number and Ticket Date are visibly read-only/system-generated, the Requester name shown is the selected identity, and the saved ticket's `requesterId` matches it exactly. | Part 6 |
 | AC-04 | **Given** an empty or invalid required field, **when** the Requester presses Submit, **then** a red message appears directly under each invalid field and no request is sent to the API. | Part 6 |
 | AC-05 | **Given** a selected file over 5 MB or with a disallowed extension, **when** it is attached, **then** the upload is rejected client-side with a clear message and no network request is made for that file. | Part 6 |
 | AC-06 | **Given** a valid form, **when** the Requester presses Submit, **then** the button immediately becomes busy/disabled and stays that way until the request completes, preventing a second ticket from being created by a double click. | Part 6 |
@@ -314,11 +315,12 @@ Given/When/Then criteria. `Part N` references the labsheet's submission-evidence
 | AC-18 | **Given** a missing, malformed, unknown, or inactive `X-Requester-Id`, **when** any Requester-scoped endpoint is called, **then** the request is rejected (`400` for malformed, `401` for missing/unknown/inactive) and no ticket data of any Requester is returned. | Part 6/7/8 |
 | AC-19 | **Given** Desktop, Tablet, and Mobile viewports, **when** any of the three main screens is inspected, **then** the layout adapts per Section 8.7 of the labsheet with no clipped content and no unintended horizontal scroll. | Part 9 |
 | AC-20 | **Given** any status or priority badge, **when** viewed without relying on color perception, **then** the badge's icon and text alone are sufficient to identify its meaning, and all interactive controls show a visible keyboard focus indicator. | Part 9 |
+| AC-21 | **Given** an active attachment on a ticket owned by the selected Requester, **when** Download is requested, **then** the API returns the original file bytes with the documented MIME type and download filename. | Part 8 |
 
 ## 10. Definition of Done
 
 ### 10.1 Product Completion
-- All of AC-01 through AC-20 pass, with test evidence, on the final `main` branch.
+- All of AC-01 through AC-21 pass, with test evidence, on the final `main` branch.
 - `npm --prefix server run test`, `npm --prefix client run test`, and `npx playwright test` all
   pass with **zero** skipped, disabled, or commented-out tests.
 - Every business rule in Section 5 has at least one test exercising it directly (see
@@ -328,17 +330,28 @@ Given/When/Then criteria. `Part N` references the labsheet's submission-evidence
 - Seed script (`prisma db seed` or equivalent) can be run twice in a row with no duplicate rows
   and no errors.
 - `README.md` setup and test-run instructions are current and were verified on a clean clone.
+- The nine required desktop/tablet/mobile screenshots exist and the completed visual checklist
+  confirms no clipping, overlap, hidden actions, or unintended horizontal page scrolling.
+- Success, validation, ownership, missing-resource, upload-boundary, and safe unexpected-failure
+  paths have traceable evidence rather than happy-path-only coverage.
 
 ### 10.2 Course Delivery Requirements
 - Every Lab 2 Issue is tracked on the Kanban board (`Backlog → Specified → Started → PR Review →
   Fixing → Done`) and ends in `Done`.
 - Every change reaches `lab2-staging` through a peer-reviewed Pull Request from a feature branch;
   nothing is committed directly to `lab2-staging` or `main`.
+- Every feature PR is linked to its Issue through the GitHub Development panel; the author replies
+  to review comments and the peer reviewer performs the merge after approval.
 - `docs/lab-02/reviewer.md` records real reviewer identity, real PR links, and real comments given
   and received, with replies to every comment (see the GitHub Workflow Guide, Part 8).
 - `docs/lab-02/ai-use.md` records the actual LLM(s) used, 6–10 real key prompts, and a short
   reflection.
 - One release Pull Request merges `lab2-staging → main` after `lab2-staging` is fully green.
+- After the release PR is merged, the complete server, client, and Playwright suites and both
+  production builds are rerun on final `main`; the real results are recorded in `tests.md`.
+- Final evidence includes current README and `.gitignore` content, the repository directory
+  structure, Git history, the completed Kanban board, and exactly one readable submission PDF with
+  headings `Answer Part 1` through `Answer Part 9` in that order.
 
 ## 11. Assumptions and Decisions
 
@@ -364,3 +377,6 @@ Decisions made here because the labsheet explicitly leaves them to the student:
 5. **`storedFileName` as a separate column from `fileName` (Section 7.2).** Chosen instead of
    sanitizing `fileName` in place, so the original name a Requester recognizes is never altered for
    display, while the value actually touching the filesystem is always safe.
+6. **Development Requester ordering.** The active-Requester endpoint returns rows by `id asc` so
+   the temporary selector is deterministic across reloads and tests. The labsheet requires active
+   database-backed Requesters but does not prescribe their display order.

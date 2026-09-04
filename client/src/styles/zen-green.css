@@ -1,0 +1,110 @@
+/* Zen Green Theme Tokens (ui-spec.md Section 1.1) */
+:root {
+  --zg-primary: #006B3C;
+  --zg-secondary: #0B7A46;
+  --zg-pale-green: #EAF6EF;
+  --zg-canvas: #F5F7F6;
+  --zg-surface: #FFFFFF;
+  --zg-border: #D1DCD6;
+  --zg-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  --zg-text-primary: #1A2E26;
+  --zg-text-muted: #5A6E65;
+  --zg-readonly-bg: #F0F4F2;
+  --zg-error: #DC2626;
+  --zg-error-bg: #FEE2E2;
+  --zg-warning: #D97706;
+  --zg-warning-bg: #FEF3C7;
+  --zg-success: #15803D;
+  --zg-success-bg: #DCFCE7;
+}
+
+body {
+  background-color: var(--zg-canvas);
+  color: var(--zg-text-primary);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  margin: 0;
+  padding: 0;
+}
+
+/* Zen Green Bootstrap Overrides */
+.navbar-zen {
+  background-color: var(--zg-primary) !important;
+  color: #FFFFFF;
+  min-height: 60px;
+}
+
+.navbar-zen .navbar-brand {
+  color: #FFFFFF !important;
+  font-weight: 700;
+  font-size: 1.25rem;
+}
+
+.nav-link-zen {
+  color: rgba(255, 255, 255, 0.85) !important;
+  font-weight: 500;
+  padding: 6px 14px !important;
+  border-radius: 20px;
+  transition: all 0.2s ease-in-out;
+}
+
+.nav-link-zen:hover {
+  color: #FFFFFF !important;
+  background-color: rgba(255, 255, 255, 0.15);
+}
+
+.nav-link-zen.active {
+  background-color: var(--zg-secondary) !important;
+  color: #FFFFFF !important;
+}
+
+.btn-primary-zen {
+  background-color: var(--zg-primary) !important;
+  border-color: var(--zg-primary) !important;
+  color: #FFFFFF !important;
+  font-weight: 600;
+}
+
+.btn-primary-zen:hover:not(:disabled) {
+  background-color: var(--zg-secondary) !important;
+  border-color: var(--zg-secondary) !important;
+}
+
+.btn-primary-zen:disabled {
+  background-color: #E2E8F0 !important;
+  border-color: #E2E8F0 !important;
+  color: #94A3B8 !important;
+  cursor: not-allowed;
+}
+
+.card-zen {
+  background-color: var(--zg-surface);
+  border: 1px solid var(--zg-border);
+  border-radius: 8px;
+  box-shadow: var(--zg-shadow);
+}
+
+.form-control-zen, .form-select-zen {
+  border: 1px solid var(--zg-border);
+  border-radius: 6px;
+  height: 40px;
+  color: var(--zg-text-primary);
+}
+
+.form-control-zen:focus, .form-select-zen:focus {
+  border-color: var(--zg-secondary);
+  box-shadow: 0 0 0 2px rgba(11, 122, 70, 0.25);
+  outline: none;
+}
+
+.form-control-zen[readonly] {
+  background-color: var(--zg-readonly-bg) !important;
+  cursor: default;
+}
+
+.badge-requester {
+  background-color: rgba(255, 255, 255, 0.2);
+  color: #FFFFFF;
+  border-radius: 20px;
+  padding: 4px 12px;
+  font-size: 0.85rem;
+}

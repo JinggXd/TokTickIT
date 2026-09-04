@@ -1,5 +1,7 @@
 # Lab 2 REST API Specification
 
+**Contract version:** `1.1.0` (updated 2026-09-04)
+
 Companion to `docs/lab-02/specification.md`. Every decision here traces back to a Business Rule
 (BR-xx) or Acceptance Criterion (AC-xx) in that document.
 
@@ -95,7 +97,8 @@ The frontend must never assume `details` exists — check the status code first.
 ## 6. Endpoints
 
 ### 6.1 `GET /api/requesters/active`
-Returns only Development Requesters with `isActive = true` (BR-05). No header required.
+Returns only Development Requesters with `isActive = true` (BR-05), ordered by `id asc` for a
+deterministic selector. No header required.
 
 **200 OK**
 ```json
@@ -372,7 +375,8 @@ ownership (only the ticket's owner may add an attachment) and the 5-active-file 
 Requires `X-Requester-Id`. Streams the file with a `Content-Disposition: attachment;
 filename="<original fileName>"` header.
 
-**200 OK** — binary stream of the active file.
+**200 OK** (AC-21) — binary stream of the active file with the documented MIME type and original
+download filename.
 
 **403 Forbidden** — the attachment's ticket belongs to another Requester:
 ```json
@@ -444,12 +448,15 @@ doesn't silently overwrite the original reason):
 | `POST /api/tickets/:id/attachments` | Disallowed type / spoofed extension | `400` | BR-07, Section 5 |
 | `POST /api/tickets/:id/attachments` | 5 active attachments already exist | `400` | BR-07 |
 | `POST /api/tickets/:id/attachments` | Ticket owned by another Requester | `403` | BR-04 |
+| `POST /api/tickets/:id/attachments` | Ticket ID does not exist | `404` | Missing-resource behavior |
 | `POST /api/tickets/:id/attachments` | Disk write failure | `500` | BR-18 — ticket is unaffected |
 | `GET /api/attachments/:id/download` | Attachment soft-removed | `410` | BR-08 |
 | `GET /api/attachments/:id/download` | Attachment's ticket owned by another Requester | `403` | BR-04 |
+| `GET /api/attachments/:id/download` | Attachment ID does not exist | `404` | Missing-resource behavior |
 | `DELETE /api/attachments/:id` | Missing/short reason | `400` | Section 6.9 |
 | `DELETE /api/attachments/:id` | Already removed | `409` | Idempotency guard |
 | `DELETE /api/attachments/:id` | Attachment owned by another Requester | `403` | BR-04 |
+| `DELETE /api/attachments/:id` | Attachment ID does not exist | `404` | Missing-resource behavior |
 
 ## 8. Example End-to-End Walkthrough (for the coding agent / reviewer)
 

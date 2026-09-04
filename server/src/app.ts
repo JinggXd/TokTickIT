@@ -40,4 +40,26 @@ app.get("/api/categories", async (_req: Request, res: Response) => {
     res.status(500).json({ error: "Unable to load categories" });
   }
 });
+
+// ---------------------------------------------------------------------------
+// Lab 2: Phase 2 — Active Development Requesters (api-spec.md Section 6.1, BR-05)
+// ---------------------------------------------------------------------------
+app.get("/api/requesters/active", async (_req: Request, res: Response) => {
+  try {
+    const requesters = await getPrisma().requesterUser.findMany({
+      where: { isActive: true },
+      orderBy: { id: "asc" },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        department: true,
+      },
+    });
+    res.status(200).json(requesters);
+  } catch (err) {
+    res.status(500).json({ error: "Unable to load Development Requesters. Please try again." });
+  }
+});
+
 export default app;

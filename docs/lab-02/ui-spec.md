@@ -1,5 +1,7 @@
 # Lab 2 Zen Green UI Specification
 
+**Contract version:** `1.1.0` (updated 2026-09-04)
+
 Companion to `docs/lab-02/specification.md`. Structured to mirror the labsheet's Appendix C
 checklist section-for-section, so nothing on that checklist is left undocumented. Stack assumption
 (per the project's Lab 1 foundation): **React + TypeScript + Vite + Bootstrap**. Zen Green is
@@ -244,16 +246,17 @@ loads fresh (BR-14).
 
 ### 10.2 Create Ticket Screen
 
-Layout: read-only section at top (Ticket Number placeholder "will be assigned on save", Requester
-name — AC-03); two-column grid for Category / Related System / Requested Priority; full-width
-Summary (single-line) and Description (multiline textarea); Attachment control below the main
-fields (Section 4); primary (Submit) and secondary (Cancel) actions bottom-right.
+Layout: read-only section at top (Ticket Number and Ticket Date placeholders "will be assigned on
+save", plus Requester name — AC-03); two-column grid for Category / Related System / Requested
+Priority; full-width Summary (single-line) and Description (multiline textarea); Attachment control
+below the main fields (Section 4); primary (Submit) and secondary (Cancel) actions bottom-right.
 
 Field-by-field control mapping:
 
 | Field | Control | Editable? |
 |---|---|---|
 | Ticket Number | Text, placeholder | Read-only (system-generated) |
+| Ticket Date | Date/time text, placeholder until save | Read-only (backend `createdAt`) |
 | Requester | Text | Read-only (from context) |
 | Category | Select | Editable, required |
 | Related System | Select | Editable, required |
