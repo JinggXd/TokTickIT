@@ -1,8 +1,8 @@
 # Antigravity Task — Phase 3 Create Ticket Corrections
 
-**Date:** 2026-09-04  
-**Branch:** `feature/7-lab2-create-ticket`  
-**PR target:** `lab2-staging`  
+**Date:** 2026-09-04<br>
+**Branch:** `feature/7-lab2-create-ticket`<br>
+**PR target:** `lab2-staging`<br>
 **Scope:** Correct Phase 3 only. Do not implement Phase 4 or Phase 5 endpoints.
 
 ## Mandatory preparation
