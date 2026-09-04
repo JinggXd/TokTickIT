@@ -4,6 +4,7 @@ import { getPrisma } from "./prisma.js";
 import { requireRequester, AuthenticatedRequesterRequest } from "./middleware/requireRequester.js";
 import { validateTicketInput } from "./utils/validation.js";
 import { generateTicketNumber, TicketNumberGenerationError } from "./utils/ticketNumber.js";
+import { clampPagination, ALLOWED_PAGE_SIZES } from "./utils/pagination.js";
 // getPrisma() is your lazy database handle. Call it INSIDE a route when you
 // need the DB (Issue 4). It is intentionally unused until then.
 void getPrisma;
@@ -201,6 +202,182 @@ app.post(
         return;
       }
       res.status(500).json({ error: "Unable to create ticket. Please try again." });
+    }
+  }
+);
+
+// ---------------------------------------------------------------------------
+// Lab 2: Phase 4 — List My Tickets (api-spec.md Section 6.5, BR-04, BR-12, FR-06)
+// Scoped strictly to the current Requester via X-Requester-Id.
+// ---------------------------------------------------------------------------
+const ALLOWED_SORT_FIELDS = [
+  "createdAt",
+  "updatedAt",
+  "ticketNo",
+  "requestedPriority",
+  "itPriority",
+  "currentStatus",
+] as const;
+
+app.get(
+  "/api/tickets",
+  requireRequester as express.RequestHandler,
+  async (req: AuthenticatedRequesterRequest, res: Response): Promise<void> => {
+    try {
+      const requesterId = req.requester!.id;
+      const prisma = getPrisma();
+
+      // 1. Validate query parameters (sortBy and limit)
+      const validationDetails: Record<string, string> = {};
+
+      const sortByParam = req.query.sortBy as string | undefined;
+      if (sortByParam !== undefined && !ALLOWED_SORT_FIELDS.includes(sortByParam as any)) {
+        validationDetails.sortBy = `sortBy must be one of ${ALLOWED_SORT_FIELDS.join(", ")}`;
+      }
+
+      const sortOrderParam = req.query.sortOrder as string | undefined;
+      if (sortOrderParam !== undefined && !["asc", "desc"].includes(sortOrderParam)) {
+        validationDetails.sortOrder = "sortOrder must be one of asc, desc";
+      }
+
+      const limitParam = req.query.limit as string | undefined;
+      let parsedLimit: number | undefined = undefined;
+      if (limitParam !== undefined) {
+        parsedLimit = Number(limitParam);
+        if (!Number.isInteger(parsedLimit) || !ALLOWED_PAGE_SIZES.includes(parsedLimit as any)) {
+          validationDetails.limit = "limit must be one of 5, 8, 10, 20";
+        }
+      }
+
+      const pageParam = req.query.page as string | undefined;
+      if (pageParam !== undefined) {
+        const isIntString = typeof pageParam === "string" && /^-?\d+$/.test(pageParam.trim());
+        const parsedPage = Number(pageParam);
+        if (!isIntString || !Number.isSafeInteger(parsedPage)) {
+          validationDetails.page = "page must be an integer";
+        }
+      }
+
+      const categoryIdParam = req.query.categoryId as string | undefined;
+      if (categoryIdParam !== undefined && categoryIdParam !== "ALL") {
+        const catId = Number(categoryIdParam);
+        if (!Number.isInteger(catId) || catId <= 0) {
+          validationDetails.categoryId = "categoryId must be a positive integer or ALL";
+        }
+      }
+
+      const reqPriorityParam = req.query.requestedPriority as string | undefined;
+      if (
+        reqPriorityParam !== undefined &&
+        !["LOW", "MEDIUM", "HIGH", "ALL"].includes(reqPriorityParam)
+      ) {
+        validationDetails.requestedPriority = "requestedPriority must be one of LOW, MEDIUM, HIGH, ALL";
+      }
+
+      const itPriorityParam = req.query.itPriority as string | undefined;
+      if (
+        itPriorityParam !== undefined &&
+        !["LOW", "MEDIUM", "HIGH", "ALL"].includes(itPriorityParam)
+      ) {
+        validationDetails.itPriority = "itPriority must be one of LOW, MEDIUM, HIGH, ALL";
+      }
+
+      const statusParam = req.query.status as string | undefined;
+      if (
+        statusParam !== undefined &&
+        !["NEW", "IN_PROGRESS", "RESOLVED", "ALL"].includes(statusParam)
+      ) {
+        validationDetails.status = "status must be one of NEW, IN_PROGRESS, RESOLVED, ALL";
+      }
+
+      if (Object.keys(validationDetails).length > 0) {
+        res.status(400).json({
+          error: "Validation failed",
+          details: validationDetails,
+        });
+        return;
+      }
+
+      // 2. Build where filter (always scoped to requesterId)
+      const where: any = { requesterId };
+
+      if (req.query.search) {
+        const term = String(req.query.search).trim();
+        if (term) {
+          where.OR = [
+            { ticketNo: { contains: term, mode: "insensitive" } },
+            { summary: { contains: term, mode: "insensitive" } },
+          ];
+        }
+      }
+
+      if (categoryIdParam && categoryIdParam !== "ALL") {
+        where.categoryId = Number(categoryIdParam);
+      }
+
+      if (reqPriorityParam && reqPriorityParam !== "ALL") {
+        where.requestedPriority = reqPriorityParam;
+      }
+
+      if (itPriorityParam && itPriorityParam !== "ALL") {
+        where.itPriority = itPriorityParam;
+      }
+
+      if (statusParam && statusParam !== "ALL") {
+        where.currentStatus = statusParam;
+      }
+
+      // 3. Count matching items for pagination
+      const totalItems = await prisma.ticket.count({ where });
+
+      // 4. Calculate pagination clamping (BR-12)
+      const paginationResult = clampPagination({
+        page: req.query.page as string | undefined,
+        limit: parsedLimit,
+        totalItems,
+      });
+
+      // 5. Build sort order (default: createdAt desc, id desc)
+      const sortBy = sortByParam || "createdAt";
+      const sortOrder = (req.query.sortOrder as string)?.toLowerCase() === "asc" ? "asc" : "desc";
+      const orderBy: any[] = [{ [sortBy]: sortOrder }];
+      if (sortBy !== "id") {
+        orderBy.push({ id: "desc" }); // tie breaker
+      }
+
+      // 6. Query tickets with joined relations
+      const tickets = await prisma.ticket.findMany({
+        where,
+        orderBy,
+        skip: paginationResult.skip,
+        take: paginationResult.take,
+        include: {
+          category: { select: { name: true } },
+          relatedSystem: { select: { name: true } },
+        },
+      });
+
+      // 7. Format response data
+      const data = tickets.map((t) => ({
+        id: t.id,
+        ticketNo: t.ticketNo,
+        summary: t.summary,
+        categoryName: t.category.name,
+        relatedSystemName: t.relatedSystem.name,
+        requestedPriority: t.requestedPriority,
+        itPriority: t.itPriority,
+        currentStatus: t.currentStatus,
+        ticketOwnerName: "Unassigned", // No IT Staff model in Lab 2 (reserved for Lab 3)
+        createdAt: t.createdAt.toISOString(),
+        updatedAt: t.updatedAt.toISOString(),
+      }));
+
+      res.status(200).json({
+        data,
+        pagination: paginationResult.pagination,
+      });
+    } catch (err) {
+      res.status(500).json({ error: "Unable to load tickets. Please try again." });
     }
   }
 );

@@ -1,6 +1,6 @@
 # Lab 2 REST API Specification
 
-**Contract version:** `1.1.0` (updated 2026-09-04)
+**Contract version:** `1.1.1` (updated 2026-09-04 — adds strict validation for Phase 4 query parameters)
 
 Companion to `docs/lab-02/specification.md`. Every decision here traces back to a Business Rule
 (BR-xx) or Acceptance Criterion (AC-xx) in that document.
@@ -225,13 +225,13 @@ scope.
 | Param | Type | Default | Notes |
 |---|---|---|---|
 | `search` | string | — | matches `ticketNo` OR `summary`, case-insensitive, partial |
-| `categoryId` | integer \| `ALL` | `ALL` | |
-| `requestedPriority` | `LOW\|MEDIUM\|HIGH\|ALL` | `ALL` | |
-| `itPriority` | `LOW\|MEDIUM\|HIGH\|ALL` | `ALL` | |
-| `status` | `NEW\|IN_PROGRESS\|RESOLVED\|ALL` | `ALL` | |
+| `categoryId` | integer \| `ALL` | `ALL` | invalid integer or non-ALL value → `400` |
+| `requestedPriority` | `LOW\|MEDIUM\|HIGH\|ALL` | `ALL` | unsupported value → `400` |
+| `itPriority` | `LOW\|MEDIUM\|HIGH\|ALL` | `ALL` | unsupported value → `400` |
+| `status` | `NEW\|IN_PROGRESS\|RESOLVED\|ALL` | `ALL` | unsupported value → `400` |
 | `sortBy` | `createdAt\|updatedAt\|ticketNo\|requestedPriority\|itPriority\|currentStatus` | `createdAt` | unsupported value → `400` |
-| `sortOrder` | `asc\|desc` | `desc` | |
-| `page` | integer | `1` | out-of-range is clamped (BR-12), not rejected |
+| `sortOrder` | `asc\|desc` | `desc` | unsupported value → `400` |
+| `page` | integer | `1` | non-integer value → `400`; out-of-range integer is clamped (BR-12), not rejected |
 | `limit` | `5\|8\|10\|20` | `8` | unsupported value → `400` |
 
 **200 OK**
@@ -259,7 +259,7 @@ Zero matching rows still returns `200 OK` with `"data": []` — never an error. 
 the API, decides whether that means Empty State or No-Results State (BR-13), based on whether any
 search/filter param was supplied.
 
-**400 Bad Request** — unsupported `sortBy` or `limit`:
+**400 Bad Request** — unsupported query parameters (`sortBy`, `sortOrder`, `limit`, `page`, `categoryId`, `requestedPriority`, `itPriority`, `status`):
 ```json
 { "error": "Validation failed", "details": { "limit": "limit must be one of 5, 8, 10, 20" } }
 ```

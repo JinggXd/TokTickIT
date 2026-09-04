@@ -3,6 +3,7 @@ import { RequesterProvider, useRequester } from "./context/RequesterContext.js";
 import { AppShell } from "./components/AppShell.js";
 import { RequesterSelection } from "./pages/RequesterSelection.js";
 import { CreateTicket } from "./pages/CreateTicket.js";
+import { MyTickets } from "./pages/MyTickets.js";
 import { RouteGuard } from "./components/RouteGuard.js";
 
 type TabType = "my-tickets" | "create-ticket" | "select-requester";
@@ -53,30 +54,7 @@ function MainContent() {
 
       {currentView === "my-tickets" && (
         <RouteGuard>
-          <div className="container py-4" style={{ maxWidth: 1000 }}>
-            <div className="d-flex justify-content-between align-items-center mb-4">
-              <div>
-                <h1 className="h3 fw-bold mb-1">My Tickets</h1>
-                <p className="text-muted small mb-0">View and track all of your support requests.</p>
-              </div>
-              <button
-                className="btn btn-primary-zen"
-                onClick={() => navigate("create-ticket")}
-                data-testid="create-ticket-header-btn"
-              >
-                + Create Ticket
-              </button>
-            </div>
-            <div className="card card-zen p-5 text-center">
-              <div className="py-4">
-                <span style={{ fontSize: "2.5rem" }}>📋</span>
-                <h5 className="mt-3 fw-bold">My Tickets Workspace</h5>
-                <p className="text-muted small mb-0">
-                  Tickets belonging to <strong>{currentRequester?.name}</strong> ({currentRequester?.department}) will load here in Phase 4.
-                </p>
-              </div>
-            </div>
-          </div>
+          <MyTickets onNavigateToCreate={() => navigate("create-ticket")} />
         </RouteGuard>
       )}
 

@@ -105,3 +105,76 @@ export async function createTicket(
 
   return data;
 }
+
+export interface GetTicketsParams {
+  search?: string;
+  categoryId?: number | string;
+  requestedPriority?: string;
+  itPriority?: string;
+  status?: string;
+  sortBy?: string;
+  sortOrder?: "asc" | "desc";
+  page?: number;
+  limit?: number;
+}
+
+export interface TicketListItem {
+  id: number;
+  ticketNo: string;
+  summary: string;
+  categoryName: string;
+  relatedSystemName: string;
+  requestedPriority: "LOW" | "MEDIUM" | "HIGH";
+  itPriority: "LOW" | "MEDIUM" | "HIGH";
+  currentStatus: "NEW" | "IN_PROGRESS" | "RESOLVED";
+  ticketOwnerName: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface PaginationMetadata {
+  currentPage: number;
+  pageSize: number;
+  totalItems: number;
+  totalPages: number;
+}
+
+export interface TicketsResponse {
+  data: TicketListItem[];
+  pagination: PaginationMetadata;
+}
+
+export async function fetchMyTickets(
+  params: GetTicketsParams = {},
+  requesterId: number
+): Promise<TicketsResponse> {
+  const query = new URLSearchParams();
+  if (params.search) query.set("search", params.search);
+  if (params.categoryId && params.categoryId !== "ALL") query.set("categoryId", String(params.categoryId));
+  if (params.requestedPriority && params.requestedPriority !== "ALL") query.set("requestedPriority", params.requestedPriority);
+  if (params.itPriority && params.itPriority !== "ALL") query.set("itPriority", params.itPriority);
+  if (params.status && params.status !== "ALL") query.set("status", params.status);
+  if (params.sortBy) query.set("sortBy", params.sortBy);
+  if (params.sortOrder) query.set("sortOrder", params.sortOrder);
+  if (params.page !== undefined) query.set("page", String(params.page));
+  if (params.limit !== undefined) query.set("limit", String(params.limit));
+
+  const queryString = query.toString();
+  const url = `${API_URL}/api/tickets${queryString ? `?${queryString}` : ""}`;
+
+  const response = await fetch(url, {
+    headers: {
+      "X-Requester-Id": String(requesterId),
+    },
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    const err: any = new Error(errorData.error || "Unable to load tickets. Please try again.");
+    err.status = response.status;
+    err.details = errorData.details;
+    throw err;
+  }
+
+  return response.json();
+}

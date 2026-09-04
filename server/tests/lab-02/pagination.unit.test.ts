@@ -43,5 +43,10 @@ describe("Pagination Helper Unit Tests (BR-12)", () => {
       expect(res.isValid).toBe(true);
       expect(res.pagination.pageSize).toBe(validLimit);
     }
+
+    // 7. Float page truncated to integer
+    const floatPage = clampPagination({ page: 2.7, limit: 8, totalItems: 25 });
+    expect(floatPage.isValid).toBe(true);
+    expect(floatPage.pagination.currentPage).toBe(2);
   });
 });

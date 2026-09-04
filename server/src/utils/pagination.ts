@@ -47,7 +47,7 @@ export function clampPagination(options: PaginationOptions): PaginationResult {
   const totalItems = Math.max(0, options.totalItems);
   const totalPages = Math.max(1, Math.ceil(totalItems / limit));
 
-  let page = options.page !== undefined ? Number(options.page) : 1;
+  let page = options.page !== undefined ? Math.floor(Number(options.page)) : 1;
   if (isNaN(page) || page < 1) {
     page = 1;
   } else if (page > totalPages) {
