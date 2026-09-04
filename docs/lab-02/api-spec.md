@@ -231,7 +231,7 @@ scope.
 | `status` | `NEW\|IN_PROGRESS\|RESOLVED\|ALL` | `ALL` | unsupported value → `400` |
 | `sortBy` | `createdAt\|updatedAt\|ticketNo\|requestedPriority\|itPriority\|currentStatus` | `createdAt` | unsupported value → `400` |
 | `sortOrder` | `asc\|desc` | `desc` | unsupported value → `400` |
-| `page` | integer | `1` | out-of-range is clamped (BR-12), not rejected |
+| `page` | integer | `1` | non-integer value → `400`; out-of-range integer is clamped (BR-12), not rejected |
 | `limit` | `5\|8\|10\|20` | `8` | unsupported value → `400` |
 
 **200 OK**
@@ -259,7 +259,7 @@ Zero matching rows still returns `200 OK` with `"data": []` — never an error. 
 the API, decides whether that means Empty State or No-Results State (BR-13), based on whether any
 search/filter param was supplied.
 
-**400 Bad Request** — unsupported query parameters (`sortBy`, `sortOrder`, `limit`, `categoryId`, `requestedPriority`, `itPriority`, `status`):
+**400 Bad Request** — unsupported query parameters (`sortBy`, `sortOrder`, `limit`, `page`, `categoryId`, `requestedPriority`, `itPriority`, `status`):
 ```json
 { "error": "Validation failed", "details": { "limit": "limit must be one of 5, 8, 10, 20" } }
 ```

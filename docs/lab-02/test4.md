@@ -87,4 +87,3 @@ Live API verification conducted on running backend (`http://localhost:3000`):
 - **AC-12 (Pagination Clamping):** Tested `page=999` (clamped to `currentPage: 2`), `page=-5` (clamped to `currentPage: 1`), and invalid `limit=15` (returns `400 Bad Request`).
 - **AC-13 (Requester Switching):** Confirmed Requester 1 (9 tickets) and Requester 2 (0 tickets) switch cleanly with immediate state reset (`tickets: []`) and zero residual rows.
 - **AC-14 (Empty vs. No-Results):** Confirmed Requester 2 displays Empty State (📄 icon + "Create First Ticket" action), and Requester 1 with unmatched search displays No-Results State (🔍 icon + "Clear Filters" action).
-

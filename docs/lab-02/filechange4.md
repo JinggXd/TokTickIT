@@ -10,9 +10,11 @@
 
 | File | Change | Purpose |
 |---|---|---|
-| `server/src/app.ts` | Modified | Implements `GET /api/tickets` with `requireRequester` scoping, comprehensive query validation for all 7 parameters (`sortBy`, `sortOrder`, `limit`, `categoryId`, `requestedPriority`, `itPriority`, `status`), `clampPagination`, and relations query |
+| `server/src/app.ts` | Modified | Implements `GET /api/tickets` with `requireRequester` scoping, comprehensive query validation for all 8 parameters (`sortBy`, `sortOrder`, `limit`, `page`, `categoryId`, `requestedPriority`, `itPriority`, `status`), `clampPagination`, and relations query |
+| `server/src/utils/pagination.ts` | Modified | Ensures `clampPagination` integer truncates `page` to prevent float pagination metadata leakage |
 | `server/vitest.config.ts` | Modified | Sets `fileParallelism: false` to ensure deterministic sequential database integration tests without race conditions |
-| `server/tests/lab-02/my-tickets.api.test.ts` | Added | Implements API-06, API-07, API-08, API-09, API-22, API-30, and API-31 using suite-isolated requesters, non-empty assertions, independent filter checks, and `id desc` tie-breaker verification |
+| `server/tests/lab-02/my-tickets.api.test.ts` | Added | Implements API-06, API-07, API-08 (including lower/upper clamp), API-09, API-22 (including non-integer `page=1.1`, `page=abc`), API-30, and API-31 using suite-isolated requesters |
+| `server/tests/lab-02/pagination.unit.test.ts` | Modified | Adds UNIT-06 test coverage for float page truncation in `clampPagination` |
 
 ## 2. Frontend Files
 

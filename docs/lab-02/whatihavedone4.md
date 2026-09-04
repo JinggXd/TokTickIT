@@ -112,4 +112,3 @@ Phase 4 implements the Requester ticket list view, search & multi-parameter filt
 - **AC-12 (Pagination & Clamping):** Verified out-of-range `page=999` clamped to `currentPage: 2`, `page=-5` clamped to `currentPage: 1`, valid page sizes `5, 8, 10, 20` return correct pagination metadata, and invalid `limit=15` returns `400 Bad Request`.
 - **AC-13 (Requester Switching):** Requester 1 has 9 tickets, while Requester 2 and Requester 3 have 0 tickets. Switching between requesters immediately clears tickets with zero residual rows or stale data flash.
 - **AC-14 (Empty vs. No-Results States):** Verified Requester 2 (0 tickets, no filters) triggers Empty State (📄 icon + "No tickets submitted yet" + "Create First Ticket" action), whereas Requester 1 with unmatched search `search=nonexistentterm` triggers No-Results State (🔍 icon + "No tickets match your filters" + "Clear Filters" action).
-

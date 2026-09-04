@@ -249,6 +249,15 @@ app.get(
         }
       }
 
+      const pageParam = req.query.page as string | undefined;
+      if (pageParam !== undefined) {
+        const isIntString = typeof pageParam === "string" && /^-?\d+$/.test(pageParam.trim());
+        const parsedPage = Number(pageParam);
+        if (!isIntString || !Number.isSafeInteger(parsedPage)) {
+          validationDetails.page = "page must be an integer";
+        }
+      }
+
       const categoryIdParam = req.query.categoryId as string | undefined;
       if (categoryIdParam !== undefined && categoryIdParam !== "ALL") {
         const catId = Number(categoryIdParam);

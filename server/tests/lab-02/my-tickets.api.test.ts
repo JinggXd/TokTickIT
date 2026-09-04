@@ -294,6 +294,14 @@ describe("GET /api/tickets (API-06 to API-09, API-22, API-30, API-31)", () => {
     expect(res.body.pagination.currentPage).toBe(2); // totalItems=10, limit=5 -> 2 pages
     expect(res.body.pagination.totalPages).toBe(2);
     expect(res.body.data.length).toBe(5);
+
+    const resLow = await request(app)
+      .get("/api/tickets?page=-5&limit=5")
+      .set("X-Requester-Id", String(requesterA.id));
+
+    expect(resLow.status).toBe(200);
+    expect(resLow.body.pagination.currentPage).toBe(1);
+    expect(resLow.body.data.length).toBe(5);
   });
 
   // API-09 — AC-10: Case-insensitive search on ticketNo and summary
@@ -371,6 +379,22 @@ describe("GET /api/tickets (API-06 to API-09, API-22, API-30, API-31)", () => {
     expect(resEnums.body.details).toHaveProperty("requestedPriority");
     expect(resEnums.body.details).toHaveProperty("itPriority");
     expect(resEnums.body.details).toHaveProperty("status");
+
+    // 6. Invalid page (float or non-integer string -> 400 Bad Request)
+    const resPageFloat = await request(app)
+      .get("/api/tickets?page=1.1&limit=5")
+      .set("X-Requester-Id", String(requesterA.id));
+
+    expect(resPageFloat.status).toBe(400);
+    expect(resPageFloat.body.error).toBe("Validation failed");
+    expect(resPageFloat.body.details).toEqual({ page: "page must be an integer" });
+
+    const resPageAlpha = await request(app)
+      .get("/api/tickets?page=abc")
+      .set("X-Requester-Id", String(requesterA.id));
+
+    expect(resPageAlpha.status).toBe(400);
+    expect(resPageAlpha.body.details).toEqual({ page: "page must be an integer" });
   });
 
   // API-30 — AC-10: Filters work independently and in combination with ownership preserved

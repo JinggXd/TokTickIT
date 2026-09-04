@@ -22,15 +22,24 @@
    - Button hierarchy: replace remaining Bootstrap `btn-outline-` button classes with `.btn-secondary-zen` for secondary actions (`Retry`, `Search`, `Clear Filters`, `Previous`, `Next`, inactive page numbers) while maintaining `.btn-primary-zen` for active page number and primary actions.
    - Contract version bump: bump `api-spec.md` and `tests.md` to version `1.1.1` noting strict validation for Phase 4 query parameters.
    - Live application verification: verify AC-10 through AC-14 against running PostgreSQL and Express backend.
+6. Review audit round 4: Strict `page` integer validation and PR diff whitespace gate:
+   - Strict `page` validation: `page=1.1` and `page=abc` return `400 Bad Request` with `details.page: "page must be an integer"` while integer clamping (`page=-5` -> 1, `page=9999` -> totalPages) remains per BR-12.
+   - Updated `api-spec.md` and `tests.md` to reflect `page` in API-22.
+   - Whitespace gate: eliminated trailing empty lines at EOF in `test4.md` and `whatihavedone4.md`. `git diff --check lab2-staging...HEAD` passes with 0 errors.
 
 ### Implementation Workflow & Fixes:
 - **Contract Synchronization & Version Bump:**
-  - Updated `docs/lab-02/api-spec.md` and `docs/lab-02/tests.md` to version `1.1.1` (updated 2026-09-04) explicitly documenting strict validation for all Phase 4 query parameters (`sortBy`, `sortOrder`, `limit`, `categoryId`, `requestedPriority`, `itPriority`, `status`).
+  - Updated `docs/lab-02/api-spec.md` and `docs/lab-02/tests.md` to version `1.1.1` (updated 2026-09-04) explicitly documenting strict validation for all Phase 4 query parameters (`sortBy`, `sortOrder`, `limit`, `page`, `categoryId`, `requestedPriority`, `itPriority`, `status`).
   - Recorded Ambiguity 6 in `docs/lab-02/ambiguity-log.md`.
-- **Backend Hardening (`server/src/app.ts`):**
-  - Implemented strict validation for all 7 query parameters (`sortBy`, `sortOrder`, `limit`, `categoryId`, `requestedPriority`, `itPriority`, `status`), returning `400` with `details` on any invalid value.
+- **Backend Hardening (`server/src/app.ts`, `server/src/utils/pagination.ts`):**
+  - Implemented strict integer validation for `page` query parameter, rejecting floats (`page=1.1`) and non-numeric strings (`page=abc`) with `400 Bad Request` and `details.page: "page must be an integer"`.
+  - Added integer truncation in `clampPagination` to guarantee integer `currentPage` in responses.
+  - Implemented strict validation for all 8 query parameters (`sortBy`, `sortOrder`, `limit`, `page`, `categoryId`, `requestedPriority`, `itPriority`, `status`), returning `400` with `details` on any invalid value.
   - Enforced default ordering with `createdAt desc, id desc` tie-breaker.
-- **Database Isolation & Server Tests (`server/tests/lab-02/my-tickets.api.test.ts`):**
+- **Database Isolation & Server Tests (`server/tests/lab-02/my-tickets.api.test.ts`, `pagination.unit.test.ts`):**
+  - Added non-integer `page=1.1` and `page=abc` validation assertions to API-22.
+  - Added negative integer `page=-5` lower boundary clamping assertion to API-08.
+  - Added float page truncation test in `pagination.unit.test.ts` (UNIT-06).
   - Created isolated test users for the suite (`my-tickets-suite-a@test.local`, `my-tickets-suite-b@test.local`), ensuring zero mutation or deletion of seeded users.
   - Added fixture tickets with identical timestamps to prove the `id desc` tie-breaker.
   - Implemented independent and combined tests for `itPriority` and `requestedPriority`, asserting non-empty data arrays and verifying cross-requester data isolation under active filters.
@@ -58,7 +67,7 @@
 - **Live Verification of AC-10 through AC-14:**
   - Tested AC-10 (search and category/priority/status filters) via live API calls.
   - Tested AC-11 (sorting direction and tie-breaker).
-  - Tested AC-12 (clamping page out-of-bounds low/high and validating limits).
+  - Tested AC-12 (clamping page out-of-bounds low/high, strict non-integer rejection with 400, and validating limits).
   - Tested AC-13 (requester switching without stale data flash).
   - Tested AC-14 (Empty State vs. No-Results State).
 - **Verification:**
@@ -66,5 +75,5 @@
   - `npm --prefix client run test`: 6 test files, 25 tests passing (100%).
   - `npm --prefix server run build`: `tsc` exit 0.
   - `npm --prefix client run build`: `tsc && vite build` exit 0.
-  - `git diff --check`: clean (0 whitespace errors).
+  - `git diff --check lab2-staging`: clean (0 whitespace errors).
   - Repository-wide audit: 0 skipped/disabled tests.
