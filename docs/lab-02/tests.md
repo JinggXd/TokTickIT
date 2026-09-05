@@ -103,6 +103,7 @@ All three commands must exit `0` on the final `main` branch with **zero** skippe
 | API-32 | AC-21 | `GET /api/attachments/:id/download` owned active file | `200`; bytes match the stored file; `Content-Type` and attachment `Content-Disposition` use the documented values/original filename | `server/tests/lab-02/attachments.api.test.ts` |
 | API-33 | API contract missing-resource behavior | Missing Ticket/Attachment IDs on upload, download, and removal | Each endpoint returns `404` with its documented flat error body | `server/tests/lab-02/attachments.api.test.ts` |
 | API-34 | BR-18 | Attachment storage failure after ticket creation | Upload returns safe `500`; the already-created Ticket remains retrievable with the same Ticket Number and the failed file has no active metadata row | `server/tests/lab-02/attachments.api.test.ts` |
+| API-35 | AC-08, AC-18; BR-04, BR-06 | Ownership & Requester Context hardening pass across all Requester-scoped endpoints | Exhaustively tests every Requester-scoped endpoint (`GET /api/tickets`, `GET /api/tickets/:id`, `POST /api/tickets/:id/attachments`, `GET /api/attachments/:id/download`, `DELETE /api/attachments/:id`) for missing (401), malformed (400), inactive (401), and unknown (401) headers, and verifies that cross-requester access and body requester spoofing are completely blocked with 403 Forbidden | `server/tests/lab-02/ownership-hardening.api.test.ts` |
 
 Middleware-level tests are fast Phase 2 coverage of the shared guard. API-03/04/05/28 remain
 required Phase 3 integration tests against the real ticket endpoint.
@@ -175,7 +176,7 @@ required Phase 3 integration tests against the real ticket endpoint.
 | AC-05 | Attachment client-side rejection | UI-04 |
 | AC-06 | Duplicate-submit prevention (busy button) | UI-02 |
 | AC-07 | API failure retains form data | UI-03, UI-18, E2E-02 |
-| AC-08 | Ownership protection on detail/attachments | API-10, API-20, API-23, API-25, UI-15, E2E-03 |
+| AC-08 | Ownership protection on detail/attachments | API-10, API-20, API-23, API-25, API-35, UI-15, E2E-03 |
 | AC-09 | Ticket Detail fully read-only | API-12, UI-07, UI-15 |
 | AC-10 | Search & filtering | API-06, API-09, API-30, UI-14 |
 | AC-11 | Sorting | API-07, API-31, UI-14 |
@@ -185,7 +186,7 @@ required Phase 3 integration tests against the real ticket endpoint.
 | AC-15 | Add attachment to an existing ticket | API-16 |
 | AC-16 | Soft-removal lifecycle | API-17, UI-08, UI-16 |
 | AC-17 | Blocked download of removed attachment | API-19, UI-16, E2E-03 |
-| AC-18 | Invalid/inactive/unknown Requester rejected | API-03, API-04, API-05, API-28, MW-03, MW-04, MW-05, MW-06 |
+| AC-18 | Invalid/inactive/unknown Requester rejected | API-03, API-04, API-05, API-28, API-35, MW-03, MW-04, MW-05, MW-06 |
 | AC-19 | Responsive layout | RESP-01, RESP-02, RESP-03 |
 | AC-20 | Non-color badge accessibility, focus visibility | STYLE-02, STYLE-04 |
 | AC-21 | Download an owned active attachment | API-32 |
@@ -200,9 +201,9 @@ labsheet's Test-DD requirement.
 | BR-01 (ticket number format/uniqueness/retry) | UNIT-01, UNIT-02, API-01, API-21 |
 | BR-02 (new Ticket starts NEW) | API-01 |
 | BR-03 (selector is testing only) | UI-11 |
-| BR-04 (ownership) | API-06, API-10, API-20, API-23, API-25, API-30, UI-15, E2E-03 |
+| BR-04 (ownership) | API-06, API-10, API-20, API-23, API-25, API-30, API-35, UI-15, E2E-03 |
 | BR-05 (active Requesters only) | DATA-02, API-26, UI-11 |
-| BR-06 (Requester header validation) | MW-03, MW-04, MW-05, MW-06 (middleware-level), API-03, API-04, API-05, API-28 (endpoint-level) |
+| BR-06 (Requester header validation) | MW-03, MW-04, MW-05, MW-06 (middleware-level), API-03, API-04, API-05, API-28, API-35 (endpoint-level) |
 | BR-07 (attachment constraints) | API-13, API-14, API-15, UI-04, UI-09 |
 | BR-08 (soft-removal blocks download) | API-17, API-18, API-19, API-24, UI-08, UI-16 |
 | BR-09 (trim + length validation) | UNIT-03, API-02 |
