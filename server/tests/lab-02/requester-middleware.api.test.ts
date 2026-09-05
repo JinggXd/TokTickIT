@@ -49,6 +49,26 @@ describe("X-Requester-Id validation middleware (MW-03, MW-04, MW-05, MW-06)", ()
     expect(res.body).not.toHaveProperty("details");
   });
 
+  // Empty header -> 400 Bad Request
+  it("rejects an empty or whitespace-only X-Requester-Id header with 400", async () => {
+    const resEmpty = await request(app)
+      .post("/test")
+      .set("X-Requester-Id", "")
+      .send({});
+
+    expect(resEmpty.status).toBe(400);
+    expect(resEmpty.body).toEqual({ error: "Bad Request: Malformed X-Requester-Id header" });
+    expect(resEmpty.body).not.toHaveProperty("details");
+
+    const resWhitespace = await request(app)
+      .post("/test")
+      .set("X-Requester-Id", "   ")
+      .send({});
+
+    expect(resWhitespace.status).toBe(400);
+    expect(resWhitespace.body).toEqual({ error: "Bad Request: Malformed X-Requester-Id header" });
+  });
+
   // MW-05 — AC-18: header references a real but inactive Requester -> 401
   it("MW-05 (API-05 equivalent): rejects a header referencing an inactive Requester with 401", async () => {
     const inactiveRequester = await getPrisma().requesterUser.findUniqueOrThrow({
@@ -75,6 +95,28 @@ describe("X-Requester-Id validation middleware (MW-03, MW-04, MW-05, MW-06)", ()
     expect(res.status).toBe(401);
     expect(res.body).toEqual({ error: "Requester context is missing or invalid" });
     expect(res.body).not.toHaveProperty("details");
+  });
+
+  it("handles numbers exceeding database ID range before query (returning 401, not 500)", async () => {
+    // 2147483648 is INT4_MAX + 1
+    const resOverInt4 = await request(app)
+      .post("/test")
+      .set("X-Requester-Id", "2147483648")
+      .send({});
+
+    expect(resOverInt4.status).toBe(401);
+    expect(resOverInt4.body).toEqual({ error: "Requester context is missing or invalid" });
+    expect(resOverInt4.body).not.toHaveProperty("details");
+
+    // Very large number (more than 10 digits)
+    const resHuge = await request(app)
+      .post("/test")
+      .set("X-Requester-Id", "99999999999999999999")
+      .send({});
+
+    expect(resHuge.status).toBe(401);
+    expect(resHuge.body).toEqual({ error: "Requester context is missing or invalid" });
+    expect(resHuge.body).not.toHaveProperty("details");
   });
 
   // Valid active requester passes through with 200 OK
