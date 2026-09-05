@@ -95,7 +95,6 @@ export async function createTicket(
   });
 
   const data = await response.json();
-
   if (!response.ok) {
     const error: any = new Error(data.error || "Unable to create ticket. Please try again.");
     error.status = response.status;

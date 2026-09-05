@@ -94,19 +94,9 @@ async function getOrCreateTestFixture(request: APIRequestContext): Promise<TestF
 // Cleanup fixture tickets and physical files after worker finishes tests
 test.afterAll(async () => {
   try {
-    const testTickets = await prisma.ticket.findMany({
-      where: {
-        OR: [
-          { id: { in: createdTicketIds } },
-          { summary: "RESP-03 Polish Ticket with Long Summary Testing Text Wrapping and Layout Integrity" },
-        ],
-      },
-      select: { id: true },
-    });
-    const idsToDelete = testTickets.map((t) => t.id);
-    if (idsToDelete.length > 0) {
+    if (createdTicketIds.length > 0) {
       const attachments = await prisma.attachment.findMany({
-        where: { ticketId: { in: idsToDelete } },
+        where: { ticketId: { in: createdTicketIds } },
         select: { storedFileName: true },
       });
       const possibleDirs = [
@@ -118,22 +108,18 @@ test.afterAll(async () => {
           for (const dir of possibleDirs) {
             const filePath = path.join(dir, att.storedFileName);
             if (fs.existsSync(filePath)) {
-              try {
-                fs.unlinkSync(filePath);
-              } catch {}
+              fs.unlinkSync(filePath);
             }
           }
         }
       }
       await prisma.attachment.deleteMany({
-        where: { ticketId: { in: idsToDelete } },
+        where: { ticketId: { in: createdTicketIds } },
       });
       await prisma.ticket.deleteMany({
-        where: { id: { in: idsToDelete } },
+        where: { id: { in: createdTicketIds } },
       });
     }
-  } catch (err) {
-    console.warn("Test cleanup warning:", err);
   } finally {
     await prisma.$disconnect();
   }
@@ -152,6 +138,13 @@ function ensureDir(filePath: string) {
   if (!fs.existsSync(dir)) {
     fs.mkdirSync(dir, { recursive: true });
   }
+}
+
+async function captureCleanScreenshot(page: Page, filePath: string) {
+  ensureDir(filePath);
+  await page.evaluate(() => window.scrollTo(0, 0));
+  await page.waitForTimeout(150);
+  await page.screenshot({ path: filePath, fullPage: true });
 }
 
 // Helper to verify no element has unintended text clipping / overflow
@@ -402,21 +395,387 @@ test.describe("Phase 7 — Visual Inspection Screenshot Captures (Project-Isolat
       return !!sel && sel.options.length > 1;
     });
     const ctPath = `artifacts/lab-02/screenshots/create-ticket/${proj}.png`;
-    ensureDir(ctPath);
-    await page.screenshot({ path: ctPath, fullPage: true });
+    await captureCleanScreenshot(page, ctPath);
 
     // 2. My Tickets
     await page.goto("/my-tickets");
     await page.waitForSelector(".card-zen");
     const mtPath = `artifacts/lab-02/screenshots/my-tickets/${proj}.png`;
-    ensureDir(mtPath);
-    await page.screenshot({ path: mtPath, fullPage: true });
+    await captureCleanScreenshot(page, mtPath);
 
     // 3. Requester Ticket Detail
     await page.goto(`/tickets/${fixture.ticketId}`);
     await page.waitForSelector(".card-zen");
     const tdPath = `artifacts/lab-02/screenshots/ticket-detail/${proj}.png`;
-    ensureDir(tdPath);
-    await page.screenshot({ path: tdPath, fullPage: true });
+    await captureCleanScreenshot(page, tdPath);
+  });
+});
+
+test.describe("Phase 8 — End-to-End Integration Flows (E2E-01, E2E-02, E2E-03 per tests.md)", () => {
+  // E2E-01 (AC-01, AC-02, AC-03, AC-13)
+  test("E2E-01: Full happy path — select Requester, verify read-only fields, create ticket with attachment, find in My Tickets, switch Requester", async ({ page }, testInfo) => {
+    const proj = testInfo.project.name;
+
+    // Step 1: Start with unauthenticated / clean state to verify AC-02 route guard
+    await page.goto("/select-requester");
+    await page.evaluate(() => window.localStorage.clear());
+
+    // Navigating to /my-tickets directly without requester must redirect to /select-requester
+    await page.goto("/my-tickets");
+    await page.waitForURL("**/select-requester");
+    await page.waitForSelector("#requester-select");
+
+    // Capture Step 1 screenshot
+    const shot1 = `artifacts/lab-02/screenshots/e2e/01-select-requester-${proj}.png`;
+    await captureCleanScreenshot(page, shot1);
+
+    // Step 2: Select first active Development Requester (e.g. Requester 1 - Jennifer Anderson)
+    await page.waitForSelector("#requester-select");
+    await page.waitForFunction(() => {
+      const sel = document.querySelector("#requester-select") as HTMLSelectElement | null;
+      return !!sel && sel.options.length > 2;
+    });
+
+    const firstReqId = await page.evaluate(() => {
+      const sel = document.querySelector("#requester-select") as HTMLSelectElement;
+      return sel.options[1].value;
+    });
+    const firstReqText = await page.evaluate(() => {
+      const sel = document.querySelector("#requester-select") as HTMLSelectElement;
+      return sel.options[1].textContent || "";
+    });
+    expect(firstReqId).toBeTruthy();
+    await page.selectOption("#requester-select", firstReqId);
+    await page.click("[data-testid='continue-button']");
+
+    // Redirects to /my-tickets and AppShell shows user profile badge
+    await page.waitForURL("**/my-tickets");
+    const profileBadge = page.locator("[data-testid='user-profile-badge']");
+    await expect(profileBadge).toBeVisible();
+
+    // Step 3: Navigate to Create Ticket screen
+    const navCreate = page.locator("[data-testid='nav-create-ticket']:visible, [data-testid='nav-create-ticket-mobile']:visible").first();
+    await navCreate.click();
+    await page.waitForURL("**/create-ticket");
+    await page.waitForSelector("#category-select");
+
+    // Step 4: Verify AC-03 read-only system and requester fields
+    const headerInputs = page.locator(".card form .row.g-3").first().locator("input[readonly]");
+    await expect(headerInputs.nth(0)).toHaveValue("Assigned on save (will be assigned on save)");
+    await expect(headerInputs.nth(1)).toHaveValue("Assigned on save (will be assigned on save)");
+    const reqValue = await headerInputs.nth(2).inputValue();
+    expect(firstReqText).toContain(reqValue.split(" (")[0]);
+
+    // Step 5: Fill form with valid fields and stage attachment
+    await page.waitForFunction(() => {
+      const cat = document.querySelector("#category-select") as HTMLSelectElement | null;
+      const sys = document.querySelector("#system-select") as HTMLSelectElement | null;
+      return !!cat && cat.options.length > 1 && !!sys && sys.options.length > 1;
+    });
+
+    const uniqueSummary = `E2E-01 Happy Path Ticket ${Date.now()}`;
+    await page.fill("#summary-input", uniqueSummary);
+    await page.fill("#description-input", "Detailed description for E2E-01 happy path ticket verifying creation and requester isolation.");
+    await page.selectOption("#priority-select", "HIGH");
+
+    // Stage valid attachment
+    const dummyPdf = Buffer.from("%PDF-1.4\n1 0 obj<</Type/Catalog>>endobj\ntrailer<</Root 1 0 R>>\n%%EOF");
+    await page.setInputFiles("[data-testid='attachment-input']", {
+      name: "e2e_happy_attachment.pdf",
+      mimeType: "application/pdf",
+      buffer: dummyPdf,
+    });
+    await expect(page.locator("text=e2e_happy_attachment.pdf")).toBeVisible();
+
+    // Capture Step 2 screenshot
+    const shot2 = `artifacts/lab-02/screenshots/e2e/02-create-ticket-form-${proj}.png`;
+    await captureCleanScreenshot(page, shot2);
+
+    // Step 6: Submit Ticket and verify Success screen
+    const createResPromise = page.waitForResponse(
+      (res) => res.url().includes("/api/tickets") && res.request().method() === "POST"
+    );
+    await page.click("button[type='submit']");
+    const createRes = await createResPromise;
+    if (createRes.ok()) {
+      const data = await createRes.json();
+      if (data.id && !createdTicketIds.includes(data.id)) {
+        createdTicketIds.push(data.id);
+      }
+    }
+    await page.waitForSelector("[data-testid='success-ticket-no']");
+
+    const createdTicketNo = (await page.locator("[data-testid='success-ticket-no']").textContent())?.trim();
+    expect(createdTicketNo).toMatch(/^TKT-\d{4}-\d{6}$/);
+
+    const successRequester = await page.locator("[data-testid='success-requester']").textContent();
+    expect(firstReqText).toContain(successRequester?.split(" (")[0] || "");
+
+    await expect(page.locator("text=e2e_happy_attachment.pdf")).toBeVisible();
+
+    // Track ticket ID for cleanup (backup)
+    const dbTicket = await prisma.ticket.findUnique({ where: { ticketNo: createdTicketNo! } });
+    if (dbTicket && !createdTicketIds.includes(dbTicket.id)) {
+      createdTicketIds.push(dbTicket.id);
+    }
+
+    // Capture Step 3 screenshot
+    const shot3 = `artifacts/lab-02/screenshots/e2e/03-ticket-created-success-${proj}.png`;
+    await captureCleanScreenshot(page, shot3);
+
+    // Step 7: Click View My Tickets and verify ticket appears in list
+    const myTicketsResPromise = page.waitForResponse(
+      (res) => res.url().includes("/api/tickets") && res.request().method() === "GET" && res.status() === 200
+    );
+    await page.click("button:has-text('View My Tickets')");
+    await page.waitForURL("**/my-tickets");
+    await myTicketsResPromise;
+    await expect(page.locator("text=Loading your tickets...")).toHaveCount(0);
+    await page.waitForSelector(".card-zen");
+
+    if (proj === "mobile") {
+      await expect(page.locator(".d-block.d-md-none").getByText(createdTicketNo)).toBeVisible();
+      await expect(page.locator(".d-block.d-md-none").getByText(uniqueSummary)).toBeVisible();
+    } else {
+      await expect(page.locator(".d-none.d-md-block").getByText(createdTicketNo)).toBeVisible();
+      await expect(page.locator(".d-none.d-md-block").getByText(uniqueSummary)).toBeVisible();
+    }
+
+    // Capture Step 4 screenshot
+    const shot4 = `artifacts/lab-02/screenshots/e2e/04-my-tickets-owner-${proj}.png`;
+    await captureCleanScreenshot(page, shot4);
+
+    // Step 8: Switch Requester to second active requester (AC-13, BR-14)
+    await page.click("[data-testid='change-requester-button']");
+    await page.waitForURL("**/select-requester");
+    await page.waitForSelector("#requester-select");
+    await page.waitForFunction(() => {
+      const sel = document.querySelector("#requester-select") as HTMLSelectElement | null;
+      return !!sel && sel.options.length > 2;
+    });
+
+    const secondReqId = await page.evaluate(() => {
+      const sel = document.querySelector("#requester-select") as HTMLSelectElement;
+      return sel.options[2].value;
+    });
+    expect(secondReqId).toBeTruthy();
+    expect(secondReqId).not.toBe(firstReqId);
+    await page.selectOption("#requester-select", secondReqId);
+
+    // Wait for the switched requester's tickets response and ensure loading finishes before asserting
+    const switchedTicketsResPromise = page.waitForResponse(
+      (res) => res.url().includes("/api/tickets") && res.request().method() === "GET" && res.status() === 200
+    );
+    await page.click("[data-testid='continue-button']");
+
+    await page.waitForURL("**/my-tickets");
+    await switchedTicketsResPromise;
+    await expect(page.locator("text=Loading your tickets...")).toHaveCount(0);
+    await page.waitForSelector(".card-zen");
+
+    // Verify Jennifer's ticket is NOT present in Sarah's My Tickets list
+    await expect(page.locator(`text=${createdTicketNo}`)).toHaveCount(0);
+    await expect(page.locator(`text=${uniqueSummary}`)).toHaveCount(0);
+
+    // Capture Step 5 screenshot
+    const shot5 = `artifacts/lab-02/screenshots/e2e/05-switched-requester-${proj}.png`;
+    await captureCleanScreenshot(page, shot5);
+  });
+
+  // E2E-02 (AC-07, BR-11)
+  test("E2E-02: Simulated backend failure during ticket submission retains form values", async ({ page, request }, testInfo) => {
+    const proj = testInfo.project.name;
+    const fixture = await getOrCreateTestFixture(request);
+    await injectRequester(page, fixture.requester);
+
+    await page.goto("/create-ticket");
+    await page.waitForSelector("#category-select");
+    await page.waitForFunction(() => {
+      const cat = document.querySelector("#category-select") as HTMLSelectElement | null;
+      const sys = document.querySelector("#system-select") as HTMLSelectElement | null;
+      return !!cat && cat.options.length > 1 && !!sys && sys.options.length > 1;
+    });
+
+    const failedSummary = `E2E-02 Simulated Failure Test ${Date.now()}`;
+    const failedDesc = "This description and summary must be strictly retained after a 500 error.";
+
+    await page.fill("#summary-input", failedSummary);
+    await page.fill("#description-input", failedDesc);
+    await page.selectOption("#priority-select", "HIGH");
+
+    // Stage an attachment
+    const dummyPdf = Buffer.from("%PDF-1.4\n1 0 obj<</Type/Catalog>>endobj\ntrailer<</Root 1 0 R>>\n%%EOF");
+    await page.setInputFiles("[data-testid='attachment-input']", {
+      name: "failure_retention_file.pdf",
+      mimeType: "application/pdf",
+      buffer: dummyPdf,
+    });
+    await expect(page.locator("text=failure_retention_file.pdf")).toBeVisible();
+
+    // Intercept POST /api/tickets with 500 failure per api-spec.md Section 6.4
+    await page.route("**/api/tickets", async (route) => {
+      if (route.request().method() === "POST") {
+        await route.fulfill({
+          status: 500,
+          contentType: "application/json",
+          body: JSON.stringify({ error: "Unable to create ticket. Please try again." }),
+        });
+      } else {
+        await route.continue();
+      }
+    });
+
+    // Click submit
+    await page.click("button[type='submit']");
+
+    // Verify safe failure alert appears
+    const alert = page.locator(".alert.alert-danger");
+    await expect(alert).toBeVisible();
+    await expect(alert).toContainText("Unable to create ticket. Please try again.");
+
+    // Verify form values remain intact (BR-11)
+    await expect(page.locator("#summary-input")).toHaveValue(failedSummary);
+    await expect(page.locator("#description-input")).toHaveValue(failedDesc);
+    await expect(page.locator("#priority-select")).toHaveValue("HIGH");
+    await expect(page.locator("text=failure_retention_file.pdf")).toBeVisible();
+
+    // Submit button re-enabled
+    await expect(page.locator("button[type='submit']")).toBeEnabled();
+
+    // Capture screenshot
+    const shot = `artifacts/lab-02/screenshots/e2e/06-backend-failure-retained-${proj}.png`;
+    await captureCleanScreenshot(page, shot);
+
+    await page.unroute("**/api/tickets");
+  });
+
+  // E2E-03 (AC-08, AC-17, BR-04, BR-08)
+  test("E2E-03: Negative security flows — cross-requester direct URL (403) and removed attachment direct download (410)", async ({ page, request }, testInfo) => {
+    const proj = testInfo.project.name;
+
+    // Fetch active requesters
+    const reqRes = await request.get("http://localhost:3000/api/requesters/active");
+    const requesters = await reqRes.json();
+    const req1 = requesters[0]; // Jennifer Anderson
+    const req2 = requesters[1]; // Sarah Johnson
+
+    const catRes = await request.get("http://localhost:3000/api/categories");
+    const cats = await catRes.json();
+    const sysRes = await request.get("http://localhost:3000/api/related-systems");
+    const syss = await sysRes.json();
+
+    // Part A: Create a ticket owned by Requester 2 (Sarah Johnson)
+    const sarahTicketRes = await request.post("http://localhost:3000/api/tickets", {
+      headers: { "X-Requester-Id": String(req2.id) },
+      data: {
+        summary: `E2E-03 Sarah Private Ticket ${Date.now()}`,
+        description: "Confidential ticket belonging exclusively to Sarah Johnson.",
+        categoryId: cats[0].id,
+        relatedSystemId: syss[0].id,
+        requestedPriority: "LOW",
+      },
+    });
+    expect(sarahTicketRes.ok()).toBe(true);
+    const sarahTicket = await sarahTicketRes.json();
+    createdTicketIds.push(sarahTicket.id);
+
+    // As Requester 1 (Jennifer Anderson), attempt direct URL navigation to Sarah's ticket
+    await injectRequester(page, req1);
+    await page.goto(`/tickets/${sarahTicket.id}`);
+    await page.waitForSelector(".card-zen");
+
+    // Verify safe 403 Access Denied UI
+    await expect(page.locator("text=Access Denied")).toBeVisible();
+    await expect(page.locator("text=You do not own this ticket and cannot view its details.")).toBeVisible();
+    await expect(page.locator(`text=${sarahTicket.summary}`)).toHaveCount(0);
+
+    const shotA = `artifacts/lab-02/screenshots/e2e/07-cross-requester-403-${proj}.png`;
+    await captureCleanScreenshot(page, shotA);
+
+    // Click Return to My Tickets
+    await page.click("button:has-text('Return to My Tickets')");
+    await page.waitForURL("**/my-tickets");
+
+    // Part B: Direct URL download of a soft-removed attachment (410 Gone)
+    // Create a ticket owned by Requester 1 (Jennifer Anderson)
+    const jenniferTicketRes = await request.post("http://localhost:3000/api/tickets", {
+      headers: { "X-Requester-Id": String(req1.id) },
+      data: {
+        summary: `E2E-03 Jennifer Attachment Ticket ${Date.now()}`,
+        description: "Ticket to verify 410 Gone on removed attachment direct download.",
+        categoryId: cats[0].id,
+        relatedSystemId: syss[0].id,
+        requestedPriority: "MEDIUM",
+      },
+    });
+    expect(jenniferTicketRes.ok()).toBe(true);
+    const jenniferTicket = await jenniferTicketRes.json();
+    createdTicketIds.push(jenniferTicket.id);
+
+    // Upload an attachment
+    const dummyPdf = Buffer.from("%PDF-1.4\n1 0 obj<</Type/Catalog>>endobj\ntrailer<</Root 1 0 R>>\n%%EOF");
+    const uploadRes = await request.post(`http://localhost:3000/api/tickets/${jenniferTicket.id}/attachments`, {
+      headers: { "X-Requester-Id": String(req1.id) },
+      multipart: {
+        file: {
+          name: "e2e_removed_file.pdf",
+          mimeType: "application/pdf",
+          buffer: dummyPdf,
+        },
+      },
+    });
+    expect(uploadRes.ok()).toBe(true);
+    const uploadedAtt = await uploadRes.json();
+
+    // Navigate to ticket detail as owner while attachment is still active
+    await page.goto(`/tickets/${jenniferTicket.id}`);
+    await page.waitForSelector(".card-zen");
+
+    // Verify attachment is initially active with Download and Remove buttons
+    await expect(page.locator("text=e2e_removed_file.pdf")).toBeVisible();
+    const downloadBtn = page.locator("button:has-text('Download')");
+    await expect(downloadBtn).toBeVisible();
+    await expect(page.locator("button:has-text('Remove')")).toBeVisible();
+    await expect(page.locator("span.badge:has-text('Unavailable')")).toHaveCount(0);
+
+    // Concurrently soft-remove the attachment on the server via API (stale UI simulation)
+    const removeRes = await request.delete(`http://localhost:3000/api/attachments/${uploadedAtt.id}`, {
+      headers: { "X-Requester-Id": String(req1.id) },
+      data: { removalReason: "Soft-removed for E2E-03 verification" },
+    });
+    expect(removeRes.ok()).toBe(true);
+
+    // Click Download from the stale UI — browser receives 410 Gone and dynamically transitions
+    const download410Promise = page.waitForResponse(
+      (res) => res.url().includes(`/api/attachments/${uploadedAtt.id}/download`) && res.status() === 410
+    );
+    await downloadBtn.click();
+    const download410Res = await download410Promise;
+    expect(download410Res.status()).toBe(410);
+
+    // Verify UI dynamically updates to Unavailable state without page refresh (AC-17, BR-08)
+    await expect(page.locator("button:has-text('Download')")).toHaveCount(0);
+    await expect(page.locator("button:has-text('Remove')")).toHaveCount(0);
+    await expect(page.locator("span.badge:has-text('Unavailable')")).toBeVisible();
+    await expect(page.locator("text=Removal reason:")).toBeVisible();
+
+    // Direct download API request by owner returns 410 Gone per api-spec.md Section 6.8
+    const dlRes = await request.get(`http://localhost:3000/api/attachments/${uploadedAtt.id}/download`, {
+      headers: { "X-Requester-Id": String(req1.id) },
+    });
+    expect(dlRes.status()).toBe(410);
+    const dlBody = await dlRes.json();
+    expect(dlBody.error).toContain("This attachment has been removed and cannot be downloaded");
+
+    // Direct download API request by non-owner returns 403 Forbidden per api-spec.md Section 6.8
+    const crossDlRes = await request.get(`http://localhost:3000/api/attachments/${uploadedAtt.id}/download`, {
+      headers: { "X-Requester-Id": String(req2.id) },
+    });
+    expect(crossDlRes.status()).toBe(403);
+    const crossBody = await crossDlRes.json();
+    expect(crossBody.error).toContain("Access denied: You do not own this attachment");
+
+    const shotB = `artifacts/lab-02/screenshots/e2e/08-removed-attachment-410-${proj}.png`;
+    await captureCleanScreenshot(page, shotB);
   });
 });
