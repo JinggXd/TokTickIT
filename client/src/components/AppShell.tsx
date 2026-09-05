@@ -22,12 +22,12 @@ export const AppShell: React.FC<AppShellProps> = ({
   return (
     <div className="min-vh-100 d-flex flex-column" style={{ backgroundColor: "var(--zg-canvas)" }}>
       {/* Zen Green Navigation Header (ui-spec.md Section 9) */}
-      <header className="navbar navbar-expand navbar-zen px-3 px-md-4 py-2 sticky-top shadow-sm">
-        <div className="container-fluid d-flex justify-content-between align-items-center">
-          {/* Brand Logo & Name */}
+      <header className="navbar navbar-zen px-3 px-md-4 py-2 sticky-top shadow-sm flex-column align-items-stretch">
+        <div className="container-fluid d-flex justify-content-between align-items-center p-0">
+          {/* Brand Logo & Desktop Navigation */}
           <div className="d-flex align-items-center gap-3">
             <span
-              className="navbar-brand d-flex align-items-center gap-2 mb-0 cursor-pointer"
+              className="navbar-brand d-flex align-items-center gap-2 mb-0 cursor-pointer text-decoration-none"
               style={{ cursor: "pointer" }}
               onClick={() => onTabChange("my-tickets")}
             >
@@ -35,9 +35,9 @@ export const AppShell: React.FC<AppShellProps> = ({
               <span className="fw-bold">TokTickIT</span>
             </span>
 
-            {/* Navigation links (only when logged in) */}
+            {/* Desktop navigation links (visible on md and up) */}
             {currentRequester && (
-              <nav className="d-flex gap-2 ms-3">
+              <nav className="d-none d-md-flex gap-2 ms-3">
                 <button
                   className={`btn btn-sm nav-link-zen ${currentTab === "my-tickets" ? "active" : ""}`}
                   onClick={() => onTabChange("my-tickets")}
@@ -62,7 +62,7 @@ export const AppShell: React.FC<AppShellProps> = ({
               <div className="d-flex align-items-center gap-2" data-testid="user-profile-badge">
                 <div className="badge-requester d-flex align-items-center gap-2">
                   <span>👤</span>
-                  <span className="fw-semibold">{currentRequester.name}</span>
+                  <span className="fw-semibold text-truncate" style={{ maxWidth: "120px" }}>{currentRequester.name}</span>
                   <span className="opacity-75 d-none d-sm-inline">({currentRequester.department})</span>
                 </div>
                 <button
@@ -81,6 +81,31 @@ export const AppShell: React.FC<AppShellProps> = ({
             )}
           </div>
         </div>
+
+        {/* Mobile navigation: collapses into horizontally scrollable bar per Section 9 */}
+        {currentRequester && (
+          <nav
+            className="d-flex d-md-none overflow-x-auto text-nowrap gap-2 pt-2 pb-1 w-100"
+            style={{ minHeight: "44px" }}
+          >
+            <button
+              className={`btn nav-link-zen ${currentTab === "my-tickets" ? "active" : ""}`}
+              onClick={() => onTabChange("my-tickets")}
+              data-testid="nav-my-tickets-mobile"
+              style={{ minHeight: "44px", padding: "10px 16px", display: "inline-flex", alignItems: "center" }}
+            >
+              📋 My Tickets
+            </button>
+            <button
+              className={`btn nav-link-zen ${currentTab === "create-ticket" ? "active" : ""}`}
+              onClick={() => onTabChange("create-ticket")}
+              data-testid="nav-create-ticket-mobile"
+              style={{ minHeight: "44px", padding: "10px 16px", display: "inline-flex", alignItems: "center" }}
+            >
+              ➕ Create Ticket
+            </button>
+          </nav>
+        )}
       </header>
 
       {/* Main Content Area */}

@@ -439,8 +439,8 @@ export const MyTickets: React.FC<MyTicketsProps> = ({
         )
       ) : (
         <>
-          {/* Desktop Table View (≥ 992px) per ui-spec.md Section 10.3 */}
-          <div className="d-none d-lg-block card card-zen overflow-hidden mb-3">
+          {/* Desktop & Tablet Table View (≥ 768px) per ui-spec.md Section 6 & 10.3 */}
+          <div className="d-none d-md-block card card-zen overflow-hidden mb-3">
             <div className="table-responsive">
               <table className="table table-hover align-middle mb-0">
                 <thead className="table-light text-muted small">
@@ -521,8 +521,8 @@ export const MyTickets: React.FC<MyTicketsProps> = ({
             </div>
           </div>
 
-          {/* Mobile / Tablet Card View (< 992px) per ui-spec.md Section 10.3 (stacked vertically) */}
-          <div className="d-block d-lg-none mb-3">
+          {/* Mobile Card View (< 768px) per ui-spec.md Section 6 & 10.3 (stacked vertically) */}
+          <div className="d-block d-md-none mb-3">
             {tickets.map((t) => (
               <div
                 key={t.id}
@@ -556,27 +556,29 @@ export const MyTickets: React.FC<MyTicketsProps> = ({
               Showing page {pagination.currentPage} of {pagination.totalPages} ({pagination.totalItems} total tickets)
             </div>
 
-            <div className="d-flex align-items-center gap-2">
-              <label htmlFor="limit-select" className="text-muted small mb-0">
-                Per page:
-              </label>
-              <select
-                id="limit-select"
-                className="form-select form-select-sm"
-                style={{ width: "auto" }}
-                value={pageSize}
-                onChange={(e) => {
-                  setPageSize(Number(e.target.value));
-                  setCurrentPage(1);
-                }}
-              >
-                <option value={5}>5</option>
-                <option value={8}>8</option>
-                <option value={10}>10</option>
-                <option value={20}>20</option>
-              </select>
+            <div className="d-flex align-items-center flex-wrap gap-2">
+              <div className="d-flex align-items-center gap-2">
+                <label htmlFor="limit-select" className="text-muted small mb-0">
+                  Per page:
+                </label>
+                <select
+                  id="limit-select"
+                  className="form-select form-select-sm"
+                  style={{ width: "auto" }}
+                  value={pageSize}
+                  onChange={(e) => {
+                    setPageSize(Number(e.target.value));
+                    setCurrentPage(1);
+                  }}
+                >
+                  <option value={5}>5</option>
+                  <option value={8}>8</option>
+                  <option value={10}>10</option>
+                  <option value={20}>20</option>
+                </select>
+              </div>
 
-              <div className="btn-group btn-group-sm" role="navigation" aria-label="Pagination Navigation">
+              <div className="btn-group btn-group-sm flex-wrap" role="navigation" aria-label="Pagination Navigation">
                 <button
                   className="btn btn-secondary-zen"
                   disabled={pagination.currentPage <= 1}

@@ -15,3 +15,6 @@ server/prisma/*.db
 .vite/
 uploads/
 server/uploads/
+# playwright
+test-results/
+playwright-report/

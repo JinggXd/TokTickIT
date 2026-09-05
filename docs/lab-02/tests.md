@@ -151,9 +151,18 @@ required Phase 3 integration tests against the real ticket endpoint.
 
 | Test ID | AC | Scope | Expected Result | File |
 |---|---|---|---|---|
-| RESP-01 | AC-19 | My Tickets at `<768px` | Table is replaced by a card list; no horizontal scrollbar on the page | `e2e/lab-02/requester-ticket-flow.spec.ts` |
-| RESP-02 | AC-19 | Create Ticket at `768–991px` | Two-column layout for classification fields; Summary/Description remain full width | `e2e/lab-02/requester-ticket-flow.spec.ts` |
-| RESP-03 | AC-19 | All three screens at `≥992px` | Content centers with a max width of `1200px`; no clipped labels | `e2e/lab-02/requester-ticket-flow.spec.ts` |
+| RESP-01 | AC-19 | My Tickets at `<768px` | Table is replaced by a card list; buttons full width; touch target ≥ 44px; no horizontal scrollbar on the page | `e2e/lab-02/requester-ticket-flow.spec.ts` |
+| RESP-02 | AC-19 | Create Ticket at `768–991px` | Two-column layout for classification fields; Summary/Description remain full width; compact table visible in My Tickets | `e2e/lab-02/requester-ticket-flow.spec.ts` |
+| RESP-03 | AC-19 | All three screens at `≥992px` | Content centers with a max width of `1200px`; exact left/right margin centering; no clipped labels/text; long summary and attachment ellipsis verified | `e2e/lab-02/requester-ticket-flow.spec.ts` |
+
+### Visual Inspection Screenshots (`ui-spec.md` Section 8 & 11)
+
+| Viewport Breakpoint | Create Ticket Screen | My Tickets Screen | Requester Ticket Detail Screen |
+|---|---|---|---|
+| **Desktop (`≥992px`, 1280x800)** | [`artifacts/lab-02/screenshots/create-ticket/desktop.png`](../../artifacts/lab-02/screenshots/create-ticket/desktop.png) | [`artifacts/lab-02/screenshots/my-tickets/desktop.png`](../../artifacts/lab-02/screenshots/my-tickets/desktop.png) | [`artifacts/lab-02/screenshots/ticket-detail/desktop.png`](../../artifacts/lab-02/screenshots/ticket-detail/desktop.png) |
+| **Tablet (`768–991px`, 768x1024)** | [`artifacts/lab-02/screenshots/create-ticket/tablet.png`](../../artifacts/lab-02/screenshots/create-ticket/tablet.png) | [`artifacts/lab-02/screenshots/my-tickets/tablet.png`](../../artifacts/lab-02/screenshots/my-tickets/tablet.png) | [`artifacts/lab-02/screenshots/ticket-detail/tablet.png`](../../artifacts/lab-02/screenshots/ticket-detail/tablet.png) |
+| **Mobile (`<768px`, 375x667)** | [`artifacts/lab-02/screenshots/create-ticket/mobile.png`](../../artifacts/lab-02/screenshots/create-ticket/mobile.png) | [`artifacts/lab-02/screenshots/my-tickets/mobile.png`](../../artifacts/lab-02/screenshots/my-tickets/mobile.png) | [`artifacts/lab-02/screenshots/ticket-detail/mobile.png`](../../artifacts/lab-02/screenshots/ticket-detail/mobile.png) |
+
 
 ## 8. Planned Tests — End-to-End
 
