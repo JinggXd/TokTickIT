@@ -133,3 +133,9 @@ textarea.form-control-zen {
   padding: 4px 12px;
   font-size: 0.85rem;
 }
+
+@media (min-width: 768px) {
+  .w-md-auto {
+    width: auto !important;
+  }
+}

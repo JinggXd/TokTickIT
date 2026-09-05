@@ -245,11 +245,12 @@ export function RequesterTicketDetail({
                 <label className="form-label fw-semibold" style={{ color: "var(--zg-text-primary)" }}>
                   Summary
                 </label>
-                <input
-                  type="text"
-                  className="form-control form-control-zen"
+                <textarea
+                  className="form-control form-control-zen text-break"
                   value={ticket.summary}
                   readOnly
+                  rows={2}
+                  style={{ resize: "none" }}
                 />
               </div>
 

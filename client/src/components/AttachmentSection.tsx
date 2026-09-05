@@ -237,19 +237,20 @@ export function AttachmentSection({
                   key={item.id}
                   className="list-group-item px-0 py-3 d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-2"
                 >
-                  <div className="flex-grow-1">
-                    <div className="d-flex align-items-center gap-2">
+                  <div className="flex-grow-1 overflow-hidden" style={{ minWidth: 0, maxWidth: "100%" }}>
+                    <div className="d-flex align-items-center gap-2 overflow-hidden" style={{ minWidth: 0 }}>
                       <span
-                        className={
+                        className={`text-truncate ${
                           isRemoved
                             ? "text-decoration-line-through text-muted fw-semibold"
                             : "fw-semibold"
-                        }
-                        style={{ color: isRemoved ? undefined : "var(--zg-text-primary)" }}
+                        }`}
+                        style={{ color: isRemoved ? undefined : "var(--zg-text-primary)", maxWidth: "100%" }}
+                        title={item.fileName}
                       >
                         {item.fileName}
                       </span>
-                      <span className="text-muted" style={{ fontSize: "0.85rem" }}>
+                      <span className="text-muted text-nowrap flex-shrink-0" style={{ fontSize: "0.85rem" }}>
                         ({formatFileSize(item.fileSize)})
                       </span>
                     </div>
@@ -305,12 +306,12 @@ export function AttachmentSection({
             {uploadingFiles.map((up) => (
               <li
                 key={up.tempId}
-                className="list-group-item px-0 py-3 d-flex justify-content-between align-items-center"
+                className="list-group-item px-0 py-3 d-flex justify-content-between align-items-center gap-2"
               >
-                <div className="d-flex align-items-center gap-2">
-                  <span className="spinner-border spinner-border-sm text-success" role="status" />
-                  <span className="fw-semibold text-muted">{up.fileName}</span>
-                  <span className="badge bg-light text-secondary border">Uploading...</span>
+                <div className="d-flex align-items-center gap-2 overflow-hidden" style={{ minWidth: 0 }}>
+                  <span className="spinner-border spinner-border-sm text-success flex-shrink-0" role="status" />
+                  <span className="fw-semibold text-muted text-truncate" title={up.fileName}>{up.fileName}</span>
+                  <span className="badge bg-light text-secondary border flex-shrink-0">Uploading...</span>
                 </div>
               </li>
             ))}
