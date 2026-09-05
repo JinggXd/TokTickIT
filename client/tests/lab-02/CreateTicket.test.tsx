@@ -389,4 +389,242 @@ describe("Create Ticket Screen (UI-01 to UI-04, UI-12, UI-13, STYLE-01, STYLE-04
     await user.tab();
     expect(document.activeElement).toBe(descriptionInput);
   });
+
+  // -------------------------------------------------------------------------
+  // UI-18 — AC-07, BR-18: Post-create attachment failure
+  // -------------------------------------------------------------------------
+  it("UI-18: preserves created Ticket Number on attachment failure and reports failed file with retry path", async () => {
+    const mockCreated = {
+      id: 101,
+      ticketNo: "TKT-2026-000101",
+      summary: "Valid summary text",
+      description: "Valid description that is longer than ten characters",
+      requestedPriority: "MEDIUM",
+      itPriority: "MEDIUM",
+      currentStatus: "NEW",
+      requesterId: 1,
+      createdAt: "2026-09-04T10:00:00.000Z",
+    };
+
+    let uploadAttempts = 0;
+
+    globalThis.fetch = vi.fn().mockImplementation((url: string, opts?: any) => {
+      if (url.endsWith("/api/categories")) {
+        return Promise.resolve({ ok: true, json: () => Promise.resolve(mockCategories) });
+      }
+      if (url.endsWith("/api/related-systems")) {
+        return Promise.resolve({ ok: true, json: () => Promise.resolve(mockRelatedSystems) });
+      }
+      if (url.endsWith("/api/tickets") && opts?.method === "POST") {
+        return Promise.resolve({ ok: true, json: () => Promise.resolve(mockCreated) });
+      }
+      if (url.includes("/attachments") && opts?.method === "POST") {
+        uploadAttempts++;
+        if (uploadAttempts === 1) {
+          // First file succeeds
+          return Promise.resolve({
+            ok: true,
+            json: () =>
+              Promise.resolve({
+                id: 501,
+                ticketId: 101,
+                fileName: "good_file.pdf",
+                fileSize: 1000,
+                mimeType: "application/pdf",
+              }),
+          });
+        }
+        if (uploadAttempts === 2) {
+          // Second file fails
+          return Promise.resolve({
+            ok: false,
+            status: 500,
+            json: () =>
+              Promise.resolve({
+                error: "Unable to save the attachment. Please try again.",
+              }),
+          });
+        }
+        // Retry succeeds
+        return Promise.resolve({
+          ok: true,
+          json: () =>
+            Promise.resolve({
+              id: 502,
+              ticketId: 101,
+              fileName: "failing_file.pdf",
+              fileSize: 1000,
+              mimeType: "application/pdf",
+            }),
+        });
+      }
+      return Promise.reject(new Error(`Unhandled mock for ${url}`));
+    });
+
+    const user = userEvent.setup();
+    renderWithContext(<CreateTicket />);
+
+    // Wait for categories to load
+    await waitFor(() => {
+      expect(screen.getByLabelText(/category/i)).not.toBeDisabled();
+    });
+
+    // Fill summary and description
+    const summaryInput = screen.getByLabelText(/summary/i);
+    const descriptionInput = screen.getByLabelText(/description/i);
+    await user.type(summaryInput, "Valid summary text");
+    await user.type(descriptionInput, "Valid description that is longer than ten characters");
+
+    // Stage 2 files
+    const fileInput = screen.getByLabelText(/attachments/i);
+    const file1 = new File(["good"], "good_file.pdf", { type: "application/pdf" });
+    const file2 = new File(["fail"], "failing_file.pdf", { type: "application/pdf" });
+    fireEvent.change(fileInput, { target: { files: [file1, file2] } });
+
+    await waitFor(() => {
+      expect(screen.getByText("good_file.pdf")).toBeInTheDocument();
+      expect(screen.getByText("failing_file.pdf")).toBeInTheDocument();
+    });
+
+    // Submit ticket
+    const submitBtn = screen.getByRole("button", { name: /submit ticket/i });
+    await user.click(submitBtn);
+
+    // Ticket Number must be preserved and rendered
+    await waitFor(() => {
+      expect(screen.getByTestId("success-ticket-no")).toHaveTextContent("TKT-2026-000101");
+    });
+
+    // good_file.pdf is shown in uploaded files
+    expect(screen.getByText("good_file.pdf")).toBeInTheDocument();
+
+    // failing_file.pdf is shown in failed uploads with retry button
+    expect(screen.getByText(/some attachments could not be saved/i)).toBeInTheDocument();
+    expect(screen.getByText(/failing_file\.pdf/i)).toBeInTheDocument();
+
+    const retryBtn = screen.getByRole("button", { name: /retry/i });
+    expect(retryBtn).toBeInTheDocument();
+
+    // Click Retry button
+    await user.click(retryBtn);
+
+    // After retry succeeds, warning banner is cleared and ticketNo remains intact
+    await waitFor(() => {
+      expect(screen.queryByText(/some attachments could not be saved/i)).not.toBeInTheDocument();
+    });
+    expect(screen.getByTestId("success-ticket-no")).toHaveTextContent("TKT-2026-000101");
+  });
+
+  // UI-18: Prevents leaving or creating another ticket while attachments are uploading
+  it("UI-18: disables navigation and action buttons while post-create attachments are uploading and displays progress", async () => {
+    let resolveUpload: (val: any) => void;
+    const uploadPromise = new Promise((resolve) => {
+      resolveUpload = resolve;
+    });
+
+    globalThis.fetch = vi.fn().mockImplementation((url: string, opts?: any) => {
+      if (url.includes("/api/categories")) {
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve(mockCategories),
+        });
+      }
+      if (url.includes("/api/related-systems")) {
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve(mockRelatedSystems),
+        });
+      }
+      if (url.includes("/api/tickets") && opts?.method === "POST" && !url.includes("attachments")) {
+        return Promise.resolve({
+          ok: true,
+          json: () =>
+            Promise.resolve({
+              id: 101,
+              ticketNo: "TKT-2026-000101",
+              summary: "Valid summary text",
+              description: "Valid description longer than ten characters",
+              requestedPriority: "MEDIUM",
+              itPriority: "MEDIUM",
+              currentStatus: "NEW",
+              createdAt: "2026-09-05T12:00:00.000Z",
+            }),
+        });
+      }
+      if (url.includes("/api/tickets/101/attachments") && opts?.method === "POST") {
+        return uploadPromise;
+      }
+      return Promise.reject(new Error(`Unhandled mock for ${url}`));
+    });
+
+    const user = userEvent.setup();
+    const handleCancel = vi.fn();
+    renderWithContext(<CreateTicket onCancel={handleCancel} />);
+
+    await waitFor(() => {
+      expect(screen.getByLabelText(/category/i)).not.toBeDisabled();
+    });
+
+    await user.type(screen.getByLabelText(/summary/i), "Valid summary text");
+    await user.type(screen.getByLabelText(/description/i), "Valid description longer than ten characters");
+
+    // Stage 1 file
+    const fileInput = screen.getByLabelText(/attachments/i);
+    const file1 = new File(["test"], "in_flight.pdf", { type: "application/pdf" });
+    fireEvent.change(fileInput, { target: { files: [file1] } });
+
+    await waitFor(() => {
+      expect(screen.getByText("in_flight.pdf")).toBeInTheDocument();
+    });
+
+    // Submit ticket
+    const submitBtn = screen.getByRole("button", { name: /submit ticket/i });
+    await user.click(submitBtn);
+
+    // Wait for success screen to show ticketNo
+    await waitFor(() => {
+      expect(screen.getByTestId("success-ticket-no")).toHaveTextContent("TKT-2026-000101");
+    });
+
+    // While attachment upload is in-flight:
+    // 1. Uploading progress indicator is rendered
+    expect(screen.getByTestId("attachment-uploading-indicator")).toBeInTheDocument();
+    expect(screen.getByText(/uploading attachments\.\.\./i)).toBeInTheDocument();
+
+    // 2. "Create Another Ticket" and "View My Tickets" buttons are disabled
+    const createAnotherBtn = screen.getByRole("button", { name: /create another ticket/i });
+    const viewMyTicketsBtn = screen.getByRole("button", { name: /view my tickets/i });
+
+    expect(createAnotherBtn).toBeDisabled();
+    expect(viewMyTicketsBtn).toBeDisabled();
+
+    // Click should not trigger onCancel
+    await user.click(viewMyTicketsBtn);
+    expect(handleCancel).not.toHaveBeenCalled();
+
+    // Now resolve upload
+    resolveUpload!({
+      ok: true,
+      json: () =>
+        Promise.resolve({
+          id: 501,
+          ticketId: 101,
+          fileName: "in_flight.pdf",
+          fileSize: 1000,
+          mimeType: "application/pdf",
+        }),
+    });
+
+    // After upload finishes:
+    await waitFor(() => {
+      expect(screen.queryByTestId("attachment-uploading-indicator")).not.toBeInTheDocument();
+    });
+
+    expect(createAnotherBtn).not.toBeDisabled();
+    expect(viewMyTicketsBtn).not.toBeDisabled();
+
+    // Clicking "View My Tickets" now triggers handleCancel
+    await user.click(viewMyTicketsBtn);
+    expect(handleCancel).toHaveBeenCalledTimes(1);
+  });
 });

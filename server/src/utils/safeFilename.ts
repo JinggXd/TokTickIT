@@ -91,7 +91,21 @@ export function validateAttachmentType(
   }
 
   // Check Magic bytes if buffer is supplied
-  if (buffer && buffer.length >= 4) {
+  if (buffer) {
+    if (buffer.length === 0) {
+      return {
+        isValid: false,
+        error: "File is empty",
+      };
+    }
+
+    if (buffer.length < 4 || (ext === ".webp" && buffer.length < 12) || (ext === ".png" && buffer.length < 8)) {
+      return {
+        isValid: false,
+        error: `File content mismatch: file is too short to be a valid ${ext} file`,
+      };
+    }
+
     // PNG: 89 50 4E 47
     const isPng = buffer[0] === 0x89 && buffer[1] === 0x50 && buffer[2] === 0x4e && buffer[3] === 0x47;
     // PDF: %PDF (25 50 44 46)

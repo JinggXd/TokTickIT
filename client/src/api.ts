@@ -178,3 +178,134 @@ export async function fetchMyTickets(
 
   return response.json();
 }
+
+export interface AttachmentItem {
+  id: number;
+  fileName: string;
+  fileSize: number;
+  mimeType: string;
+  removedAt: string | null;
+  removalReason: string | null;
+  createdAt: string;
+}
+
+export interface TicketDetail {
+  id: number;
+  ticketNo: string;
+  summary: string;
+  description: string;
+  categoryName: string;
+  relatedSystemName: string;
+  requestedPriority: "LOW" | "MEDIUM" | "HIGH";
+  itPriority: "LOW" | "MEDIUM" | "HIGH";
+  currentStatus: "NEW" | "IN_PROGRESS" | "RESOLVED";
+  ticketOwnerName: string;
+  requesterId: number;
+  createdAt: string;
+  updatedAt: string;
+  attachments: AttachmentItem[];
+}
+
+export async function fetchTicketDetail(
+  id: number,
+  requesterId: number
+): Promise<TicketDetail> {
+  const response = await fetch(`${API_URL}/api/tickets/${id}`, {
+    headers: {
+      "X-Requester-Id": String(requesterId),
+    },
+  });
+
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    const err: any = new Error(data.error || "Unable to load ticket detail. Please try again.");
+    err.status = response.status;
+    err.details = data.details;
+    throw err;
+  }
+
+  return data;
+}
+
+export async function uploadAttachment(
+  ticketId: number,
+  file: File,
+  requesterId: number
+): Promise<AttachmentItem> {
+  const formData = new FormData();
+  formData.append("file", file);
+
+  const response = await fetch(`${API_URL}/api/tickets/${ticketId}/attachments`, {
+    method: "POST",
+    headers: {
+      "X-Requester-Id": String(requesterId),
+    },
+    body: formData,
+  });
+
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    const err: any = new Error(data.error || "Unable to upload attachment. Please try again.");
+    err.status = response.status;
+    err.details = data.details;
+    throw err;
+  }
+
+  return data;
+}
+
+export async function downloadAttachment(
+  attachmentId: number,
+  requesterId: number
+): Promise<{ blob: Blob; fileName: string }> {
+  const response = await fetch(`${API_URL}/api/attachments/${attachmentId}/download`, {
+    headers: {
+      "X-Requester-Id": String(requesterId),
+    },
+  });
+
+  if (!response.ok) {
+    const data = await response.json().catch(() => ({}));
+    const err: any = new Error(data.error || "Unable to download attachment.");
+    err.status = response.status;
+    throw err;
+  }
+
+  // Parse filename from Content-Disposition header if available
+  let fileName = "attachment";
+  const disposition = response.headers.get("Content-Disposition");
+  if (disposition && disposition.includes("filename=")) {
+    const match = disposition.match(/filename="?([^";]+)"?/);
+    if (match && match[1]) {
+      fileName = match[1];
+    }
+  }
+
+  const blob = await response.blob();
+  return { blob, fileName };
+}
+
+export async function softRemoveAttachment(
+  attachmentId: number,
+  removalReason: string,
+  requesterId: number
+): Promise<{ id: number; removedAt: string; removalReason: string }> {
+  const response = await fetch(`${API_URL}/api/attachments/${attachmentId}`, {
+    method: "DELETE",
+    headers: {
+      "Content-Type": "application/json",
+      "X-Requester-Id": String(requesterId),
+    },
+    body: JSON.stringify({ removalReason }),
+  });
+
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    const err: any = new Error(data.error || "Unable to remove attachment. Please try again.");
+    err.status = response.status;
+    err.details = data.details;
+    throw err;
+  }
+
+  return data;
+}
