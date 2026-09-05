@@ -157,6 +157,13 @@ describe("Phase 6: Ownership Hardening Pass (API-35, BR-04, BR-06, AC-08, AC-18)
         expect(res.body).not.toHaveProperty("details");
       });
 
+      it(`${name}: rejects empty X-Requester-Id ('') with 400 without details`, async () => {
+        const res = await invoke({ "X-Requester-Id": "" });
+        expect(res.status).toBe(400);
+        expect(res.body).toEqual({ error: "Bad Request: Malformed X-Requester-Id header" });
+        expect(res.body).not.toHaveProperty("details");
+      });
+
       it(`${name}: rejects malformed X-Requester-Id ('abc') with 400 without details`, async () => {
         const res = await invoke({ "X-Requester-Id": "abc" });
         expect(res.status).toBe(400);
@@ -166,6 +173,13 @@ describe("Phase 6: Ownership Hardening Pass (API-35, BR-04, BR-06, AC-08, AC-18)
 
       it(`${name}: rejects unknown X-Requester-Id ('99999999') with 401`, async () => {
         const res = await invoke({ "X-Requester-Id": "99999999" });
+        expect(res.status).toBe(401);
+        expect(res.body).toEqual({ error: "Requester context is missing or invalid" });
+        expect(res.body).not.toHaveProperty("details");
+      });
+
+      it(`${name}: rejects out-of-range integer X-Requester-Id ('2147483648') with 401 (not 500)`, async () => {
+        const res = await invoke({ "X-Requester-Id": "2147483648" });
         expect(res.status).toBe(401);
         expect(res.body).toEqual({ error: "Requester context is missing or invalid" });
         expect(res.body).not.toHaveProperty("details");

@@ -16,8 +16,8 @@ npm --prefix server run test
 Result:
 ```text
 Test Files  14 passed (14)
-Tests       92 passed (92)
-Duration    5.08s
+Tests       104 passed (104)
+Duration    5.30s
 ```
 
 Covered suites:
@@ -26,7 +26,7 @@ Covered suites:
 - UNIT-03 trim & validate ticket input
 - UNIT-04/UNIT-05 safe filename policy & minimum length / magic bytes validation (< 4 bytes rejection)
 - UNIT-06 pagination helper
-- MW-03/MW-04/MW-05/MW-06 shared requester middleware
+- MW-03/MW-04/MW-05/MW-06 shared requester middleware (including empty header 400 and integer overflow guard 401)
 - Active requester API (API-26)
 - Reference data endpoints (API-27: active categories & related systems)
 - Create ticket API (API-01 to API-05, API-21, API-28, API-29)
@@ -34,8 +34,8 @@ Covered suites:
 - Ticket detail API (API-10, API-11, API-12, malformed ID, missing header)
 - Attachments API (API-13, API-14, API-15, API-16, API-17, API-18, API-19, API-20, API-23, API-24, API-25, API-32, API-33, API-34)
 - **Phase 6 Ownership Hardening Pass (`API-35` in `server/tests/lab-02/ownership-hardening.api.test.ts`):**
-  - Section 1 (20 tests): Missing (401), malformed (400), unknown (401), and inactive (401) header triggers across `GET /api/tickets`, `GET /api/tickets/:id`, `POST /api/tickets/:id/attachments`, `GET /api/attachments/:id/download`, and `DELETE /api/attachments/:id`
-  - Section 2 (6 tests): Cross-requester ownership boundaries — body requesterId spoofing ignored, ticket list filtering, ticket detail 403, attachment upload 403, attachment download 403, attachment removal 403
+  - Section 1 (30 tests): Missing (401), empty (400), malformed (400), unknown (401), out-of-range integer (401), and inactive (401) header triggers across `GET /api/tickets`, `GET /api/tickets/:id`, `POST /api/tickets/:id/attachments`, `GET /api/attachments/:id/download`, and `DELETE /api/attachments/:id`
+  - Section 2 (6 tests): Cross-requester ownership boundaries — body requesterId spoofing ignored (creates ticket with 201 Created), ticket list filtering, ticket detail 403, attachment upload 403, attachment download 403, attachment removal 403
   - Section 3 (1 test): Real seeded Requesters cross-access verification (Sarah Johnson cannot view, download, or delete Jennifer Anderson's records)
 
 ---

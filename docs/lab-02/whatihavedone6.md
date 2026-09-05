@@ -12,7 +12,7 @@
 Phase 6 implements the dedicated **Ownership Hardening Pass** per `.agents/skills/lab2-toktickit-build/SKILL.md`, `docs/lab-02/specification.md` (BR-04, BR-06), `docs/lab-02/api-spec.md` (Section 7 Error Scenario Matrix), and `docs/lab-02/tests.md`:
 
 ### 1.1 Automated Ownership & Requester Context Hardening (`API-35`)
-- Added comprehensive integration test suite `server/tests/lab-02/ownership-hardening.api.test.ts` with 27 exhaustive tests.
+- Added comprehensive integration test suite `server/tests/lab-02/ownership-hardening.api.test.ts` with 37 exhaustive tests.
 - **Section 1: Error Scenario Matrix Enforcement on all Requester-Scoped Routes:**
   - Systematically tests all 5 Requester-scoped routes:
     - `GET /api/tickets`
@@ -22,12 +22,14 @@ Phase 6 implements the dedicated **Ownership Hardening Pass** per `.agents/skill
     - `DELETE /api/attachments/:id`
   - Validates all header failure triggers against the canonical Error Scenario Matrix:
     - Missing `X-Requester-Id` header returns `401 Unauthorized` with `{ "error": "Requester context is missing or invalid" }` without `details`.
+    - Empty or whitespace `X-Requester-Id` header (e.g. `""`, `"   "`) returns `400 Bad Request` with `{ "error": "Bad Request: Malformed X-Requester-Id header" }` without `details`.
     - Malformed `X-Requester-Id` (e.g. string `"abc"`) returns `400 Bad Request` with `{ "error": "Bad Request: Malformed X-Requester-Id header" }` without `details`.
     - Unknown `X-Requester-Id` (e.g. `99999999`) returns `401 Unauthorized` with `{ "error": "Requester context is missing or invalid" }` without `details`.
+    - Out-of-range integer `X-Requester-Id` (e.g. `2147483648`, `99999999999`) is validated before DB query and returns `401 Unauthorized` without crashing Prisma/PostgreSQL with `500`.
     - Inactive `X-Requester-Id` (`isActive: false`, e.g. seeded Robert Wilson) returns `401 Unauthorized` with `{ "error": "Requester context is missing or invalid" }` without `details`.
 
 - **Section 2: Cross-Requester Ownership Boundary Enforcement (BR-04, AC-08):**
-  - **Body Spoofing Protection:** Verified that sending `{ requesterId: otherRequester.id }` in `POST /api/tickets` body is ignored; created ticket's `requesterId` is strictly derived from the validated `X-Requester-Id` header.
+  - **Body Spoofing Protection:** Verified that sending `{ requesterId: otherRequester.id }` in `POST /api/tickets` body is ignored; created ticket's `requesterId` is strictly derived from the validated `X-Requester-Id` header and creation succeeds with `201 Created`.
   - **List Scoping:** Verified that `GET /api/tickets` with another Requester's context completely excludes other users' tickets from the database response.
   - **Ticket Detail Protection:** Verified that `GET /api/tickets/:id` by a non-owner returns `403 Forbidden` with `{ "error": "Access denied: You do not own this ticket" }` without leaking `ticketNo`, `summary`, `description`, or `attachments`.
   - **Attachment Upload Protection:** Verified that `POST /api/tickets/:id/attachments` by a non-owner returns `403 Forbidden` with `{ "error": "Access denied: You do not own this ticket" }` without persisting attachments or incrementing count.
@@ -52,7 +54,7 @@ Phase 6 implements the dedicated **Ownership Hardening Pass** per `.agents/skill
 
 ## 2. Verification Summary
 
-- **Server Unit & Integration Tests:** 14 files, 92 tests passing (100%).
+- **Server Unit & Integration Tests:** 14 files, 104 tests passing (100%).
 - **Client Unit & Component Tests:** 8 files, 37 tests passing (100%).
 - **Server Production Build:** `tsc` passed with 0 errors.
 - **Client Production Build:** `tsc && vite build` passed with 0 errors.
