@@ -45,5 +45,20 @@ describe("Safe Filename & MIME Sanitizer Unit Tests (BR-19, Section 5)", () => {
     const spoofedPngResult = validateAttachmentType("fake_image.png", "image/png", spoofedJpegBuffer);
     expect(spoofedPngResult.isValid).toBe(false);
     expect(spoofedPngResult.error).toMatch(/mismatch/i);
+
+    // 4. Empty or short file (< 4 bytes) must be rejected
+    const emptyBuffer = Buffer.alloc(0);
+    const emptyResult = validateAttachmentType("empty.pdf", "application/pdf", emptyBuffer);
+    expect(emptyResult.isValid).toBe(false);
+
+    const shortBuffer = Buffer.from([0x25, 0x50]); // 2 bytes
+    const shortResult = validateAttachmentType("short.pdf", "application/pdf", shortBuffer);
+    expect(shortResult.isValid).toBe(false);
+    expect(shortResult.error).toMatch(/too short|empty/i);
+
+    const oneBytePng = Buffer.from([0x89]); // 1 byte
+    const oneByteResult = validateAttachmentType("one.png", "image/png", oneBytePng);
+    expect(oneByteResult.isValid).toBe(false);
+    expect(oneByteResult.error).toMatch(/too short|empty/i);
   });
 });

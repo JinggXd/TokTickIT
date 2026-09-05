@@ -4,7 +4,11 @@ import { getPrisma } from "./prisma.js";
 import { requireRequester, AuthenticatedRequesterRequest } from "./middleware/requireRequester.js";
 import { validateTicketInput } from "./utils/validation.js";
 import { generateTicketNumber, TicketNumberGenerationError } from "./utils/ticketNumber.js";
+import fs from "fs";
+import path from "path";
+import multer from "multer";
 import { clampPagination, ALLOWED_PAGE_SIZES } from "./utils/pagination.js";
+import { sanitizeFileName, validateAttachmentType } from "./utils/safeFilename.js";
 // getPrisma() is your lazy database handle. Call it INSIDE a route when you
 // need the DB (Issue 4). It is intentionally unused until then.
 void getPrisma;
@@ -378,6 +382,359 @@ app.get(
       });
     } catch (err) {
       res.status(500).json({ error: "Unable to load tickets. Please try again." });
+    }
+  }
+);
+
+// ---------------------------------------------------------------------------
+// Lab 2: Phase 5 — Ticket Detail (api-spec.md Section 6.6, API-10, 11, 12)
+// Enforces ownership (403 if ticket does not belong to X-Requester-Id).
+// ---------------------------------------------------------------------------
+app.get(
+  "/api/tickets/:id",
+  requireRequester,
+  async (req: AuthenticatedRequesterRequest, res: Response) => {
+    const rawId = req.params.id;
+    if (!/^[1-9]\d*$/.test(rawId)) {
+      res.status(400).json({ error: "Invalid ticket ID" });
+      return;
+    }
+
+    const ticketId = parseInt(rawId, 10);
+
+    try {
+      const ticket = await getPrisma().ticket.findUnique({
+        where: { id: ticketId },
+        include: {
+          category: { select: { name: true } },
+          relatedSystem: { select: { name: true } },
+          attachments: {
+            orderBy: { createdAt: "asc" },
+            select: {
+              id: true,
+              fileName: true,
+              fileSize: true,
+              mimeType: true,
+              removedAt: true,
+              removalReason: true,
+              createdAt: true,
+            },
+          },
+        },
+      });
+
+      if (!ticket) {
+        res.status(404).json({ error: "Ticket not found" });
+        return;
+      }
+
+      if (ticket.requesterId !== req.requester!.id) {
+        res.status(403).json({ error: "Access denied: You do not own this ticket" });
+        return;
+      }
+
+      res.status(200).json({
+        id: ticket.id,
+        ticketNo: ticket.ticketNo,
+        summary: ticket.summary,
+        description: ticket.description,
+        categoryName: ticket.category.name,
+        relatedSystemName: ticket.relatedSystem.name,
+        requestedPriority: ticket.requestedPriority,
+        itPriority: ticket.itPriority,
+        currentStatus: ticket.currentStatus,
+        ticketOwnerName: "Unassigned",
+        requesterId: ticket.requesterId,
+        createdAt: ticket.createdAt.toISOString(),
+        updatedAt: ticket.updatedAt.toISOString(),
+        attachments: ticket.attachments.map((a) => ({
+          id: a.id,
+          fileName: a.fileName,
+          fileSize: a.fileSize,
+          mimeType: a.mimeType,
+          removedAt: a.removedAt ? a.removedAt.toISOString() : null,
+          removalReason: a.removalReason,
+          createdAt: a.createdAt.toISOString(),
+        })),
+      });
+    } catch (err) {
+      res.status(500).json({ error: "Unable to load ticket. Please try again." });
+    }
+  }
+);
+
+// ---------------------------------------------------------------------------
+// Lab 2: Phase 5 — Attachment Endpoints (api-spec.md Section 6.7, 6.8, 6.9)
+// ---------------------------------------------------------------------------
+
+const UPLOADS_DIR = fs.existsSync(path.resolve(process.cwd(), "server"))
+  ? path.resolve(process.cwd(), "server", "uploads")
+  : path.resolve(process.cwd(), "uploads");
+
+if (!fs.existsSync(UPLOADS_DIR)) {
+  fs.mkdirSync(UPLOADS_DIR, { recursive: true });
+}
+
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 10 * 1024 * 1024 }, // Allow up to 10MB in memory so we can validate and return exact 5MB error
+});
+
+function handleFileUpload(req: Request, res: Response, next: express.NextFunction) {
+  upload.single("file")(req, res, (err) => {
+    if (err) {
+      if (err instanceof multer.MulterError && err.code === "LIMIT_FILE_SIZE") {
+        res.status(400).json({
+          error: "Validation failed",
+          details: { file: "File exceeds the 5 MB size limit" },
+        });
+        return;
+      }
+      res.status(400).json({
+        error: "Validation failed",
+        details: { file: err.message || "File upload error" },
+      });
+      return;
+    }
+    next();
+  });
+}
+
+// 6.7 POST /api/tickets/:id/attachments — Upload Attachment
+app.post(
+  "/api/tickets/:id/attachments",
+  requireRequester,
+  handleFileUpload,
+  async (req: AuthenticatedRequesterRequest, res: Response) => {
+    const rawId = req.params.id;
+    if (!/^[1-9]\d*$/.test(rawId)) {
+      res.status(400).json({ error: "Invalid ticket ID" });
+      return;
+    }
+    const ticketId = parseInt(rawId, 10);
+
+    try {
+      const ticket = await getPrisma().ticket.findUnique({
+        where: { id: ticketId },
+      });
+
+      if (!ticket) {
+        res.status(404).json({ error: "Ticket not found" });
+        return;
+      }
+
+      if (ticket.requesterId !== req.requester!.id) {
+        res.status(403).json({ error: "Access denied: You do not own this ticket" });
+        return;
+      }
+
+      if (!req.file) {
+        res.status(400).json({
+          error: "Validation failed",
+          details: { file: "File is required" },
+        });
+        return;
+      }
+
+      // Check size limit: 5 MB
+      if (req.file.size > 5 * 1024 * 1024) {
+        res.status(400).json({
+          error: "Validation failed",
+          details: { file: "File exceeds the 5 MB size limit" },
+        });
+        return;
+      }
+
+      // Validate file extension and magic bytes
+      const validation = validateAttachmentType(req.file.originalname, req.file.mimetype, req.file.buffer);
+      if (!validation.isValid) {
+        res.status(400).json({
+          error: "Validation failed",
+          details: { file: "Only JPG, JPEG, PNG, WEBP, and PDF files are allowed" },
+        });
+        return;
+      }
+
+      // Generate safe disk filename and save to uploads directory
+      const { diskFileName } = sanitizeFileName(req.file.originalname);
+      const filePath = path.join(UPLOADS_DIR, diskFileName);
+
+      try {
+        await fs.promises.writeFile(filePath, req.file.buffer);
+      } catch (writeErr) {
+        res.status(500).json({ error: "Unable to save the attachment. Please try again." });
+        return;
+      }
+
+      // Execute DB insert inside interactive transaction with row lock on Ticket to prevent concurrent upload races
+      try {
+        const attachment = await getPrisma().$transaction(async (tx) => {
+          // Lock ticket row to serialize concurrent uploads for this ticket
+          await tx.$queryRaw`SELECT id FROM "Ticket" WHERE id = ${ticketId} FOR UPDATE`;
+
+          const activeCount = await tx.attachment.count({
+            where: { ticketId, removedAt: null },
+          });
+
+          if (activeCount >= 5) {
+            throw new Error("LIMIT_REACHED");
+          }
+
+          return await tx.attachment.create({
+            data: {
+              ticketId,
+              uploadedByRequesterId: req.requester!.id,
+              fileName: req.file!.originalname,
+              storedFileName: diskFileName,
+              fileSize: req.file!.size,
+              mimeType: validation.mimeType || req.file!.mimetype,
+            },
+          });
+        });
+
+        res.status(201).json({
+          id: attachment.id,
+          ticketId: attachment.ticketId,
+          fileName: attachment.fileName,
+          fileSize: attachment.fileSize,
+          mimeType: attachment.mimeType,
+          removedAt: null,
+          removalReason: null,
+          createdAt: attachment.createdAt.toISOString(),
+        });
+      } catch (dbErr: any) {
+        // Rollback disk file if DB write fails or limit was reached
+        try {
+          await fs.promises.unlink(filePath);
+        } catch {}
+
+        if (dbErr.message === "LIMIT_REACHED") {
+          res.status(400).json({
+            error: "Validation failed",
+            details: { file: "This ticket already has 5 active attachments" },
+          });
+          return;
+        }
+
+        res.status(500).json({ error: "Unable to save the attachment. Please try again." });
+      }
+    } catch (err) {
+      res.status(500).json({ error: "Unable to upload attachment. Please try again." });
+    }
+  }
+);
+
+// 6.8 GET /api/attachments/:id/download — Download Attachment
+app.get(
+  "/api/attachments/:id/download",
+  requireRequester,
+  async (req: AuthenticatedRequesterRequest, res: Response) => {
+    const rawId = req.params.id;
+    if (!/^[1-9]\d*$/.test(rawId)) {
+      res.status(400).json({ error: "Invalid attachment ID" });
+      return;
+    }
+    const attachmentId = parseInt(rawId, 10);
+
+    try {
+      const attachment = await getPrisma().attachment.findUnique({
+        where: { id: attachmentId },
+        include: { ticket: true },
+      });
+
+      if (!attachment) {
+        res.status(404).json({ error: "Attachment not found" });
+        return;
+      }
+
+      if (attachment.ticket.requesterId !== req.requester!.id) {
+        res.status(403).json({ error: "Access denied: You do not own this attachment" });
+        return;
+      }
+
+      if (attachment.removedAt !== null) {
+        res.status(410).json({ error: "This attachment has been removed and cannot be downloaded" });
+        return;
+      }
+
+      const filePath = path.join(UPLOADS_DIR, attachment.storedFileName);
+      if (!fs.existsSync(filePath)) {
+        res.status(404).json({ error: "File not found on server" });
+        return;
+      }
+
+      res.setHeader("Content-Type", attachment.mimeType);
+      res.setHeader("Content-Disposition", `attachment; filename="${attachment.fileName}"`);
+
+      const fileStream = fs.createReadStream(filePath);
+      fileStream.pipe(res);
+    } catch (err) {
+      res.status(500).json({ error: "Unable to download attachment. Please try again." });
+    }
+  }
+);
+
+// 6.9 DELETE /api/attachments/:id — Soft-remove Attachment
+app.delete(
+  "/api/attachments/:id",
+  requireRequester,
+  async (req: AuthenticatedRequesterRequest, res: Response) => {
+    const rawId = req.params.id;
+    if (!/^[1-9]\d*$/.test(rawId)) {
+      res.status(400).json({ error: "Invalid attachment ID" });
+      return;
+    }
+    const attachmentId = parseInt(rawId, 10);
+
+    const { removalReason } = req.body || {};
+    if (typeof removalReason !== "string" || removalReason.trim().length < 3 || removalReason.trim().length > 200) {
+      res.status(400).json({
+        error: "Validation failed",
+        details: {
+          removalReason: "A removal reason is required (3–200 characters)",
+        },
+      });
+      return;
+    }
+
+    const trimmedReason = removalReason.trim();
+
+    try {
+      const attachment = await getPrisma().attachment.findUnique({
+        where: { id: attachmentId },
+        include: { ticket: true },
+      });
+
+      if (!attachment) {
+        res.status(404).json({ error: "Attachment not found" });
+        return;
+      }
+
+      if (attachment.ticket.requesterId !== req.requester!.id) {
+        res.status(403).json({ error: "Access denied: You do not own this attachment" });
+        return;
+      }
+
+      if (attachment.removedAt !== null) {
+        res.status(409).json({ error: "This attachment has already been removed" });
+        return;
+      }
+
+      const updated = await getPrisma().attachment.update({
+        where: { id: attachmentId },
+        data: {
+          removedAt: new Date(),
+          removalReason: trimmedReason,
+        },
+      });
+
+      res.status(200).json({
+        id: updated.id,
+        removedAt: updated.removedAt!.toISOString(),
+        removalReason: updated.removalReason,
+      });
+    } catch (err) {
+      res.status(500).json({ error: "Unable to remove attachment. Please try again." });
     }
   }
 );

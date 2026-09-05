@@ -4,6 +4,7 @@ import {
   fetchCategories,
   fetchRelatedSystems,
   createTicket,
+  uploadAttachment,
   Category,
   RelatedSystem,
   CreatedTicket,
@@ -44,6 +45,15 @@ export function CreateTicket({ onSuccess, onCancel }: CreateTicketProps) {
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [createdTicket, setCreatedTicket] = useState<CreatedTicket | null>(null);
+  const [uploadedAttachments, setUploadedAttachments] = useState<Array<{ fileName: string; id: number }>>([]);
+  const [failedUploads, setFailedUploads] = useState<Array<{ file: File; error: string }>>([]);
+  const [isRetryingUpload, setIsRetryingUpload] = useState<Record<string, boolean>>({});
+  const [isUploadingAttachments, setIsUploadingAttachments] = useState<boolean>(false);
+  const [uploadProgress, setUploadProgress] = useState<{
+    current: number;
+    total: number;
+    currentFileName?: string;
+  } | null>(null);
 
   // Load reference data on mount
   useEffect(() => {
@@ -183,6 +193,38 @@ export function CreateTicket({ onSuccess, onCancel }: CreateTicketProps) {
       );
 
       setCreatedTicket(ticket);
+
+      // Sequential post-create attachment uploads (BR-18, UI-18)
+      if (stagedFiles.length > 0) {
+        setIsUploadingAttachments(true);
+        const uploaded: Array<{ fileName: string; id: number }> = [];
+        const failed: Array<{ file: File; error: string }> = [];
+
+        for (let i = 0; i < stagedFiles.length; i++) {
+          const file = stagedFiles[i];
+          setUploadProgress({
+            current: i + 1,
+            total: stagedFiles.length,
+            currentFileName: file.name,
+          });
+
+          try {
+            const att = await uploadAttachment(ticket.id, file, currentRequester.id);
+            uploaded.push({ fileName: att.fileName, id: att.id });
+            setUploadedAttachments([...uploaded]);
+          } catch (attErr: any) {
+            failed.push({
+              file,
+              error: attErr.message || "Failed to save attachment",
+            });
+            setFailedUploads([...failed]);
+          }
+        }
+
+        setIsUploadingAttachments(false);
+        setUploadProgress(null);
+      }
+
       if (onSuccess) {
         onSuccess(ticket);
       }
@@ -194,14 +236,40 @@ export function CreateTicket({ onSuccess, onCancel }: CreateTicketProps) {
       }
     } finally {
       setIsSubmitting(false);
+      setIsUploadingAttachments(false);
+      setUploadProgress(null);
+    }
+  };
+
+  const handleRetryUpload = async (failedFile: { file: File; error: string }) => {
+    if (!createdTicket || !currentRequester) return;
+    setIsRetryingUpload((prev) => ({ ...prev, [failedFile.file.name]: true }));
+
+    try {
+      const att = await uploadAttachment(createdTicket.id, failedFile.file, currentRequester.id);
+      setUploadedAttachments((prev) => [...prev, { fileName: att.fileName, id: att.id }]);
+      setFailedUploads((prev) => prev.filter((f) => f.file.name !== failedFile.file.name));
+    } catch (err: any) {
+      setFailedUploads((prev) =>
+        prev.map((f) =>
+          f.file.name === failedFile.file.name
+            ? { ...f, error: err.message || "Retry upload failed" }
+            : f
+        )
+      );
+    } finally {
+      setIsRetryingUpload((prev) => ({ ...prev, [failedFile.file.name]: false }));
     }
   };
 
   const handleResetForm = () => {
+    if (isUploadingAttachments) return;
     setCreatedTicket(null);
     setSummary("");
     setDescription("");
     setStagedFiles([]);
+    setUploadedAttachments([]);
+    setFailedUploads([]);
     setFieldErrors({});
     setSubmitError(null);
     setAttachmentError(null);
@@ -256,21 +324,82 @@ export function CreateTicket({ onSuccess, onCancel }: CreateTicketProps) {
               <label className="form-label small text-muted mb-1">Summary</label>
               <div className="p-2 bg-light rounded">{createdTicket.summary}</div>
             </div>
-            {stagedFiles.length > 0 && (
+
+            {isUploadingAttachments && (
+              <div className="col-12" data-testid="attachment-uploading-indicator">
+                <div className="alert alert-info d-flex align-items-center mb-0" role="status" aria-live="polite">
+                  <span className="spinner-border spinner-border-sm me-2 text-primary" role="status" aria-hidden="true" />
+                  <div>
+                    <strong>Uploading attachments...</strong>{" "}
+                    {uploadProgress
+                      ? `(${uploadProgress.current} of ${uploadProgress.total}: ${uploadProgress.currentFileName || ""})`
+                      : "Please wait before leaving."}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {uploadedAttachments.length > 0 && (
               <div className="col-12">
-                <div className="alert alert-info py-2 px-3 small mb-0">
-                  ℹ️ {stagedFiles.length} attachment(s) staged. Attachment upload service will activate in Phase 5.
+                <label className="form-label small text-muted mb-1">Attached Files</label>
+                <ul className="list-group list-group-flush border rounded p-2 bg-white">
+                  {uploadedAttachments.map((att) => (
+                    <li key={att.id} className="list-group-item d-flex align-items-center gap-2 py-1 px-2 border-0">
+                      <span className="text-success">✓</span>
+                      <span className="fw-semibold small">{att.fileName}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {failedUploads.length > 0 && (
+              <div className="col-12">
+                <div className="alert alert-warning py-3 px-3 mb-0" role="alert">
+                  <div className="fw-bold mb-1">Some attachments could not be saved:</div>
+                  <ul className="mb-2 ps-3 small">
+                    {failedUploads.map(({ file, error }) => (
+                      <li key={file.name} className="d-flex justify-content-between align-items-center mb-1">
+                        <span>
+                          <strong>{file.name}</strong> — {error}
+                        </span>
+                        <button
+                          type="button"
+                          className="btn btn-sm btn-secondary-zen ms-3"
+                          disabled={isRetryingUpload[file.name] || isUploadingAttachments}
+                          onClick={() => handleRetryUpload({ file, error })}
+                        >
+                          {isRetryingUpload[file.name] ? "Retrying..." : "Retry"}
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                  <div className="small text-muted">
+                    Your ticket <strong>{createdTicket.ticketNo}</strong> was created successfully. You can retry uploading now or from the Ticket Detail page.
+                  </div>
                 </div>
               </div>
             )}
           </div>
 
           <div className="d-flex justify-content-end gap-2 mt-4">
-            <button className="btn btn-outline-secondary" onClick={handleResetForm}>
+            <button
+              className="btn btn-outline-secondary"
+              onClick={handleResetForm}
+              disabled={isUploadingAttachments}
+            >
               Create Another Ticket
             </button>
             {onCancel && (
-              <button className="btn btn-primary-zen" onClick={onCancel}>
+              <button
+                className="btn btn-primary-zen"
+                onClick={() => {
+                  if (!isUploadingAttachments) {
+                    onCancel();
+                  }
+                }}
+                disabled={isUploadingAttachments}
+              >
                 View My Tickets
               </button>
             )}
