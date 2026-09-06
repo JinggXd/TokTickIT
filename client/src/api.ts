@@ -1,3 +1,5 @@
+import type { RequesterUser } from "./types.js";
+
 const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:3000";
 
 export interface Category {
@@ -27,4 +29,282 @@ export async function checkSystem(): Promise<SystemStatus> {
   }
   const categories: Category[] = await categoriesRes.json();
   return { online: true, categories };
+}
+
+export async function fetchActiveRequesters(): Promise<RequesterUser[]> {
+  const response = await fetch(`${API_URL}/api/requesters/active`);
+  if (!response.ok) {
+    throw new Error("Unable to load Development Requesters. Please try again.");
+  }
+
+  return response.json();
+}
+
+export async function fetchCategories(): Promise<Category[]> {
+  const response = await fetch(`${API_URL}/api/categories`);
+  if (!response.ok) {
+    throw new Error("Unable to load categories. Please try again.");
+  }
+  return response.json();
+}
+
+export interface RelatedSystem {
+  id: number;
+  name: string;
+}
+
+export async function fetchRelatedSystems(): Promise<RelatedSystem[]> {
+  const response = await fetch(`${API_URL}/api/related-systems`);
+  if (!response.ok) {
+    throw new Error("Unable to load related systems. Please try again.");
+  }
+  return response.json();
+}
+
+export interface CreateTicketPayload {
+  summary: string;
+  description: string;
+  categoryId: number;
+  relatedSystemId: number;
+  requestedPriority: "LOW" | "MEDIUM" | "HIGH";
+}
+
+export interface CreatedTicket {
+  id: number;
+  ticketNo: string;
+  summary: string;
+  description: string;
+  requestedPriority: "LOW" | "MEDIUM" | "HIGH";
+  itPriority: "LOW" | "MEDIUM" | "HIGH";
+  currentStatus: "NEW" | "IN_PROGRESS" | "RESOLVED";
+  requesterId: number;
+  createdAt: string;
+}
+
+export async function createTicket(
+  payload: CreateTicketPayload,
+  requesterId: number
+): Promise<CreatedTicket> {
+  const response = await fetch(`${API_URL}/api/tickets`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-Requester-Id": String(requesterId),
+    },
+    body: JSON.stringify(payload),
+  });
+
+  const data = await response.json();
+  if (!response.ok) {
+    const error: any = new Error(data.error || "Unable to create ticket. Please try again.");
+    error.status = response.status;
+    error.details = data.details;
+    throw error;
+  }
+
+  return data;
+}
+
+export interface GetTicketsParams {
+  search?: string;
+  categoryId?: number | string;
+  requestedPriority?: string;
+  itPriority?: string;
+  status?: string;
+  sortBy?: string;
+  sortOrder?: "asc" | "desc";
+  page?: number;
+  limit?: number;
+}
+
+export interface TicketListItem {
+  id: number;
+  ticketNo: string;
+  summary: string;
+  categoryName: string;
+  relatedSystemName: string;
+  requestedPriority: "LOW" | "MEDIUM" | "HIGH";
+  itPriority: "LOW" | "MEDIUM" | "HIGH";
+  currentStatus: "NEW" | "IN_PROGRESS" | "RESOLVED";
+  ticketOwnerName: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface PaginationMetadata {
+  currentPage: number;
+  pageSize: number;
+  totalItems: number;
+  totalPages: number;
+}
+
+export interface TicketsResponse {
+  data: TicketListItem[];
+  pagination: PaginationMetadata;
+}
+
+export async function fetchMyTickets(
+  params: GetTicketsParams = {},
+  requesterId: number
+): Promise<TicketsResponse> {
+  const query = new URLSearchParams();
+  if (params.search) query.set("search", params.search);
+  if (params.categoryId && params.categoryId !== "ALL") query.set("categoryId", String(params.categoryId));
+  if (params.requestedPriority && params.requestedPriority !== "ALL") query.set("requestedPriority", params.requestedPriority);
+  if (params.itPriority && params.itPriority !== "ALL") query.set("itPriority", params.itPriority);
+  if (params.status && params.status !== "ALL") query.set("status", params.status);
+  if (params.sortBy) query.set("sortBy", params.sortBy);
+  if (params.sortOrder) query.set("sortOrder", params.sortOrder);
+  if (params.page !== undefined) query.set("page", String(params.page));
+  if (params.limit !== undefined) query.set("limit", String(params.limit));
+
+  const queryString = query.toString();
+  const url = `${API_URL}/api/tickets${queryString ? `?${queryString}` : ""}`;
+
+  const response = await fetch(url, {
+    headers: {
+      "X-Requester-Id": String(requesterId),
+    },
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    const err: any = new Error(errorData.error || "Unable to load tickets. Please try again.");
+    err.status = response.status;
+    err.details = errorData.details;
+    throw err;
+  }
+
+  return response.json();
+}
+
+export interface AttachmentItem {
+  id: number;
+  fileName: string;
+  fileSize: number;
+  mimeType: string;
+  removedAt: string | null;
+  removalReason: string | null;
+  createdAt: string;
+}
+
+export interface TicketDetail {
+  id: number;
+  ticketNo: string;
+  summary: string;
+  description: string;
+  categoryName: string;
+  relatedSystemName: string;
+  requestedPriority: "LOW" | "MEDIUM" | "HIGH";
+  itPriority: "LOW" | "MEDIUM" | "HIGH";
+  currentStatus: "NEW" | "IN_PROGRESS" | "RESOLVED";
+  ticketOwnerName: string;
+  requesterId: number;
+  createdAt: string;
+  updatedAt: string;
+  attachments: AttachmentItem[];
+}
+
+export async function fetchTicketDetail(
+  id: number,
+  requesterId: number
+): Promise<TicketDetail> {
+  const response = await fetch(`${API_URL}/api/tickets/${id}`, {
+    headers: {
+      "X-Requester-Id": String(requesterId),
+    },
+  });
+
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    const err: any = new Error(data.error || "Unable to load ticket detail. Please try again.");
+    err.status = response.status;
+    err.details = data.details;
+    throw err;
+  }
+
+  return data;
+}
+
+export async function uploadAttachment(
+  ticketId: number,
+  file: File,
+  requesterId: number
+): Promise<AttachmentItem> {
+  const formData = new FormData();
+  formData.append("file", file);
+
+  const response = await fetch(`${API_URL}/api/tickets/${ticketId}/attachments`, {
+    method: "POST",
+    headers: {
+      "X-Requester-Id": String(requesterId),
+    },
+    body: formData,
+  });
+
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    const err: any = new Error(data.error || "Unable to upload attachment. Please try again.");
+    err.status = response.status;
+    err.details = data.details;
+    throw err;
+  }
+
+  return data;
+}
+
+export async function downloadAttachment(
+  attachmentId: number,
+  requesterId: number
+): Promise<{ blob: Blob; fileName: string }> {
+  const response = await fetch(`${API_URL}/api/attachments/${attachmentId}/download`, {
+    headers: {
+      "X-Requester-Id": String(requesterId),
+    },
+  });
+
+  if (!response.ok) {
+    const data = await response.json().catch(() => ({}));
+    const err: any = new Error(data.error || "Unable to download attachment.");
+    err.status = response.status;
+    throw err;
+  }
+
+  // Parse filename from Content-Disposition header if available
+  let fileName = "attachment";
+  const disposition = response.headers.get("Content-Disposition");
+  if (disposition && disposition.includes("filename=")) {
+    const match = disposition.match(/filename="?([^";]+)"?/);
+    if (match && match[1]) {
+      fileName = match[1];
+    }
+  }
+
+  const blob = await response.blob();
+  return { blob, fileName };
+}
+
+export async function softRemoveAttachment(
+  attachmentId: number,
+  removalReason: string,
+  requesterId: number
+): Promise<{ id: number; removedAt: string; removalReason: string }> {
+  const response = await fetch(`${API_URL}/api/attachments/${attachmentId}`, {
+    method: "DELETE",
+    headers: {
+      "Content-Type": "application/json",
+      "X-Requester-Id": String(requesterId),
+    },
+    body: JSON.stringify({ removalReason }),
+  });
+
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    const err: any = new Error(data.error || "Unable to remove attachment. Please try again.");
+    err.status = response.status;
+    err.details = data.details;
+    throw err;
+  }
+
+  return data;
 }
