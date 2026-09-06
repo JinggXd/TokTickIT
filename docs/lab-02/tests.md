@@ -172,6 +172,19 @@ required Phase 3 integration tests against the real ticket endpoint.
 | E2E-02 | AC-07 | Simulated backend failure during ticket submission | Safe failure state shown; form values still present on screen after the failed attempt | `e2e/lab-02/requester-ticket-flow.spec.ts` |
 | E2E-03 | AC-08, AC-17 | Negative flow: attempt to open another Requester's ticket URL directly, and attempt to download a removed attachment's URL directly | Both attempts are blocked (`403` / `410` surfaced as a safe UI message, not a raw JSON dump or a crash) | `e2e/lab-02/requester-ticket-flow.spec.ts` |
 
+### End-to-End Flow Screenshots (`artifacts/lab-02/screenshots/e2e/`)
+
+| Step / Scenario | Desktop (`≥992px`) | Tablet (`768–991px`) | Mobile (`<768px`) |
+|---|---|---|---|
+| 01. Select Requester (Route Guard) | [`01-select-requester-desktop.png`](../../artifacts/lab-02/screenshots/e2e/01-select-requester-desktop.png) | [`01-select-requester-tablet.png`](../../artifacts/lab-02/screenshots/e2e/01-select-requester-tablet.png) | [`01-select-requester-mobile.png`](../../artifacts/lab-02/screenshots/e2e/01-select-requester-mobile.png) |
+| 02. Create Ticket Form (Read-only Fields) | [`02-create-ticket-form-desktop.png`](../../artifacts/lab-02/screenshots/e2e/02-create-ticket-form-desktop.png) | [`02-create-ticket-form-tablet.png`](../../artifacts/lab-02/screenshots/e2e/02-create-ticket-form-tablet.png) | [`02-create-ticket-form-mobile.png`](../../artifacts/lab-02/screenshots/e2e/02-create-ticket-form-mobile.png) |
+| 03. Ticket Created Success Screen | [`03-ticket-created-success-desktop.png`](../../artifacts/lab-02/screenshots/e2e/03-ticket-created-success-desktop.png) | [`03-ticket-created-success-tablet.png`](../../artifacts/lab-02/screenshots/e2e/03-ticket-created-success-tablet.png) | [`03-ticket-created-success-mobile.png`](../../artifacts/lab-02/screenshots/e2e/03-ticket-created-success-mobile.png) |
+| 04. My Tickets (Owner Ticket Present) | [`04-my-tickets-owner-desktop.png`](../../artifacts/lab-02/screenshots/e2e/04-my-tickets-owner-desktop.png) | [`04-my-tickets-owner-tablet.png`](../../artifacts/lab-02/screenshots/e2e/04-my-tickets-owner-tablet.png) | [`04-my-tickets-owner-mobile.png`](../../artifacts/lab-02/screenshots/e2e/04-my-tickets-owner-mobile.png) |
+| 05. Switched Requester (Original Ticket Gone) | [`05-switched-requester-desktop.png`](../../artifacts/lab-02/screenshots/e2e/05-switched-requester-desktop.png) | [`05-switched-requester-tablet.png`](../../artifacts/lab-02/screenshots/e2e/05-switched-requester-tablet.png) | [`05-switched-requester-mobile.png`](../../artifacts/lab-02/screenshots/e2e/05-switched-requester-mobile.png) |
+| 06. Backend 500 Failure (Form Retention) | [`06-backend-failure-retained-desktop.png`](../../artifacts/lab-02/screenshots/e2e/06-backend-failure-retained-desktop.png) | [`06-backend-failure-retained-tablet.png`](../../artifacts/lab-02/screenshots/e2e/06-backend-failure-retained-tablet.png) | [`06-backend-failure-retained-mobile.png`](../../artifacts/lab-02/screenshots/e2e/06-backend-failure-retained-mobile.png) |
+| 07. Cross-Requester Direct URL (403 Access Denied) | [`07-cross-requester-403-desktop.png`](../../artifacts/lab-02/screenshots/e2e/07-cross-requester-403-desktop.png) | [`07-cross-requester-403-tablet.png`](../../artifacts/lab-02/screenshots/e2e/07-cross-requester-403-tablet.png) | [`07-cross-requester-403-mobile.png`](../../artifacts/lab-02/screenshots/e2e/07-cross-requester-403-mobile.png) |
+| 08. Removed Attachment Download (410 Gone) | [`08-removed-attachment-410-desktop.png`](../../artifacts/lab-02/screenshots/e2e/08-removed-attachment-410-desktop.png) | [`08-removed-attachment-410-tablet.png`](../../artifacts/lab-02/screenshots/e2e/08-removed-attachment-410-tablet.png) | [`08-removed-attachment-410-mobile.png`](../../artifacts/lab-02/screenshots/e2e/08-removed-attachment-410-mobile.png) |
+
 ---
 
 ## 9. Acceptance-Criterion Traceability Matrix
