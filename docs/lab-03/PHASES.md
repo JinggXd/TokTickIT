@@ -46,10 +46,24 @@
 6. แยก Planned/In progress/Implemented-unverified/Verified/Blocked; การผ่าน test ไม่ใช่หลักฐานว่า peer reviewer merge แล้ว
 7. เอกสารนี้ไม่ถือเป็นการอนุมัติ implementation, destructive operations, commit/push หรือ merge
 
-## ประเด็นที่ต้องยืนยันใน P00/P01 ก่อนใช้ pipeline
+## Decisions ที่คลี่คลายแล้ว (2026-09-13, contract v1.1.0)
 
-- รักษา 403 ของ foreign Requester resources ตาม Lab 2 หรือขออนุมัติเปลี่ยน contract; pipeline มีตัวอย่าง 404 ที่ต้องคลี่คลาย
-- ตรวจ enum จริงและเพิ่มสถานะให้ครบทั้ง 8 ค่า รวม OPEN และ CLOSED ที่ schema Lab 2 เดิมยังไม่มี
-- เก็บ IT Priority เดิมที่ถูกต้อง; backfill เฉพาะข้อมูลที่ขาด ไม่ทับค่าทุกแถว
-- ใช้ชื่อ field/path จริง เช่น ticketNo แทนการ rename ให้ตรงตัวอย่าง ticketNumber โดยพลการ
-- เสนอ scope update ของ AGENTS.md ที่ยังเป็นกฎ Lab 2 และ branch flow เดิม โดยไม่แก้ก่อนอนุมัติ
+- รักษา foreign Requester resource 403, removed download 410 และ double-remove 409
+- คงชื่อ ticketNo, ticketOwnerId, itPriority รวม Requester query/DTO/pagination ของ Lab 2
+- เพิ่มสถานะให้ครบ 8 ค่าโดยไม่ทับ valid priority/status/data เดิม
+- reuse --zg-* palette และ badge pairs จริง; ไม่เพิ่ม Department management
+- Admin อ่าน Public Comments/Internal Notes ได้ แต่ไม่มี Staff mutation permission
+- AGENTS.md แยก Lab 2/Lab 3 และ staging branch ตาม scope แล้ว
+- ใช้ AC-01–AC-56 จาก specification.md; tests.md เป็นแหล่งเดียวของ test traceability
+
+## สถานะ gate ปัจจุบัน
+
+| Phase | สถานะ | งานที่ยังต้องทำ |
+|---|---|---|
+| P00 | Baseline recorded; historical verification only | Inventory/ผล 2026-09-10 ไม่ใช่ผล checkout ปัจจุบัน; DB/E2E baseline รอ isolation |
+| P01 | Revised documents; review pending | ตรวจ contract v1.1.0 และ approved runtime patch scope ก่อน implementation |
+| P02 | Test plan revised; harness Blocked | ทำ LCP-01 และ HARNESS-01 ให้ปลอดภัยจริงก่อนรัน DB suites; planned tests ไม่ใช่ผล Pass |
+| P03–P14 | Planned | เริ่มตาม dependencies และเก็บหลักฐานจริงต่อ issue |
+
+คำสั่งผู้ใช้ให้แก้เอกสารรอบนี้อนุมัติการแก้ contract/pipeline/rules ที่ตรวจพบเท่านั้น
+ไม่ได้ยืนยันว่า code, migration, full suites, peer review, merge หรือ submission เสร็จแล้ว

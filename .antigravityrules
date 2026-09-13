@@ -1,11 +1,19 @@
 # TokTickIT Lab 3 — Detailed coding-agent rules and execution pipeline
 
 ผู้รับคำสั่ง: coding agent ที่ผู้ใช้เรียกว่า “Gemini 3.8 Flash”
-วันที่จัดทำ: 2026-09-10
+วันที่จัดทำ: 2026-09-10; แก้ไข contract consistency: 2026-09-13 (v1.1.0)
 แหล่งหลัก: Lab_3_sheet.pdf, 18 หน้า, CPE 334, Sprint 3, คะแนนรวม 60
 ภาษาในการอธิบายงานและ implementation log: ไทย; identifiers/code ใช้ convention ของ repo เดิม
 
 ไฟล์นี้คือคำสั่งและ pipeline สำหรับให้อ่านโดยตรง ไม่ใช่หลักฐานว่าโปรแกรม editor โหลด .antigravityrules อัตโนมัติ และไม่ใช่การยืนยันชื่อ/ความพร้อมของรุ่นโมเดล ให้บันทึกชื่อโมเดลที่ใช้งานจริงใน ai-use.md โดยไม่แต่งข้อมูล
+
+## Contract authority (แก้ไข 2026-09-13)
+
+แผนนี้กำหนดลำดับงานและ gates; รายละเอียดปัจจุบันอยู่ใน docs/lab-03/specification.md,
+api-spec.md, ui-spec.md และ tests.md v1.1.0 ใช้เอกสารทั้งสี่ร่วมกัน ไม่ใช้ตัวอย่างจาก
+snapshot เก่าแทน contract เมื่อพบข้อขัดแย้งให้รายงาน section และแก้เอกสารก่อน coding
+AGENTS.md แยก scope Lab 2/Lab 3 แล้ว; การแก้เอกสารรอบนี้ไม่ได้อนุมัติ migration,
+dependency installation หรือ runtime patches ที่ยัง Proposed และไม่ถือว่า P02 harness ผ่าน
 
 ## 0. คำสั่งสำคัญที่สุด: ห้ามแก้ของเก่า
 
@@ -32,7 +40,7 @@
 |---|---|---|
 | Database foundation | ZIP toktickit-feature-lab2-ticket-creation.zip มี PostgreSQL/Prisma, Category, RequesterUser, RelatedSystem, Ticket, Attachment และ migration Lab 2 | เป็น snapshot วันที่ 2 ก.ย. 2026 ไม่ใช่ main ปัจจุบัน |
 | Requester context | มี RequesterContext, sessionStorage, RequesterSelection, RequesterRouteGuard, AppShell และ reference APIs | เป็น temporary identity ที่ Lab 3 ต้องเลิกใช้ |
-| Create Ticket | พบ POST /api/tickets, validation, transaction สร้าง ticketNumber และ CreateTicket.tsx | ไม่ได้รัน tests ของ snapshot นี้ระหว่างจัดทำ pipeline |
+| Create Ticket | พบ POST /api/tickets, validation, transaction สร้าง ticketNo และ CreateTicket.tsx | ไม่ได้รัน tests ของ snapshot นี้ระหว่างจัดทำ pipeline |
 | My Tickets/Detail | พบ list/detail API ใน server/src/app.ts แต่ MyTickets.tsx ยังเป็น placeholder ใน snapshot นี้ | ห้ามสรุปว่า UI หรือ ownership security ปัจจุบันครบแล้ว |
 | Attachments | มี model/migration; implementation-log ของ snapshot ระบุ attachment phase ยังไม่เสร็จ | ต้องตรวจ repo ล่าสุดใหม่ |
 | Zen Green | มี theme.css, AppShell, Badge และ ui-spec เดิม | ไม่ได้ยืนยัน visual/E2E ล่าสุด |
@@ -42,7 +50,7 @@
 Stack ที่พบใน snapshot: React + TypeScript + Vite, Bootstrap, React Router; Express + TypeScript; PostgreSQL + Prisma; Vitest/Testing Library/Supertest ให้สำรวจ package.json/lockfile ปัจจุบันก่อนเลือก implementation ไม่เปลี่ยนเวอร์ชันเพราะข้อมูล snapshot
 
 Path เดิมที่ตรวจพบและต้องระวังเป็นพิเศษ:
-- server/src/app.ts, server/src/prisma.ts, server/src/services/ticketNumber.ts
+- server/src/app.ts, server/src/prisma.ts, server/src/services/ticketNo.ts
 - server/prisma/schema.prisma, server/prisma/seed.ts, server/prisma/migrations/**
 - client/src/App.tsx, client/src/api.ts, client/src/components/AppShell.tsx
 - client/src/context/RequesterContext.tsx, client/src/components/RequesterRouteGuard.tsx
@@ -91,90 +99,33 @@ Explicitly excluded ตาม §4.2 p3: email invitations/reset email, MFA/socia
 
 ภาพตัวอย่างไม่เพิ่ม scope: ไม่ทำ Forgot password/email flow, Service Actions/Actions Taken tab หรือ Staff Create Ticket เพียงเพราะปรากฏใน mockup ถ้าขัดกับข้อเขียน ให้ยึดข้อเขียนและระบุใน assumptions
 
-## 3. Implementation decisions ที่เสนอให้ใส่ใน contract ก่อน coding
+## 3. Contract decisions ที่ใช้กับ implementation
 
-ค่าต่อไปนี้เป็นข้อเสนอของ pipeline สำหรับช่องที่ชีทให้ทีมตัดสินใจ ไม่ใช่ข้อบังคับที่อาจารย์ระบุตัวเลขไว้ ต้องยืนยันกับ repo/Lab 2 contract และอนุมัติ contract ก่อน implement
+รายละเอียดที่ต้องอ่านก่อนแต่ละ issue:
 
-### 3.1 Authorization matrix ที่เสนอ
+| เรื่อง | แหล่งที่กำหนดค่าปัจจุบัน |
+|---|---|
+| Role/ownership matrix รวม Admin read และ Staff write | specification.md §5.2.1 |
+| Session/cookie/password/hash/CSRF/expiry/rate limit | api-spec.md §2.6 |
+| 8-status matrix, claim/reassign/version, appears-resolved | specification.md BR-10–BR-17; api-spec.md §5.8 |
+| Requester DTO/query/attachment compatibility | api-spec.md §3; Lab 2 api-spec.md §5–6 |
+| Comments/notes validation, ordering and append-only | api-spec.md §4 |
+| Queue query/defaults/invalid input/counts | api-spec.md §5.1 |
+| Admin validation, role change and concurrent safety | api-spec.md §6.5 |
+| Migration/indexes/credential provisioning/seed | specification.md §7.2 |
+| Existing Zen Green tokens, feedback and screenshot coverage | ui-spec.md §1, §6–7 |
+| AC IDs และ planned tests/evidence | specification.md §9; tests.md §3–5 |
 
-ทุกแถวใช้กับ active user ที่เปลี่ยน initial password แล้วเท่านั้น เว้น auth endpoints; เช็ก permission ที่ server ทุก request ห้ามเชื่อ role/userId จาก client
+Decisions resolved in v1.1.0: foreign Requester resources ใช้ 403, missing ใช้ 404,
+removed download ใช้ 410, double-remove ใช้ 409; ignore legacy identity overrides;
+claim ที่มี owner อยู่แล้วเป็น 409 รวม owner คนเดิม; manual unassign ไม่อยู่ใน scope;
+ใช้ expectedVersion จำนวนเต็ม; รักษา IT Priority เดิมที่ถูกต้อง; Admin อ่าน notes ได้แต่
+สร้างไม่ได้; Staff/Admin download ได้แต่ upload/remove ไม่ได้; ไม่มี Department management
+สีหลักเดิมคือ --zg-primary #006B3C ไม่สร้าง palette ใหม่
 
-| Operation | Requester | IT Staff | Administrator |
-|---|---|---|---|
-| Current user/logout/change own password | ได้ | ได้ | ได้ |
-| Create Requester Ticket | ได้ ในนามตนเอง | ไม่ได้ | ไม่ได้ |
-| List own Tickets/Requester mutations เดิม | เฉพาะของตนและกฎ Lab 2 | ไม่ใช้ Requester route | ไม่ใช้ Requester route |
-| Read Ticket/public comments | เฉพาะของตน | ทุก Ticket | ทุก Ticket แบบ read-only ที่ contract อนุญาต |
-| Queue | ไม่ได้ | ได้ | ไม่ได้โดย default |
-| Claim/reassign/IT Priority/status | ไม่ได้ | ได้ตาม matrix | ไม่ได้โดย default |
-| เป็น primary Ticket Owner | ไม่ได้ | ได้เมื่อ active | ได้เมื่อ active ตาม §4.5 แม้ไม่มีสิทธิ์ operation โดย default |
-| Post public comment | เฉพาะของตน | ได้ | ไม่ได้โดย default; อ่านได้ |
-| Read Internal Notes | ไม่ได้ | ได้ | ได้ |
-| Create Internal Note | ไม่ได้ | ได้ | ไม่ได้โดย default |
-| Read/download active attachments | เฉพาะของตน | ได้ | อ่านได้ตาม Ticket read policy |
-| Upload/soft-remove attachments | คงกฎของ Lab 2 เฉพาะของตน | ไม่ได้โดย default | ไม่ได้โดย default |
-| Problem Appears Resolved | เฉพาะของตนตามกฎ | ไม่ทำแทน Requester | ไม่ทำแทน Requester |
-| List/create/edit users/reset initial password | ไม่ได้ | ไม่ได้ | ได้พร้อม safety rules |
-
-อธิบายจุดกำกวมของชีท: §4.3 แยกหน้าที่ Admin/Staff แต่ §4.4 อนุญาต Admin อ่าน comments/notes และ §4.5 อนุญาตเป็น owner/ระบุขอบเขต role ของ IT Priority ดังนั้น grant Admin read อย่างชัดเจน แต่ไม่ให้สิทธิ์ Staff operations อัตโนมัติ หากทีมเลือกให้ Admin ทำ operation ใดเพิ่ม ต้องแก้ matrix/AC/tests ใน contract ก่อน ผู้ใช้อยู่ได้ role เดียวเสมอ
-
-Admin navigation หลักมี User Management + account/logout; read-only Ticket Detail เข้าผ่าน URL ที่ได้รับอนุญาตได้ โดยไม่เพิ่ม dashboard หรือคัดลอก Staff operational controls
-
-### 3.2 Authentication contract ที่เสนอ
-
-- ใช้ opaque session ID ใน HttpOnly cookie และเก็บ session server-side ใน PostgreSQL เหมาะกับ logout/revoke จริง; ไม่เก็บ bearer token หรือ password ใน localStorage/sessionStorage
-- Session token สุ่มด้วย CSPRNG อย่างน้อย 32 bytes; เก็บ token hash ใน DB; rotate เมื่อ login และ password change; absolute expiry ตัวอย่าง 8 ชั่วโมง ไม่ต่ออายุแบบไม่สิ้นสุด
-- Cookie SameSite=Lax, Path=/, HttpOnly; Secure ใน HTTPS deployment ที่มีอยู่แล้ว local HTTP ให้ document development-only behavior ไม่ทำ cloud migration
-- หาก client/server คนละ origin ให้กำหนด allowed origin เฉพาะและ credentials ชัดเจน ห้าม wildcard credential CORS
-- State-changing requests ต้องมี CSRF protection ที่เลือกและทดสอบจริง เช่น session-bound CSRF token + Origin validation; login ต้องป้องกัน login CSRF ด้วย trusted Origin policy; สเปกระบุ token retrieval/bootstrap ให้ client ใช้ได้ก่อน first-password-change
-- Password hashing ใช้ library ที่เหมาะกับ stack เช่น Argon2id; กำหนด parameters จริงและทดสอบ verify/error behavior ห้าม crypto เอง ห้าม plaintext/deterministic universal initial password สำหรับข้อมูลจริง
-- Password policy ที่เสนอ: 12–128 Unicode code points, อนุญาต passphrase/space, ไม่ trim/normalize password โดยเงียบ, new != current; confirmation เท่ากัน; จำกัด request size ก่อน expensive hash ให้ client/server นับเหมือนกัน ระบุ rationale และทดสอบ min-1/min/max/max+1/Unicode
-- Email trim + canonical lowercase ตาม policy ของแอป + unique constraint; ตรวจ collision ของข้อมูลก่อน migration ห้ามลบ/รวมคนเพราะ email ชนโดยอัตโนมัติ
-- Invalid email/password และ inactive account ใช้ 401 ข้อความกลาง เช่น “Unable to sign in. Check your credentials or contact an administrator if the account is inactive.” ไม่เปิดเผยว่า email มีจริง; UI ชัดเจนแต่ไม่แจกแจงรายชื่อ inactive accounts
-- Login-attempt policy ที่เสนอ: rate limit ต่อ normalized account key และ client IP, ตัวอย่าง 5 failures/15 min พร้อม 429/Retry-After; ไม่มี permanent account lock/unlock UI; ห้ามเก็บ raw credential ใน log
-- ต้อง change password: จำกัด session ให้เข้าถึง me, logout, change-password และ CSRF bootstrap ที่จำเป็นเท่านั้น; protected API อื่น 403 PASSWORD_CHANGE_REQUIRED; ป้องกัน route bypass/refresh/deep link
-- Logout revoke server session + clear cookie; replay cookie เดิมไม่ได้; expired session 401; inactive user/role change/reset password ต้อง revoke sessions หรือเช็ก current account/session version เพื่อไม่ใช้สิทธิ์เก่าต่อ
-- Reset initial password: Admin ส่งค่าใหม่ผ่าน local-lab UI, server hash + mustChangePassword=true + revoke sessions; response ไม่ echo secret; form clear secret หลัง success
-- /me และทุก DTO ใช้ explicit safe select ไม่ส่ง hash, token, reset credential; unexpected errors ไม่มี stack/SQL/raw body
-
-### 3.3 Workflow matrix ที่เสนอ
-
-ต้องเทียบกฎ Requester Lab 2 ปัจจุบันก่อน freeze; ตารางนี้เป็น decision ที่ทีมเสนอ ไม่ใช่ transition matrix ที่ชีทให้มา ทุก transition ที่ไม่ระบุให้ reject
-
-| From | Allowed next statuses (IT Staff) | เงื่อนไข |
-|---|---|---|
-| New | Open, Cancelled | Open ต้องมี eligible owner; Cancelled confirm |
-| Open | In Progress, Waiting for Requester, Cancelled | non-cancel ต้องมี eligible owner |
-| In Progress | Waiting for Requester, Resolved, Cancelled | Resolved/Cancelled confirm |
-| Waiting for Requester | In Progress, Resolved, Cancelled | กลับทำงาน/resolve ต้องมี eligible owner; confirm terminal intent |
-| Resolved | Closed, Reopened | Closed/Reopened confirm; reopen clear appears-resolved indication |
-| Closed | Reopened | confirm; ถ้าทีมเลือก terminal ต้องบันทึก decision ต่างนี้ก่อน |
-| Reopened | Open, In Progress, Cancelled | non-cancel ต้องมี eligible owner |
-| Cancelled | ไม่มี | terminal; ไม่เปิดช่อง client patch ข้ามกฎ |
-
-- Initial NEW; เพิ่ม WAITING_FOR_REQUESTER, REOPENED, CANCELLED โดยไม่ทำ status เดิมหาย; display labels คือ New, Open, In Progress, Waiting for Requester, Resolved, Closed, Reopened, Cancelled
-- Requester ไม่ใช้ generic status endpoint และห้าม Resolved/Closed เสมอ หาก Lab 2 เคยมีกฎ Requester cancel/reopen จริง ให้ preserve เฉพาะสิทธิ์ที่ไม่ขัดชีทและเขียน transition/AC เพิ่มก่อน implement
-- Claim: unassigned → current Staff; claim owner ตัวเองอีกครั้งเป็น no-op; ถ้าเป็นของคนอื่นตอบ 409 ให้ใช้ reassign action ที่ชัดเจน; owner ไม่ใช่ requesterId
-- Assign/reassign: รับ ownerId เฉพาะ active IT Staff/Admin; unknown ID/Requester/inactive reject; reassign แสดง owner เดิม/ใหม่ให้ confirm; claim ไม่เปลี่ยน status เงียบ ๆ
-- Unassign เป็น optional decision; ค่าเริ่มต้นเสนออนุญาตเฉพาะ New/Cancelled เพื่อไม่ละเมิด owner requirement หากไม่ implement ให้ reject null ใน reassign API อย่างชัดเจน
-- owner deactivated/เปลี่ยน role ภายหลัง: transaction admin update ต้อง unassign affected tickets และแสดง count ก่อน confirm; ไม่เปลี่ยน status/ticket history เงียบ ๆ; Staff ต้อง assign ใหม่ก่อน operation ที่ต้องมี owner
-- IT Priority copy Requested Priority ทั้ง ticket ใหม่และ backfill ticket เก่า; ภายหลังแก้ IT Priority ไม่แก้ Requested Priority และไม่ sync กลับตาม requester edits
-- Problem Appears Resolved: own ticket ใน Open/In Progress/Waiting for Requester/Reopened เท่านั้น; บันทึก server timestamp + actor, ไม่เปลี่ยน currentStatus; กดซ้ำ no-op; ไม่ใช้ feature นี้เป็น authorization ให้ Requester close Ticket
-- ใช้ version หรือ conditional write เพื่อกัน stale assignment/status/priority; conflict 409 พร้อม refetch; validate transition + write ใน transaction เดียว
-- ไม่สร้าง Actions Taken และไม่บล็อก Resolved เพราะไม่มี Actions Taken; เงื่อนไขดังกล่าวเลื่อนไป Lab 4
-
-### 3.4 Comments/notes, query และ validation decisions
-
-- แยก PublicComment กับ InternalNote ใน API/DTO ให้ตรวจง่าย; append-only ไม่มี PATCH/PUT/DELETE สำหรับ entries; authorId และ createdAt มาจาก backend
-- เสนอ content หลัง trim 1–2,000 Unicode code points, escape/render plain text, preserve line breaks; ไม่ใช้ dangerouslySetInnerHTML; test script payload ต้องแสดงเป็นข้อความไม่ execute
-- Requester ส่ง authorId, createdAt, visibility, internalNotes, ownerId, itPriority หรือ status ผ่าน body ต้องไม่แก้ protected fields; reject unknown protected fields ด้วย 400 ตาม contract (requesterId เก่าดู P05)
-- Query queue: search ticketNumber/summary แบบ case-insensitive; filters categoryId, requestedPriority, itPriority, currentStatus, owner (all/me/unassigned/eligible user ID); ไม่มี filter ทำงานนอก role scope
-- Sort allowlist: createdAt, updatedAt, ticketNumber, itPriority, currentStatus; default updatedAt desc + id desc; priority ใช้ semantic rank ไม่เรียง alphabet; status rank ระบุชัด; ห้ามนำ sort string ไปต่อ SQL
-- page เริ่ม 1; pageSize 10/20/50, default 10; invalid/unknown parameter 400; เกินหน้าสุดคืน empty data พร้อม metadata ไม่ error; reset page=1 เมื่อ search/filter เปลี่ยน
-- Response: data, page, pageSize, total, totalPages, unfilteredTotal; กำหนด totalPages=0 เมื่อ total=0; count/data ใช้ filters และ snapshot ที่สอดคล้องกัน
-- Admin list: Name/Email/Role/Status/Edit, search name/email, optional single role filter; ไม่บังคับ pagination/multi-sort/multi-filter
-- Error convention: 400 invalid input/query, 401 unauthenticated/expired, 403 forbidden/password-change-required, 404 not found หรือ foreign protected resource, 409 duplicate/stale/conflicting operation, 429 rate limit, 500 safe failure
-- เช็ก Requester notes permission ก่อน lookup และตอบ 403 ไม่ส่ง existence/content/count; foreign Ticket/Attachment ใช้ 404 แบบเดียวกับ missing; attachment endpoints ต้องตรวจทั้ง ticketId/attachmentId relation
+แยก pagination: My Tickets คง categoryId/requestedPriority/limit และ data/pagination
+ตาม Lab 2; Staff Queue ใช้ contract ใหม่ใน api-spec.md §5.1 ไม่ใช้ตัวอย่าง queue เปลี่ยน
+Requester API โดยพลการ รายการ decisions นี้ไม่ใช่หลักฐานว่า feature ทำงานแล้ว
 
 ## 4. Pipeline — ทำตาม dependency ทีละ phase
 
@@ -199,7 +150,7 @@ Gate: รู้สถานะปัจจุบันจาก repo จริ�
 Issue/branch: Sprint 3 contract / docs/lab3-contract; base จาก lab3-staging ที่ตั้งจาก approved Lab 2 baseline
 
 1. สร้าง docs/lab-03/specification.md ให้ครบ 11 sections ตาม §9: Sprint Goal, Stakeholder Request, Scope, FR, BR, UI Summary, Data Changes, API Contract, AC, DoD, Assumptions/Decisions
-2. FR numbered ครบ R01–R28; BR-01..05 รักษาความหมายตัวอย่าง mandatory ของชีท แล้วเพิ่ม BR สำหรับ decisions ที่เหลือ
+2. FR numbered ครบ R01–R28; รักษาความหมาย mandatory BR ของชีทและบันทึก mapping ไปยัง local BR IDs ตาม specification.md §11.8
 3. Freeze authorization matrix ทุก endpoint/action รวม Admin read vs Staff write, attachments, inactive sessions, first-password-change, legacy requesterId handling
 4. Freeze 8-status matrix/confirmations, owner eligibility/deactivation, priority copy, appears-resolved representation, comment length/rendering, login attempts/password/session behavior
 5. สร้าง ui-spec.md: 5 main Lab 3 screens + Requester Detail/shell regression, create/view/edit modes, controls, role behavior, all meaningful feedback, breakpoints/a11y, token/component reuse
@@ -222,7 +173,7 @@ Issue/branch: Sprint 3 tests / test/lab3-contract
 6. แต่ละ issue รัน RED ที่ fail เพราะ feature ยังไม่มีจริง แล้ว implement smallest change → GREEN → relevant regression ไม่สร้าง fake failing assertion เพื่อถ่ายหลักฐาน TDD
 7. Initial status Planned/Not run ห้ามเริ่มเป็น Pass; tests ที่ยังไม่มี path จริงต้องระบุ proposed และอัปเดตเมื่อสร้าง
 
-Gate: test plan traceable, test harness พร้อม, auth/migration/security tests มีกรณี fail ที่มีความหมาย
+Gate: test plan traceable, test harness พร้อมและ HARNESS-01 ผ่าน; auth/migration/security มี planned negative cases ที่มีความหมาย แต่ละ feature เก็บ Red จริงเมื่อเริ่ม issue นั้น ห้ามเขียน P02 Complete เมื่อมีเพียง tests.md
 
 ### P03 — Additive data migration, ownership mapping และ seed
 
@@ -230,9 +181,9 @@ Issue/branch: User migration / feature/lab3-user-migration; depends P01–P02 + 
 
 1. เลือก strategy ให้เข้ากับ current schema: ตัวอย่าง map Prisma User ไป physical RequesterUser ด้วย @@map เพื่อ preserve IDs/table แล้วเพิ่ม role/credential fields หรือสร้าง User และ migration mapping ที่ตรวจทุกแถว ห้าม drop/recreate แบบข้อมูลหาย
 2. User fields ขั้นต่ำ: id, name, canonical email unique, role enum 3 ค่า, active, passwordHash, mustChangePassword, timestamps; session/sessionVersion ตาม auth design
-3. Ticket: preserve requester relation, ticketNumber, fields, attachments; เพิ่ม ownerId nullable, itPriority, required statuses, appearsResolvedAt/by และ version ตาม contract
+3. Ticket: preserve requester relation, ticketNo, fields, attachments; reuse ticketOwnerId/itPriority และเพิ่ม required statuses, appearsResolvedAt/by และ version ตาม contract
 4. เพิ่ม PublicComment/InternalNote: id, ticketId, authorId, body, createdAt; FK/relation names แยก requester/owner/author; explicit indexes สำหรับ query/lookup เช่น authorId, ticketId+createdAt และ queue filters ที่ใช้จริง
-5. เพิ่ม forward migration ใหม่เท่านั้น: expand → map/backfill → validate → constrain; ให้ itPriority backfill จาก requestedPriority จริงก่อน NOT NULL; status เดิมคงเดิม
+5. เพิ่ม forward migration ใหม่เท่านั้น: expand → map/backfill → validate → constrain; รักษา itPriority เดิมที่ถูกต้อง เติมจาก requestedPriority เฉพาะค่าที่ขาด; status เดิมคงเดิม
 6. ตรวจทุก old Requester map ไป User คนเดียว, old Ticket requester ownership ไม่เปลี่ยน, existing active flag/name/email คงตาม mapping; detect duplicate normalized email และหยุดเฉพาะส่วนนี้เพื่อ resolve ไม่ merge คนเอง
 7. Credential provisioning ต้อง document ว่า Requester เก่าได้ initial password อย่างไร: local-only script รับ/generate ค่าและ hash ไม่ embed plaintext ใน SQL; บัญชียังไม่ provision ห้าม login สำเร็จ ต้อง force change เมื่อ provision แล้ว
 8. Seed idempotent: ≥4 active +1 inactive Requester, ≥3 active +1 inactive Staff, ≥1 active Admin; seeded credentials fictional local-only และชี้วิธี login ไว้ใน README supplement
@@ -308,7 +259,7 @@ Gate: Requester flow เดิมครบตาม approved Lab 2 baseline แ�
 Issue/branch: Staff Queue / feature/lab3-staff-queue; depends P03,P05,P06
 
 1. Implement GET queue พร้อม search/filter/sort/pagination ตาม frozen contract; SQL/Prisma predicates ต้อง scope ฝั่ง server ไม่โหลดทุก ticket ไป filter หน้าเว็บ
-2. Define summary DTO เฉพาะ field ที่ใช้: id, ticketNumber, createdAt, updatedAt, summary, category, requestedPriority, itPriority, currentStatus, owner{id,name,role}|null; ไม่ส่ง internal notes ใน queue
+2. Define summary DTO เฉพาะ field ที่ใช้: id, ticketNo, createdAt, updatedAt, summary, category, requestedPriority, itPriority, currentStatus, owner{id,name,role}|null; ไม่ส่ง internal notes ใน queue
 3. ออกแบบ desktop columns ให้มีข้อมูล prioritization โดยไม่เป็น mega-grid: Ticket No.+date, Summary+category, Requested Priority, IT Priority, Status, Owner, Open action; justify grouping ใน ui-spec
 4. Tablet/mobile ใช้ card list ที่มี label/value ชัดเจน; search/filter controls wrap/stack; ไม่ใช้ table กว้างล้นทั้งหน้า
 5. แสดง owner/unassigned, status/priority labels+badges; loading skeleton, empty queue, no results+clear filters, forbidden, failure+retry; pagination disabled boundary ถูกต้อง
@@ -364,7 +315,7 @@ Issue/branch: User administration / feature/lab3-user-administration; depends P0
 6. ป้องกัน self-deactivation; ป้องกัน last active Admin deactivation หรือ role demotion เป็น non-admin; inactive Admin ไม่นับช่วยรักษาจำนวน
 7. Last-admin guard ต้อง transaction/lock หรือ serializable strategy จริง ไม่ใช่ count แล้ว update แยกกัน; test สอง active Admin demote/deactivate พร้อมกันต้องเหลือ ≥1 active Admin
 8. อนุญาต self-demote ได้เฉพาะมี active Admin อื่นตาม decision; revoke current session/redirect และห้ามทำ operation ด้วย role เก่าต่อ; ถ้าเลือกห้ามทั้งหมดให้ระบุใน contract
-9. Deactivate/change owner-role ต้องดำเนินการ owner-policy ที่ freeze ใน P01, พร้อม count impacted tickets/confirmation; preserve ticket requester/author FK แม้คน inactive/เปลี่ยน role
+9. Deactivate/change owner-role ต้องดำเนินการ owner-policy ที่ freeze ใน P01, พร้อม confirmation และแสดง count impacted tickets จาก response หลังสำเร็จ; preserve ticket requester/author FK แม้คน inactive/เปลี่ยน role
 10. Reset initial password: authorized Admin เท่านั้น, valid password → hash + mustChangePassword + revoke existing sessions; next login limited จน change; ไม่ส่งรหัสผ่านทางอีเมล
 11. Admin reset ของตนเองต้อง revoke ตัวเองและกลับไป login ตาม contract; ไม่ bypass forced change เพราะเป็น Admin
 12. User deletion ไม่มี endpoint/ปุ่ม ใช้ deactivation; UI forbidden/safe failure/responsive Zen Green ครบ
@@ -395,9 +346,11 @@ Gate: tests ที่ contract กำหนดผ่านจริง, visual c
 
 Issue/branch: Release integration / release/lab3-verification ตาม workflow ทีม
 
+ทำ peer review/Issue linking/merge gate ต่อ feature ตลอด P01–P12 ไม่รอรวมทุก feature มา review ครั้งแรกใน P13; P13 รวบรวมหลักฐานและตรวจ integration/release
+
 1. Feature branch ทุกอันออกจาก lab3-staging ล่าสุดที่อนุมัติ; ไม่มี direct feature commits ลง main/lab3-staging
 2. PR แต่ละอัน target lab3-staging, link GitHub Issue โดยตรง, ระบุ requirement/AC/tests/changed files/migration/dependency/legacy approval/evidence/known risks
-3. Kanban ใช้ชื่อ statuses เดิมของทีม ห้ามแต่งชื่อใหม่แทน; phase contract/test/migration/auth/RBAC/requester/staff/admin/visual/release ต้องมี issues traceable
+3. Kanban ใช้ Backlog → Specified → Started → PR Review → Fixing (ถ้ามี) → Done; phase contract/test/migration/auth/RBAC/requester/staff/admin/visual/release ต้องมี issues traceable
 4. เคารพกฎเดิม: reviewer ที่ไม่ใช่ผู้เปิด PR ให้ substantive comment, ผู้เขียนตอบด้วย fix หรือเหตุผล, reviewer verify/approve และเป็นผู้ merge; ห้าม self-merge
 5. บันทึก reviewer.md ด้วย actual identities/PR links/comment-response/approvals/merger; หากยังไม่มี peer review ให้ Pending ไม่ปลอมให้ครบ rubric
 6. หลัง merge feature ตรวจ integration; release PR lab3-staging → main ผ่าน review เช่นกัน; รักษา commit/PR history ที่แสดง flow นี้ได้จริง ไม่ squash ทั้งหมดจนหลักฐานหาย
@@ -433,132 +386,30 @@ Issue: Lab 3 submission evidence; depends P13
 
 Gate: PDF 1 ไฟล์ครบ 9 หัวข้อ คะแนนรวม 60 และทุกหลักฐานเปิดตรวจได้; ถ้าขาด review/main/test evidence ให้ระบุ Submission incomplete
 
-## 5. REST inventory ที่ต้อง freeze ใน api-spec.md
+## 5. REST inventory และ consistency gate
 
-ชื่อ path ต่อไปนี้เป็นข้อเสนอให้เข้ากับ Express app; คง Requester public route names เดิมเท่าที่ทำได้ แต่ identity ต้อง secure จริง อย่าเพิ่ม route ใหม่แล้วปล่อย route เก่า bypass ได้
+ใช้ method/path/request/response/error/role จาก api-spec.md เป็นแหล่งเดียว:
+- §2: login/me/logout/change-password/CSRF และ session rules
+- §3: Requester create/list/detail, attachment upload/download/remove และ appears-resolved
+- §4: Public Comments/Internal Notes พร้อม permission และ append-only rejection
+- §5: Staff Queue, claim, reassign, IT Priority, status, Staff/Admin detail และ eligible owners
+- §6: Admin list/search/create/edit/reset พร้อม safety/concurrency
+- §7: shared error precedence และ safe failure
 
-| Method/path (proposed) | Request / success data | Permission / critical behavior |
-|---|---|---|
-| POST /api/auth/login | email,password → 200 {user,mustChangePassword} + cookie | public; 401/429; safe DTO |
-| GET /api/auth/me | →200 {user:{id,name,email,role,mustChangePassword}} | valid limited/full session; 401 otherwise |
-| GET /api/auth/csrf | →200 {csrfToken} | valid limited/full session; no-store; trusted-origin policy |
-| POST /api/auth/logout | →204 | invalidate cookie/session, idempotent behavior documented |
-| POST /api/auth/change-password | currentPassword,newPassword,confirmPassword →200 safe user | limited/full own session, CSRF, rotate/revoke |
-| Existing Requester Ticket APIs | retain accepted business fields and safe response | authenticated Requester; derive owner; 404 foreign |
-| Existing Requester Attachment APIs | preserve upload/list/download/soft-remove contracts | own Ticket + attachment relation + removed-state rules |
-| GET /api/staff/tickets | documented query →200 paginated summary DTO | IT Staff only |
-| GET /api/staff/tickets/:id | →200 permitted detail incl operational fields/version | IT Staff; 404 missing |
-| GET /api/staff/ticket-owners | →200 [{id,name,role}] | Staff; active Staff/Admin only; minimal DTO |
-| POST /api/staff/tickets/:id/claim | expectedVersion →200 updated detail/version | Staff; atomic unassigned claim; 409 conflict |
-| PATCH /api/staff/tickets/:id/owner | ownerId,expectedVersion →200 | Staff; eligibility/active checks; 409 stale |
-| PATCH /api/staff/tickets/:id/it-priority | itPriority,expectedVersion →200 | Staff; immutable requestedPriority |
-| PATCH /api/staff/tickets/:id/status | status,expectedVersion →200 | Staff; matrix validation; no Actions Taken prerequisite |
-| GET /api/tickets/:id/public-comments | →200 {data:[{id,body,author:{id,name},createdAt}]} | own Requester/Staff/Admin read |
-| POST /api/tickets/:id/public-comments | body →201 safe entry | own Requester/Staff; server author/time |
-| GET /api/tickets/:id/internal-notes | →200 note DTO | Staff/Admin; Requester 403 before lookup |
-| POST /api/tickets/:id/internal-notes | body →201 safe entry | Staff only under proposed matrix |
-| POST /api/tickets/:id/appears-resolved | no actor/time/status in request →200 indicator | own Requester; idempotent; formal status unchanged |
-| GET /api/admin/tickets/:id | →200 read-only safe detail | Admin read grant; no operational mutations |
-| GET /api/admin/users | search, optional role →200 safe users | Admin; no hashes/credentials/sessions |
-| POST /api/admin/users | name,email,role,active,initialPassword →201 user | Admin; exactly 1 role; hash+force-change |
-| PATCH /api/admin/users/:id | name,email,role,active →200 user | Admin; self/last-admin/owner policy transaction |
-| POST /api/admin/users/:id/initial-password | initialPassword →204 | Admin; hash+mustChange+revoke sessions |
+ตรวจ endpoint ครบก่อนผ่าน P01 โดยเฉพาะ GET Staff Detail, eligible owners, Admin read-only
+Detail และ attachment permissions ห้ามมีเพียงชื่อ endpoint โดยไม่มี DTO/role/error contract
 
-Existing Ticket read/download routes ต้องรองรับ Staff/Admin read permissions หรือเพิ่ม explicit role paths ตาม approved contract แต่ห้าม reuse requester mutation route โดยให้ข้าม ownership แบบกว้าง
+## 6. Acceptance Criteria → planned tests
 
-API spec ต้องแสดง JSON จริงอย่างน้อยสำหรับ auth success, password-change-required, validation fields, paginated queue, ticket detail แต่ละ role, safe comment/note, admin user และ conflict; ห้ามใช้ `...` แทน shape ของ protected data ที่ต้อง review
+AC-01–AC-56 อยู่ใน specification.md §9; ตาราง scenarios และ reverse traceability อยู่ใน
+ tests.md §3–4 เป็นแหล่งเดียว ไม่คัดลอกเลข AC เป็นตารางอีกชุดใน pipeline
+ทุกแถวต้องมี target path, scenario, observable result, command, status และ evidence/commit
+Path ที่ยังไม่มีจริงระบุ Proposed/Planned จน implement; ห้ามอ้างว่าเป็น executed test
 
-Error example (proposal, align legacy envelope with approved patch):
-```json
-{
-  "error": "VALIDATION_ERROR",
-  "message": "One or more fields are invalid",
-  "fields": { "email": "Enter a valid email address" }
-}
-```
-
-## 6. Acceptance Criteria → planned tests ขั้นต่ำ
-
-ทั้งหมดในตารางนี้คือ Planned ไม่ใช่ Pass ให้เพิ่ม FR/BR links และ actual file paths ใน tests.md และขยาย parameterized cases ให้ครบ matrix ของ contract
-
-Test file keys (ชื่อที่ชีทระบุคงไว้):
-- AUTH = server/tests/lab-03/auth.api.test.ts
-- AUTHZ = server/tests/lab-03/authorization.api.test.ts
-- QUEUE = server/tests/lab-03/staff-queue.api.test.ts
-- DETAIL = server/tests/lab-03/staff-ticket-detail.api.test.ts
-- COMM = server/tests/lab-03/comments-notes.api.test.ts
-- ADMIN = server/tests/lab-03/users-admin.api.test.ts
-- MIG = server/tests/lab-03/migration-regression.test.ts (เพิ่มเติม)
-- REG = server/tests/lab-03/requester-regression.api.test.ts (เพิ่มเติม)
-- UNIT = server/tests/lab-03/password.unit.test.ts, workflow.unit.test.ts (เพิ่มเติม)
-- UI = client/tests/lab-03/ ตาม layout จริง โดยต้องมี Login.test.tsx, ChangePassword.test.tsx, StaffTicketQueue.test.tsx, StaffTicketDetail.test.tsx, UserManagement.test.tsx
-- STYLE = client/tests/lab-03/<screen>.style.test.tsx (ปรับกับ suite เดิม)
-- E2E-A = e2e/lab-03/authentication.spec.ts
-- E2E-S = e2e/lab-03/staff-ticket-flow.spec.ts
-- E2E-U = e2e/lab-03/user-administration.spec.ts
-- E2E-R = e2e/lab-03/requester-regression.spec.ts (เพิ่มเติม)
-- E2E-V = e2e/lab-03/responsive.spec.ts (เพิ่มเติม)
-
-| AC | Observable pass condition | Planned Test ID → file key |
-|---|---|---|
-| AC-01 | Active valid user login ได้ safe identity/role/session | API-01 → AUTH; E2E-01 → E2E-A |
-| AC-02 | Initial-password session เข้า normal UI/API ไม่ได้จน change ผ่าน | API-02 → AUTH/AUTHZ; E2E-02 → E2E-A |
-| AC-03 | ส่ง requesterId คนอื่นยังใช้ auth owner และไม่ได้ข้อมูลคนอื่น | SEC-01 → AUTHZ/REG |
-| AC-04 | Requester เรียก Internal Notes ถูกปฏิเสธ ไม่มี private payload | SEC-02 → AUTHZ/COMM |
-| AC-05 | Wrong credentials/inactive/email unknown ให้ safe failure สอดคล้อง | API-03 → AUTH; UI-01 → UI Login |
-| AC-06 | Password min/max/Unicode/confirm/current/new-equals-old validation ตรง contract | UNIT-01 → UNIT; API-04 → AUTH |
-| AC-07 | me returns permitted DTO; missing/expired cookie rejected | API-05 → AUTH |
-| AC-08 | Logout/replayed cookie/back/deep-link ไม่คืน protected data | API-06 → AUTH; E2E-03 → E2E-A |
-| AC-09 | Login attempt rate limit/expiry/retry ถูกและไม่เกิด permanent lock | SEC-03 → AUTH |
-| AC-10 | CSRF/cookie/origin/session rotation ทำงานตาม auth design | SEC-04 → AUTH/AUTHZ |
-| AC-11 | Inactive/changed-role/reset-password session ใช้สิทธิ์เก่าต่อไม่ได้ | SEC-05 → ADMIN/AUTHZ |
-| AC-12 | Login/change screen validation/busy/safe errors/success ครบ | UI-02 → UI Login/ChangePassword; E2E-04 → E2E-A |
-| AC-13 | Role navigation/current name+role/logout ตรง server; ไม่มี selector | UI-03 → UI auth-navigation; E2E-05 → E2E-A |
-| AC-14 | Existing IDs/requester mapping/status/reference/attachment metadata+bytes ยังถูก | MIG-01 → MIG |
-| AC-15 | Migration fresh+populated DB ผ่าน ไม่มี data loss/schema drift | MIG-02 → MIG |
-| AC-16 | Seed รันสองครั้ง role/count/examples ถูก ไม่มี duplicate/credential overwrite | MIG-03 → MIG |
-| AC-17 | Legacy Requester initial credential provisioned+forced change ถูก | MIG-04 → MIG/AUTH |
-| AC-18 | Requester create/list/detail/query/Ticket Number ยังคง business behavior | REG-01 → REG; E2E-06 → E2E-R |
-| AC-19 | Legacy attachment upload/read/download/soft-remove ทำงานตาม Lab 2 | REG-02 → REG; E2E-07 → E2E-R |
-| AC-20 | Foreign/missing/removed attachment ไม่คืน bytes หรือ existence leak | SEC-06 → AUTHZ/REG |
-| AC-21 | Logout/login อีกคนไม่เห็น previous-user state/cache | E2E-08 → E2E-R |
-| AC-22 | Staff Queue access allowed; Requester/Admin denied ตาม matrix | API-07 → QUEUE/AUTHZ |
-| AC-23 | Queue search+combined filters+owner modes ถูก | API-08 → QUEUE; UI-04 → UI StaffTicketQueue |
-| AC-24 | Sort allowlist/semantic priority/stable ties ถูก | API-09 → QUEUE |
-| AC-25 | Pagination totals/defaults/page bounds/invalid params ตรง contract | API-10 → QUEUE |
-| AC-26 | Queue loading/empty/no-results/error/retry/open action ถูก | UI-05 → UI StaffTicketQueue; E2E-09 → E2E-S |
-| AC-27 | Staff detail read allowed/forbidden/not-found และ read-only fields ถูก | API-11 → DETAIL/AUTHZ; UI-06 → UI StaffTicketDetail |
-| AC-28 | Claim/reassign รองรับ active Staff/Admin owner, reject inactive/Requester | API-12 → DETAIL |
-| AC-29 | Concurrent claim มีผู้ชนะเดียว; stale writes 409 | API-13 → DETAIL |
-| AC-30 | IT Priority copy ตอนสร้าง+backfill; update ไม่เปลี่ยน requestedPriority | API-14 → DETAIL/REG; MIG-05 → MIG |
-| AC-31 | ทั้ง 8 statuses พร้อม allowed transitions/confirmations; invalid pairs denied | UNIT-02 → UNIT; API-15 → DETAIL; UI-07 → UI StaffTicketDetail |
-| AC-32 | Requester ตั้ง formal Resolved/Closed หรือ operational fields ไม่ได้ | SEC-07 → AUTHZ/DETAIL |
-| AC-33 | Appears-resolved บันทึก actor/time แต่ status ไม่เปลี่ยน, own-only/no-op ซ้ำ | API-16 → DETAIL/REG; E2E-10 → E2E-S |
-| AC-34 | Public comments readable ตาม matrix และสร้างได้เฉพาะ allowed roles | API-17 → COMM/AUTHZ |
-| AC-35 | Internal notes readable Staff/Admin, create Staff; ไม่มี leakage ผ่าน other DTO | SEC-08 → COMM/AUTHZ |
-| AC-36 | Comments/notes append-only, server author/time, reject spoof/edit/delete | API-18 → COMM |
-| AC-37 | Content empty/whitespace/length/XSS safe และ drafts แยก public/internal | UNIT-03 → UNIT; API-19 → COMM; UI-08 → UI communication |
-| AC-38 | Staff end-to-end Queue→claim→priority→workflow→communication→resolve/close | E2E-11 → E2E-S |
-| AC-39 | Admin list columns/name-email search/optional role filter ถูก | API-20 → ADMIN; UI-09 → UI UserManagement |
-| AC-40 | Create user valid single role+active+initial password+force-change | API-21 → ADMIN; E2E-12 → E2E-U |
-| AC-41 | Duplicate email incl case/space/concurrent writes และ invalid input rejected | API-22 → ADMIN |
-| AC-42 | Edit name/email/role/active; immutable account credential fields ไม่ถูก mass-assign | API-23 → ADMIN |
-| AC-43 | Self-deactivation blocked; last active Admin demotion/deactivation blocked | API-24 → ADMIN |
-| AC-44 | Concurrent last-admin mutations ยังเหลือ active Admin ≥1 | API-25 → ADMIN |
-| AC-45 | Owner account deactivation/role change ทำตาม transactional owner policy | API-26 → ADMIN/DETAIL |
-| AC-46 | Admin new initial password revoke sessions/force next change; old password invalid | API-27 → ADMIN/AUTH; E2E-13 → E2E-U |
-| AC-47 | Non-admin access admin API/screens forbidden; no user delete route | SEC-09 → ADMIN/AUTHZ; UI-10 → UI UserManagement |
-| AC-48 | Admin validation/busy/success/forbidden/safe failure/responsive ครบ | UI-11 → UI UserManagement; E2E-14 → E2E-U |
-| AC-49 | Major screens desktop/tablet/mobile no clipping/overlap/horizontal overflow | VIS-01 → STYLE/E2E-V + screenshots |
-| AC-50 | Zen Green reuse, role/status/priority text badges, editable/read-only ชัด | VIS-02 → STYLE/E2E-V + visual checklist |
-| AC-51 | Keyboard focus/labels/errors/target sizing/menu usable ตาม Lab 2 | A11Y-01 → UI/STYLE/E2E-V |
-| AC-52 | Meaningful not-found/conflict/server failure ไม่แสดง stack/secret/foreign data | SEC-10 → AUTHZ/DETAIL/ADMIN; UI-12 → UI |
-| AC-53 | Required docs/tests/artifacts มี actual paths, AC ทุกตัวมี planned+executed tests | DOC-01 → documentation/traceability check |
-| AC-54 | Spec/test plan อยู่ก่อน feature completion; real issue/PR/review/merge traceable | WORK-01 → Git history + reviewer.md inspection |
-| AC-55 | Final main full required suites ผ่านและ evidence อ้าง SHA ที่ถูก | RELEASE-01 → full commands + logs + main SHA |
-| AC-56 | One PDF Answer Part 1–9 ครบ/ลิงก์ทำงาน/ภาพอ่านได้, AI prompts+reflection จริง | SUB-01 → rendered PDF/manual link and rubric check |
-
-AC-53..56 เป็นเอกสาร/workflow/ส่งงาน ให้ใช้ planned inspection/manual checks ที่ตรวจได้จริง ไม่ปลอมเป็น unit tests; tests.md ระบุชนิด Manual/Document/Workflow และ evidence ชัดเจน
+P02 review ตรวจทั้งเลขและความหมาย: ไม่มี AC หาย/ซ้ำ ไม่มี test อ้าง AC ที่ไม่มี และแต่ละ
+scenario พิสูจน์ AC นั้นจริง รวม reassign/invalid owners/concurrent last-admin/seed counts
+VIS/A11y ที่ตรวจ geometry หรือ focus ต้องใช้ Playwright + ภาพแอปจริง ไม่ใช้ jsdom แทน
+เอกสาร/workflow/ส่งงานใช้ planned manual inspections ไม่ปลอมเป็น unit test
 
 ## 7. โครงสร้างไฟล์ปลายทาง
 

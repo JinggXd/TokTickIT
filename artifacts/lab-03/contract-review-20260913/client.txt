@@ -1,0 +1,32 @@
+
+> toktickit-workspace@1.0.0 test:client
+> npm --prefix client test
+
+
+> toktickit-client@1.0.0 test
+> vitest run
+
+
+ RUN  v2.1.9 D:/toktickit/client
+
+ ✓ tests/lab-01/App.test.tsx (3 tests) 42ms
+ ✓ tests/lab-02/RouteGuard.test.tsx (4 tests) 94ms
+ ✓ tests/lab-02/AppShell.test.tsx (1 test) 134ms
+ ✓ tests/lab-02/RequesterSelection.test.tsx (4 tests) 307ms
+ ✓ tests/lab-02/RequesterTicketDetail.test.tsx (5 tests) 298ms
+ ✓ tests/lab-02/AttachmentSection.test.tsx (5 tests) 953ms
+   ✓ AttachmentSection (UI-08, UI-09, UI-16) > handles soft removal with reason dialog 721ms
+ ✓ tests/lab-02/MyTickets.test.tsx (6 tests) 1802ms
+   ✓ My Tickets Screen (UI-05, UI-06, UI-14, STYLE-02) > UI-05: renders distinct Empty State vs. No-Results State with distinct icons, copy, and actions 405ms
+   ✓ My Tickets Screen (UI-05, UI-06, UI-14, STYLE-02) > UI-14: search, all filters (including IT Priority), sort toggle, page size, direct page numbers, Previous/Next, loading, and retry 1050ms
+ ✓ tests/lab-02/CreateTicket.test.tsx (9 tests) 6926ms
+   ✓ Create Ticket Screen (UI-01 to UI-04, UI-12, UI-13, STYLE-01, STYLE-04) > UI-02: disables submit button and all form controls during pending submission 1223ms
+   ✓ Create Ticket Screen (UI-01 to UI-04, UI-12, UI-13, STYLE-01, STYLE-04) > UI-03: renders failure banner and preserves all entered field values when API fails 1273ms
+   ✓ Create Ticket Screen (UI-01 to UI-04, UI-12, UI-13, STYLE-01, STYLE-04) > UI-13: displays backend Ticket Number as headline, Ticket Date, and retains requester identity 1144ms
+   ✓ Create Ticket Screen (UI-01 to UI-04, UI-12, UI-13, STYLE-01, STYLE-04) > UI-18: preserves created Ticket Number on attachment failure and reports failed file with retry path 1343ms
+   ✓ Create Ticket Screen (UI-01 to UI-04, UI-12, UI-13, STYLE-01, STYLE-04) > UI-18: disables navigation and action buttons while post-create attachments are uploading and displays progress 1301ms
+
+ Test Files  8 passed (8)
+      Tests  37 passed (37)
+   Start at  18:12:35
+   Duration  8.34s (transform 492ms, setup 995ms, collect 2.12s, tests 10.56s, environment 5.37s, prepare 958ms)

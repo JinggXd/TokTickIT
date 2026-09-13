@@ -1,17 +1,17 @@
 # TokTickIT — Engineering Specification (Lab 3)
 
-**Document Version:** 1.0.0  
-**Status:** DRAFT CONTRACT — Frozen for Review  
-**Sprint:** Sprint 3 (Lab 3: Authentication, RBAC, IT Staff Queue & Operations, Comments/Notes, User Administration)  
-**Target Branch:** `lab3-staging`  
-**Base:** `main` (`b94642a`)  
+**Document Version:** 1.1.0
+**Status:** REVISED DRAFT — Contract corrections; implementation gates remain open
+**Sprint:** Sprint 3 (Lab 3: Authentication, RBAC, IT Staff Queue & Operations, Comments/Notes, User Administration)
+**Target Branch:** `lab3-staging`
+**Base:** `main` (`b94642a`)
 **Standard Compliance:** CPE 334 Lab 3 Specification Guidelines (§9, 11 Sections)
 
 ---
 
 ## 1. Sprint Goal
 
-Transition TokTickIT from a single-role development prototype (Lab 2) into a production-grade, multi-role IT service management system. This entails implementing secure authentication (HttpOnly session-based), role-based access control (RBAC) across three distinct roles (`REQUESTER`, `IT_STAFF`, `ADMINISTRATOR`), IT Staff ticket management (queue search/filter/sort/pagination, assignment, IT priority, 8 status transitions), append-only communications (Public Comments & Internal Notes), and administrative user management with strict safety invariants, while maintaining 100% backward compatibility with Lab 2 requester workflows and database records.
+Transition TokTickIT from a single-role development prototype (Lab 2) into a course-scoped, multi-role IT ticketing system. This entails implementing secure authentication (HttpOnly session-based), role-based access control (RBAC) across three distinct roles (`REQUESTER`, `IT_STAFF`, `ADMINISTRATOR`), IT Staff ticket management (queue search/filter/sort/pagination, assignment, IT priority, 8 status transitions), append-only communications (Public Comments & Internal Notes), and administrative user management with strict safety invariants, while preserving Lab 2 business behavior and data while replacing its development identity mechanism.
 
 ---
 
@@ -28,14 +28,14 @@ TokTickIT was successfully piloted as a Requester Ticketing MVP in Lab 2. Stakeh
 ## 3. Scope
 
 ### 3.1 Included Scope
-- **Authentication**: Stateful sessions via secure HttpOnly cookies, Argon2id/bcrypt password hashing, login, logout, current user profile (`/api/auth/me`), CSRF protection, and mandatory initial password change enforcement.
+- **Authentication**: Stateful sessions via secure HttpOnly cookies, Argon2id password hashing, login, logout, current user profile (`/api/auth/me`), CSRF protection, and mandatory initial password change enforcement.
 - **Authorization & RBAC**: Strict server-side role and ownership validation across all endpoints; client UI role-based navigation.
 - **Requester Regression**: Complete preservation of Ticket Creation, My Tickets, Ticket Detail, and Attachment upload/download/soft-remove on authenticated identity.
 - **IT Staff Queue**: Search, multi-filtering (category, priorities, status, assignment), semantic priority sorting, and pagination.
 - **IT Staff Operations**: Atomic ticket claim, reassign to active staff/admin, IT Priority updates, permitted 8-state transitions with concurrency versioning (`409 Conflict`).
 - **Communication**: Append-only Public Comments (Requester/Staff/Admin) and Internal Notes (Staff/Admin only); Requester "Problem Appears Resolved" indication.
 - **User Administration**: Admin user list with search, user creation with temporary credentials, user editing, activation/deactivation safety checks, and credential resets.
-- **Design System**: Strict reuse of Zen Green tokens, accessible responsive layouts (Desktop ≥992px, Tablet 768–991px, Mobile <768px), and 7 component feedback states.
+- **Design System**: Strict reuse of Zen Green tokens, accessible responsive layouts (Desktop ≥992px, Tablet 768–991px, Mobile <768px), and all meaningful feedback states, including forbidden, not-found, conflict, and safe failure.
 
 ### 3.2 Explicitly Excluded (Per Lab 3 Sheet §4.2)
 - Self-registration / public signup.
@@ -47,6 +47,11 @@ TokTickIT was successfully piloted as a Requester Ticketing MVP in Lab 2. Stakeh
 - IT Staff Ticket Creation (Tickets originate exclusively from Requesters).
 - Actions Taken / Service Actions logging (deferred to Lab 4).
 - Formal SLA engines, escalation rules, and automatic notification dispatchers.
+- Dashboards/KPI analytics beyond simple queue counts; production/cloud infrastructure changes.
+- Department/profile management, photos, account history, bulk operations, import/export.
+- Account unlocking, approval workflows, and advanced recovery/identity management.
+- Mandatory admin pagination, multi-column sorting, or multiple simultaneous filters.
+Existing department data is retained as read-only legacy metadata; it is not a user-editable field.
 
 ---
 
@@ -55,7 +60,7 @@ TokTickIT was successfully piloted as a Requester Ticketing MVP in Lab 2. Stakeh
 - **R01 (Auth Lifecycle):** Secure login via email and password for active accounts, server-side session invalidation on logout, current authenticated user profile retrieval.
 - **R02 (Forced Password Change):** Accounts flagged with `mustChangePassword: true` must be strictly restricted to password change, me, logout, and CSRF endpoints. All business APIs must return `403 Forbidden` (`PASSWORD_CHANGE_REQUIRED`).
 - **R03 (Three Distinct Roles):** System supports exactly 3 roles: `REQUESTER`, `IT_STAFF`, `ADMINISTRATOR`. Each user holds exactly one role. All permissions enforced server-side.
-- **R04 (Authenticated Identity Replacement):** Replace all temporary Lab 2 requester switching mechanisms with authenticated session identity. Header `X-Requester-Id` is ignored and rejected.
+- **R04 (Authenticated Identity Replacement):** Replace all temporary Lab 2 requester switching mechanisms with authenticated session identity. Legacy `X-Requester-Id` and supplied `requesterId` never override session identity; they are ignored. A header alone cannot authenticate.
 - **R05 (Lab 2 Preservation):** All existing tickets, attachments, ticket numbers (`ticketNo`), and categories remain intact without data loss.
 - **R06 (Ticket Ownership & Assignment):** Tickets have 0..1 owners (`ticketOwnerId`). Eligible owners are active IT Staff and Administrators. Claim and reassign actions validate eligibility.
 - **R07 (IT Priority Management):** `itPriority` is initialized to match `requestedPriority` at creation. Only IT Staff may update `itPriority`. `requestedPriority` remains immutable.
@@ -66,7 +71,7 @@ TokTickIT was successfully piloted as a Requester Ticketing MVP in Lab 2. Stakeh
 - **R12 (Non-Destructive Migration):** Schema additions must be forward migrations. Legacy tables, IDs, and existing `itPriority` values must be preserved without data loss.
 - **R13 (Idempotent Seed):** Seeding must be idempotent, providing 4 active + 1 inactive Requesters, 3 active + 1 inactive Staff, and ≥1 active Admin, plus reference data.
 - **R14 (Realistic Fixtures):** Seed tickets distributed across all 8 statuses, 3 priorities, assigned/unassigned states, and accompanied by realistic comments and notes.
-- **R15 (RESTful Consistency):** Strict adherence to REST conventions, JSON error envelopes, and exact HTTP status codes (400, 401, 403, 404, 409, 429).
+- **R15 (RESTful Consistency):** Strict adherence to REST conventions, JSON error envelopes, and exact HTTP status codes (400, 401, 403, 404, 405, 409, 410, 429, 500).
 - **R16 (Queue Capabilities):** IT Staff queue supports text search, multi-filter combinations, semantic priority sorting, and pagination with consistent totals.
 - **R17 (Design Consistency):** Reusable Zen Green theme tokens, role-based navigation bar, user identity pill, status badges, and responsive form controls.
 - **R18 (Staff Ticket Detail):** Comprehensive staff detail interface showing read-only ticket classification, operational controls, and communication threads.
@@ -94,9 +99,36 @@ TokTickIT was successfully piloted as a Requester Ticketing MVP in Lab 2. Stakeh
 
 ### 5.2 Authorization & Role Rules
 - **BR-06 (Single Role Invariant):** Every user has exactly one assigned role (`REQUESTER`, `IT_STAFF`, or `ADMINISTRATOR`).
-- **BR-07 (Requester Scoping):** Requesters can only access and view tickets they created (`requesterId === currentUser.id`). Attempting to read or mutate another requester's ticket returns `404 Not Found` (or `403 Forbidden` per contract) without revealing metadata.
+- **BR-07 (Requester Scoping):** Requesters can only access and view tickets they created (`requesterId === currentUser.id`). Attempting to read or mutate another requester's ticket returns `403 Forbidden` without revealing metadata.
 - **BR-08 (Internal Note Confidentiality):** Internal Notes are strictly inaccessible to Requesters. Any requester request to `/api/tickets/:id/internal-notes` returns `403 Forbidden` before querying the database. Responses must never leak counts or existence.
 - **BR-09 (Operational Field Immutability for Requesters):** Requesters cannot modify `ticketOwnerId`, `itPriority`, or `currentStatus`.
+
+### 5.2.1 Authorization Matrix (Normative)
+
+All business access requires an active session and completed password change. Denial is
+403; missing/expired/revoked session is 401. Requester resource ownership denial stays 403.
+
+| Operation | Requester | IT Staff | Administrator |
+|---|---|---|---|
+| Me, logout, own password change, CSRF bootstrap | Own session, including forced-change session | Same | Same |
+| Create/list own tickets; requester detail | Own only | Denied | Denied |
+| Staff Queue/detail and eligible-owner list | Denied | Allowed | Denied |
+| Admin read-only ticket detail | Denied | Denied | Allowed |
+| Claim/reassign/IT Priority/status | Denied | Allowed | Denied |
+| Eligible primary Ticket Owner | No | Active only | Active only |
+| Read Public Comments | Own ticket | All tickets | All tickets |
+| Create Public Comment | Own ticket | All tickets | Denied |
+| Read Internal Notes | Denied before resource lookup | Allowed | Allowed |
+| Create Internal Note | Denied | Allowed | Denied |
+| Download active attachment | Own ticket | All tickets | All tickets |
+| Upload/soft-remove attachment | Own ticket | Denied | Denied |
+| Problem Appears Resolved | Own ticket, permitted statuses | Denied | Denied |
+| List/create/edit users, reset initial password | Denied | Denied | Allowed with safety guards |
+| Categories and Related Systems reference reads | Allowed | Allowed | Allowed |
+
+Admin ticket reads have their own `/admin/tickets/:id` UI and API route, reached by an
+explicit permitted URL, without granting Queue or Staff mutation access. This implements
+the handout's separation of responsibilities while preserving Admin comment/note visibility.
 
 ### 5.3 Ticket Lifecycle & Workflow Rules
 - **BR-10 (Ticket Creation Defaults):** Every newly created ticket begins in status `NEW`, with `ticketOwnerId: null`, and `itPriority: requestedPriority`.
@@ -112,15 +144,15 @@ TokTickIT was successfully piloted as a Requester Ticketing MVP in Lab 2. Stakeh
   - `CLOSED` $\rightarrow$ `REOPENED`
   - `REOPENED` $\rightarrow$ `OPEN`, `IN_PROGRESS`, `CANCELLED`
   - `CANCELLED` $\rightarrow$ *Terminal (No further transitions allowed)*
-- **BR-15 (Transition Ownership Preconditions):** Transitioning to `OPEN`, `IN_PROGRESS`, or `WAITING_FOR_REQUESTER` requires the ticket to have an assigned eligible owner (`ticketOwnerId !== null`).
-- **BR-16 (Optimistic Concurrency):** Status, owner, and priority mutations require client submission of `expectedVersion` (or `updatedAt`). Stale writes return `409 Conflict`.
+- **BR-15 (Transition Ownership Preconditions):** Transitioning to `OPEN`, `IN_PROGRESS`, or `WAITING_FOR_REQUESTER` requires an assigned active IT Staff/Admin owner. RESOLVED also requires an eligible owner. Reopening clears both appears-resolved fields; all other transitions preserve them.
+- **BR-16 (Optimistic Concurrency):** Status, owner, and priority mutations require client submission of `expectedVersion` (positive integer matching `Ticket.version`). Stale writes return `409 Conflict`.
 - **BR-17 (Problem Appears Resolved Semantics):** Requesters may invoke this on their own tickets when status is `OPEN`, `IN_PROGRESS`, `WAITING_FOR_REQUESTER`, or `REOPENED`. This sets `appearsResolvedAt` and `appearsResolvedById`. Status remains unchanged. Multiple invocations are idempotent no-ops.
 
 ### 5.4 Administrative Safety Rules
 - **BR-18 (Canonical Email):** Email addresses are trimmed and stored lowercase. Uniqueness is enforced both in application validation and PostgreSQL unique constraint.
 - **BR-19 (Self-Deactivation Protection):** An Administrator cannot deactivate their own user account.
 - **BR-20 (Last Active Admin Protection):** An Administrator cannot be deactivated or demoted if they are the sole remaining active Administrator in the system.
-- **BR-21 (Owner Deactivation Cascade):** Deactivating an IT Staff or Administrator account unassigns all tickets currently owned by that user (`ticketOwnerId` set to `null`).
+- **BR-21 (Owner Deactivation Cascade):** Deactivating an owner or changing their role to REQUESTER atomically unassigns affected tickets, increments their versions, and preserves status/requester/author history. The response includes the affected count. Reassign an eligible owner before transitions that require one.
 
 ---
 
@@ -148,12 +180,12 @@ TokTickIT was successfully piloted as a Requester Ticketing MVP in Lab 2. Stakeh
    - Communication Threads: Two tabbed panels:
      - **Public Comments Tab**: Shared thread visible to Requester.
      - **Internal Notes Tab**: Yellow-tinted confidential thread restricted to Staff/Admin.
-   - Attachments section: Download and soft-remove capabilities.
+   - Attachments section: Read existing metadata and download active files. Staff/Admin cannot upload or soft-remove; only the owning Requester can.
 
 ### 6.3 Administrator Screen
 5. **User Management Screen (`/admin/users`):**
    - Search bar by user name or email.
-   - "Add User" button triggering creation modal (Name, Email, Role, Initial Password).
+   - "Add User" button triggering creation modal (Name, Email, Role, Active state, Initial Password).
    - User table: Name, Email, Role badge, Active status badge, and Actions (`Edit`, `Reset Password`).
    - Edit Modal: Name, Email, Role, Active toggle with confirmation dialog.
    - Reset Password Modal: Allows setting a new temporary password, forcing `mustChangePassword: true` on next login.
@@ -193,13 +225,16 @@ erDiagram
         boolean isActive
         string passwordHash
         boolean mustChangePassword
+        int sessionVersion
         datetime createdAt
         datetime updatedAt
     }
 
     Session {
-        string id PK
+        string id PK "SHA-256 session-token hash"
         int userId FK
+        int sessionVersion
+        string csrfToken
         datetime expiresAt
         datetime createdAt
     }
@@ -240,11 +275,46 @@ erDiagram
     }
 ```
 
+### 7.2 Migration, Indexes, Credentials and Seed Plan
+
+1. Map Prisma `User` to the existing physical `RequesterUser` table with `@@map`.
+   Preserve requester IDs, `Attachment.uploadedByRequesterId`, Ticket/Attachment IDs,
+   reference rows, filenames, soft-removal metadata, and physical bytes. Preserve the
+   required legacy department column with an empty-string default for newly created users;
+   API clients cannot create/edit this field.
+2. Add role, nullable passwordHash for unprovisioned accounts, mustChangePassword, and
+   sessionVersion (integer, initially 1). Add a Session table with hashed token primary key,
+   user FK, captured sessionVersion, CSRF token, createdAt and expiresAt. No raw session
+   token is persisted. User role/activation changes and resets revoke all sessions atomically.
+3. Preserve existing enum values and add the five missing statuses. Reuse itPriority and
+   ticketOwnerId. Add version (default 1), nullable appearsResolvedAt/appearsResolvedById
+   with a User FK, and separate PublicComment/InternalNote author/ticket relations.
+   Preserve valid IT Priority values; only backfill missing values from Requested Priority.
+4. Keep existing indexes; add Session(userId), Session(expiresAt), comment/note(ticketId,
+   createdAt, id), comment/note(authorId), Ticket(ticketOwnerId, updatedAt),
+   Ticket(currentStatus, updatedAt), and Ticket(appearsResolvedById). Canonical email
+   uniqueness is enforced in PostgreSQL. Preflight normalized-email collisions and invalid
+   owner references; report conflicts instead of merging people or deleting data.
+5. On a disposable copy: capture before/after counts, IDs, FK mappings, statuses, priority
+   values, attachment metadata and SHA-256 of files. Apply expand/backfill/validate/constrain
+   forward migrations; never edit applied migrations. Test a fresh migration chain separately.
+   Verify sequences accept new records without collision. Capture and verify backup restoration
+   on a copy; a Prisma model rename requires coordinated generated-client/caller updates.
+6. A local provisioning helper accepts per-user temporary secrets at runtime, hashes them,
+   sets mustChangePassword, and never prints or commits plaintext secrets. No hash means
+   login is denied. Provide local-only fictional seed credentials in setup documentation;
+   never assign a universal committed password to migrated real accounts.
+7. Seed counts/data follow AC-18. Use stable unique seed keys (including comments/notes),
+   initialize credentials only when missing, and run twice to prove no duplication, no
+   changed-password reset, and no overwrite of existing valid rows. Snapshot the test fixture
+   at run start; historical counts in baseline.md are not hardcoded completion assertions.
+
+
 ---
 
 ## 8. REST API Contract Overview
 
-All endpoints enforce session authentication and role permissions. Complete details and schemas are specified in `api-spec.md`.
+All protected endpoints enforce session authentication and role permissions; login and the idempotent no-session logout exception follow api-spec.md §2.6. Complete details and schemas are specified in `api-spec.md`.
 
 | Method | Endpoint Path | Description | Access Role |
 |---|---|---|---|
@@ -262,6 +332,7 @@ All endpoints enforce session authentication and role permissions. Complete deta
 | `GET` | `/api/tickets/:id/internal-notes` | List internal notes | IT Staff / Admin |
 | `POST` | `/api/tickets/:id/internal-notes` | Post internal note | IT Staff |
 | `GET` | `/api/staff/tickets` | IT Staff Queue query (search, filter, sort, page)| IT Staff |
+| `GET` | `/api/admin/tickets/:id` | Read-only ticket detail | Administrator |
 | `GET` | `/api/staff/tickets/:id` | IT Staff Ticket Detail with operational data | IT Staff |
 | `POST` | `/api/staff/tickets/:id/claim` | Claim unassigned ticket | IT Staff |
 | `PATCH`| `/api/staff/tickets/:id/owner` | Reassign ticket owner | IT Staff |
@@ -294,52 +365,53 @@ All endpoints enforce session authentication and role permissions. Complete deta
 15. **AC-15:** Forward database migration applies cleanly on fresh and populated test databases without data loss.
 16. **AC-16:** Idempotent seed script runs repeatedly without duplicating records or overwriting changed passwords.
 17. **AC-17:** Seeded/migrated Requesters have valid provisioned credentials and initial password change flag.
-18. **AC-19:** Requester ticket creation, listing, detail, and ticket number formatting retain full Lab 2 behavior.
-19. **AC-20:** Legacy attachment upload, list, download, and soft-remove function with full ownership protection.
-20. **AC-21:** Accessing foreign or removed attachments returns `404` / `410` without leaking file existence.
-21. **AC-22:** Logging out and logging in as another requester completely isolates ticket cache and state.
-22. **AC-23:** IT Staff Queue accessible to IT Staff; denied (`403`) to Requesters and non-permitted roles.
-23. **AC-24:** Queue search by ticket number and summary operates case-insensitively with combined filters.
-24. **AC-25:** Semantic priority sorting orders tickets by `HIGH` > `MEDIUM` > `LOW` rather than alphabetical order.
-25. **AC-26:** Queue pagination handles bounds, total counts, page sizes (10/20/50), and page resets on filter change.
-26. **AC-27:** Queue renders distinct loading skeleton, empty queue, no-results state, and error retry state.
-27. **AC-28:** Staff Detail shows all read-only ticket fields and exposes operational panels only to permitted roles.
-28. **AC-29:** Unassigned ticket can be claimed by IT Staff; claiming already owned ticket requires reassign action.
-29. **AC-30:** Concurrent claim or stale status update returns `409 Conflict` prompting the user to refresh.
-30. **AC-31:** IT Priority updates independently from Requested Priority; Requested Priority remains immutable.
-31. **AC-32:** Status transitions strictly adhere to permitted 8-status matrix; illegal transitions rejected with `400`.
-32. **AC-33:** Requester cannot set status to `RESOLVED` or `CLOSED` or mutate operational fields.
-33. **AC-34:** Requester "Problem Appears Resolved" records timestamp and actor without changing formal status.
-34. **AC-35:** Public comments are readable by own Requester, Staff, and Admin; creatable by Requester and Staff.
-35. **AC-36:** Internal notes are visible and creatable only by IT Staff and Admin; completely hidden from Requester.
-36. **AC-37:** Comments and notes are strictly append-only; `PUT`, `PATCH`, and `DELETE` requests are rejected with `405`.
-37. **AC-38:** Comment content trimmed, validated (1–2,000 chars), and rendered safely without HTML injection.
-38. **AC-39:** IT Staff can complete end-to-end flow: triage queue $\rightarrow$ claim $\rightarrow$ prioritize $\rightarrow$ comment $\rightarrow$ resolve.
-39. **AC-40:** Admin User Management lists all users with Name, Email, Role, Status, and Edit action.
-40. **AC-41:** Admin can provision new user with valid single role, active state, and initial password.
-41. **AC-42:** Duplicate email submission (case-insensitive and trimmed) returns `409 Conflict`.
-42. **AC-43:** Admin can edit user name, email, role, and active status without modifying credential fields.
-43. **AC-44:** Administrator self-deactivation is strictly blocked by application logic and API response `400`.
-44. **AC-45:** Deactivation or demotion of the last remaining active Administrator is blocked with `400`.
-45. **AC-46:** Deactivating a ticket owner unassigns their owned tickets and displays affected count.
-46. **AC-47:** Admin password reset forces `mustChangePassword === true` and revokes user sessions immediately.
-47. **AC-48:** Non-admin attempting to access user management APIs or screens receives `403 Forbidden`.
-48. **AC-49:** Admin screens handle loading, validation errors, busy states, and success confirmations.
-49. **AC-50:** Desktop (1280px), Tablet (768px), and Mobile (375px) viewports display no clipped labels or horizontal scroll.
-50. **AC-51:** Strict reuse of Zen Green palette, typography, status badges, and clear read-only vs editable styling.
-51. **AC-52:** Keyboard accessibility, associated `<label>` elements, focus rings, and touch targets (≥44px) verified.
-52. **AC-53:** Safe error handling: `404`, `409`, and `500` responses never leak stack traces, database secrets, or foreign data.
-53. **AC-54:** Complete engineering documentation (`specification.md`, `api-spec.md`, `ui-spec.md`, `tests.md`).
-54. **AC-55:** Specification and Test Plan exist and are reviewed before implementation PRs are merged.
-55. **AC-56:** Final main test suites pass with recorded commit SHA; single submission PDF (Parts 1–9) verified.
+18. **AC-18:** Seed includes at least 4 active and 1 inactive Requester, 3 active and 1 inactive Staff, and 1 active Admin; at least 24 fictional tickets span all 8 statuses, all priorities and assigned/unassigned ownership, with sample comments and notes.
+19. **AC-19:** Requester ticket creation, listing, detail, and ticket number formatting retain full Lab 2 behavior.
+20. **AC-20:** Legacy attachment upload, list, download, and soft-remove function with full ownership protection.
+21. **AC-21:** Accessing foreign or removed attachments returns `403` / `410` with zero file bytes; genuinely missing resources return `404`. Ownership is checked before removed-state disclosure.
+22. **AC-22:** Logging out and logging in as another requester completely isolates ticket cache and state.
+23. **AC-23:** IT Staff Queue accessible to IT Staff; denied (`403`) to Requesters and non-permitted roles.
+24. **AC-24:** Queue search by ticket number and summary operates case-insensitively with combined filters.
+25. **AC-25:** Semantic priority sorting orders tickets by `HIGH` > `MEDIUM` > `LOW` rather than alphabetical order.
+26. **AC-26:** Queue pagination handles bounds, total counts, page sizes (10/20/50), and page resets on filter change.
+27. **AC-27:** Queue renders distinct loading skeleton, empty queue, no-results state, and error retry state.
+28. **AC-28:** Staff Detail shows all read-only ticket fields and exposes operational panels only to permitted roles.
+29. **AC-29:** Staff can claim an unassigned ticket and assign/reassign to an active Staff/Admin. Every already-owned claim returns 409. Null, inactive, nonexistent and Requester owners are rejected.
+30. **AC-30:** Concurrent claim or stale status update returns `409 Conflict` prompting the user to refresh.
+31. **AC-31:** IT Priority updates independently from Requested Priority; Requested Priority remains immutable.
+32. **AC-32:** Status transitions strictly adhere to permitted 8-status matrix; illegal transitions rejected with `400`.
+33. **AC-33:** Requester cannot set status to `RESOLVED` or `CLOSED` or mutate operational fields.
+34. **AC-34:** Requester "Problem Appears Resolved" records timestamp and actor without changing formal status.
+35. **AC-35:** Public comments are readable by own Requester, Staff, and Admin; creatable by Requester and Staff.
+36. **AC-36:** Internal notes are readable by IT Staff and Admin, creatable only by IT Staff, and completely hidden from Requester.
+37. **AC-37:** Comments and notes are strictly append-only; `PUT`, `PATCH`, and `DELETE` requests are rejected with `405`.
+38. **AC-38:** Comment content trimmed, validated (1–2,000 chars), and rendered safely without HTML injection.
+39. **AC-39:** IT Staff can complete end-to-end flow: triage queue $\rightarrow$ claim $\rightarrow$ prioritize $\rightarrow$ comment $\rightarrow$ resolve.
+40. **AC-40:** Admin User Management lists Name, Email, Role, Status and Edit, with name/email search and a single optional role filter.
+41. **AC-41:** Admin can provision new user with valid single role, active state, and initial password.
+42. **AC-42:** Duplicate email submission (case-insensitive and trimmed) returns `409 Conflict`.
+43. **AC-43:** Admin can edit user name, email, role, and active status without modifying credential fields.
+44. **AC-44:** Administrator self-deactivation is strictly blocked by application logic and API response `400`.
+45. **AC-45:** Deactivation or demotion of the last remaining active Administrator is blocked with `400`.
+46. **AC-46:** Deactivating an owner or changing them to REQUESTER unassigns their tickets atomically, increments versions, preserves statuses and displays the affected count.
+47. **AC-47:** Admin password reset forces `mustChangePassword === true` and revokes user sessions immediately.
+48. **AC-48:** Non-admin attempting to access user management APIs or screens receives `403 Forbidden`.
+49. **AC-49:** Admin screens handle loading, validation errors, busy states, and success confirmations.
+50. **AC-50:** Desktop (1280px), Tablet (768px), and Mobile (375px) viewports display no clipped labels or horizontal scroll.
+51. **AC-51:** Strict reuse of Zen Green palette, typography, status badges, and clear read-only vs editable styling.
+52. **AC-52:** Keyboard accessibility, associated `<label>` elements, focus rings, and touch targets (≥44px) verified.
+53. **AC-53:** Safe error handling: `404`, `409`, and `500` responses never leak stack traces, database secrets, or foreign data.
+54. **AC-54:** Complete engineering documentation (`specification.md`, `api-spec.md`, `ui-spec.md`, `tests.md`).
+55. **AC-55:** Specification and Test Plan exist and are reviewed before implementation PRs are merged.
+56. **AC-56:** Final main test suites pass with recorded commit SHA; single submission PDF (Parts 1–9) verified.
 
 ---
 
 ## 10. Definition of Done (DoD)
 
-A phase or feature is marked **Done** only when all of the following conditions are met:
+P00–P02 have their own documentary/harness gates in PHASES.md. A product feature is marked **Done** only when all of the following conditions are met:
 1. Every corresponding Acceptance Criterion has at least one automated or formal verification test passing.
-2. TDD sequence is strictly observed: tests written first, confirmed failing for the expected reason, then made to pass.
+2. Feature implementation follows TDD: write the planned test, confirm the expected Red, implement, then Green. Documentation-only review uses traceability/diff checks and does not invent a feature Red/Green result.
 3. No tests are skipped (`.skip`), disabled, commented out, or reduced in assertion strength.
 4. Server, client, and E2E suites pass with zero regressions against baseline.
 5. All code adheres to TypeScript strict mode with zero build errors.
@@ -351,7 +423,23 @@ A phase or feature is marked **Done** only when all of the following conditions 
 ## 11. Assumptions & Technical Decisions
 
 1. **Session Store Strategy:** Stateful HttpOnly cookies backed by PostgreSQL session records are selected over stateless JWTs to enable instantaneous revocation during logout, password reset, or account deactivation.
-2. **Password Cryptography:** Argon2id / bcrypt standard algorithm used for password hashing; no bespoke crypto implementations.
+2. **Password Cryptography:** Argon2id is selected; the hashing profile is fixed in api-spec.md §2.6; the package/version requires a dependency patch before P04. No dependency installation is authorized by this document.
 3. **Optimistic Locking:** Concurrency conflicts on ticket mutations resolved via version numbers, returning `409 Conflict` with refetch instructions.
 4. **Preserved Schema Conventions:** Existing column name `ticketNo` is retained (avoiding disruptive renaming to `ticketNumber`). `ticketOwnerId` and `itPriority` are reused.
-5. **Test Isolation Guard:** All future automated test runs must execute against an isolated disposable database (`toktickit_test`) and isolated uploads folder (`test-uploads`) to guarantee zero pollution of shared data.
+5. **Test Isolation Guard:** All database/API/E2E runs must execute against an isolated disposable database (`toktickit_test`) and isolated uploads folder (`test-uploads`) to guarantee zero pollution of shared data.
+
+6. **Legacy compatibility:** Keep Lab 2 requester query names, pagination, ticket/attachment
+   DTOs and error bodies. Only session authentication, expanded status allowlist, current
+   operational values, and explicitly additive detail fields change. Refer to api-spec.md §3.
+7. **Workflow decisions:** Claiming any assigned ticket is 409 (including own claim); manual
+   unassign is excluded and ownerId null is 400. Eligible owner is required for OPEN,
+   IN_PROGRESS, WAITING_FOR_REQUESTER and RESOLVED transitions. Only CANCELLED is terminal.
+8. **Business-rule numbering:** BR IDs here are local contract IDs, not the sheet's example
+   numbering. Mandatory sheet BR-01 maps to R01/BR-05/AC-01/AC-05; sheet BR-02 to BR-02;
+   sheet BR-03 to R04/BR-07/AC-03; sheet BR-04 to §5.2.1/BR-08/AC-35/AC-36;
+   sheet BR-05 to BR-09/BR-17/AC-33/AC-34.
+9. **Release DoD:** The feature checklist in §10 is necessary but not sufficient for product
+   completion. Final-main SHA and complete passing output, reviewer identity/comments/
+   responses/approval/merge records, all Issues Done, README/.gitignore, actual test paths,
+   screenshots and completed visual checklist, ai-use.md with 6–10 real prompts and the
+   student's reflection, and one verified PDF Parts 1–9 are required by AC-54–AC-56.
