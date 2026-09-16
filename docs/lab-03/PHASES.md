@@ -62,8 +62,9 @@
 |---|---|---|
 | P00 | Baseline recorded; historical verification only | Inventory/ผล 2026-09-10 ไม่ใช่ผล checkout ปัจจุบัน; DB/E2E baseline รอ isolation |
 | P01 | Revised documents; review pending | ตรวจ contract v1.1.0 และ approved runtime patch scope ก่อน implementation |
-| P02 | Test plan revised; harness Blocked | ทำ LCP-01 และ HARNESS-01 ให้ปลอดภัยจริงก่อนรัน DB suites; planned tests ไม่ใช่ผล Pass |
-| P03–P14 | Planned | เริ่มตาม dependencies และเก็บหลักฐานจริงต่อ issue |
+| P02 | Harness implemented; verification blocked | HARNESS-01 pure guard ผ่านแล้ว; รอ disposable PostgreSQL เพื่อยืนยัน migration/server/E2E โดยไม่แตะ development data |
+| P03 | Blocked | ต้องมี `DATABASE_URL_TEST` ที่เข้าถึงได้และชื่อ `toktickit_test`/`toktickit_test_<suffix>` ก่อน apply/verify migration และ seed |
+| P04–P14 | Planned | เริ่มตาม dependencies และเก็บหลักฐานจริงต่อ issue |
 
 คำสั่งผู้ใช้ให้แก้เอกสารรอบนี้อนุมัติการแก้ contract/pipeline/rules ที่ตรวจพบเท่านั้น
 ไม่ได้ยืนยันว่า code, migration, full suites, peer review, merge หรือ submission เสร็จแล้ว

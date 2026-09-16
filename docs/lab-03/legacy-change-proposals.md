@@ -1,6 +1,6 @@
 # TokTickIT Lab 3 — Legacy Change Proposals
 
-**Status:** Runtime patches PROPOSED; LCP-05 documentation scope applied on 2026-09-13
+**Status:** LCP-01 partially implemented and pending database-backed verification; remaining runtime patches PROPOSED; LCP-05 documentation scope applied on 2026-09-13
 **Rule Reference:** [`.antigravityrules`](../../.antigravityrules) Section 0 & 4 (P00)
 **Notice:** Runtime proposals remain unapplied. AGENTS.md documentation alignment (LCP-05) was applied under the user's request to fix the audit findings; this is not approval of database/code/dependency changes.
 
@@ -10,7 +10,7 @@
 
 | Patch ID | Target Path | Purpose / Requirement | Impact on Lab 2 | Status |
 |---|---|---|---|---|
-| **LCP-01** | `playwright.config.ts`, server test/bootstrap/upload configuration | Isolated test DB & uploads folder (Safety Gate) | Zero regression; protects live DB from test writes | **Proposed** |
+| **LCP-01** | `playwright.config.ts`, server test/bootstrap/upload configuration | Isolated test DB & uploads folder (Safety Gate) | Zero regression; protects live DB from test writes | **Implemented — DB verification blocked** |
 | **LCP-02** | `server/prisma/schema.prisma` | Additive schema expansion for Lab 3 models/enums | Fully backwards-compatible; no column drops | **Proposed** |
 | **LCP-03** | `server/src/app.ts` | Auth router mounting & session middleware integration | Replaces header spoofing with real session | **Proposed** |
 | **LCP-04** | `client/src/App.tsx`, `AppShell.tsx` | Authenticated shell & role navigation | Removes temporary Dev Requester selector | **Proposed** |

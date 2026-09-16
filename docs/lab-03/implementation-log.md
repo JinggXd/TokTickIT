@@ -204,3 +204,46 @@ results from 2026-09-10 were not reused as current results.
    migration patch approval. Existing code, applied migrations, database and uploads were unchanged.
 4. Peer review/merge, final-main suites/SHA, screenshots/checklists, reviewer.md, ai-use.md and
    final submission PDF remain pending. No commit, push, PR update or merge was performed.
+
+---
+
+## 2026-09-16 — P02 isolation harness implementation (in progress)
+
+- **Authorization:** The user asked the agent to continue the Lab 3 plan through implementation and
+  to record actual work in this log. No commit, push, PR merge, shared-database change, or new
+  dependency installation was authorized by this entry.
+- **Branch / starting state:** `docs/lab3-contract`, clean before this implementation pass.
+
+### Changes made
+
+| Path | Change |
+|---|---|
+| `server/src/config/testEnvironment.ts` | New fail-closed test-target validator. It accepts only PostgreSQL database names `toktickit_test` or `toktickit_test_<suffix>`, requires a run ID, and resolves uploads only inside `server/test-uploads/<run-id>`. |
+| `server/scripts/run-tests.mjs` | New server test launcher. It maps `DATABASE_URL_TEST` to `DATABASE_URL` before Vitest starts, enables test mode, creates one run-specific upload directory, then removes only that directory after the child process exits. |
+| `server/tests/setup.ts`, `server/vitest.config.ts` | Every Vitest suite now invokes the guard before test imports exercise application/database code. |
+| `server/tests/lab-03/test-environment.test.ts` | HARNESS-01 test written first: missing/unsafe development database URLs fail; an allowlisted test URL receives a contained upload path. |
+| `server/src/app.ts` | Attachment storage now uses the guarded test directory in test mode and preserves `server/uploads` for normal runtime. |
+| `server/scripts/run-test-server.mjs`, `playwright.config.ts` | Playwright now requires the same disposable database target, starts a dedicated server on port 3001 and client on 5174, and never reuses a developer server. |
+| `.gitignore` | Ignores only generated `server/test-uploads/` content. |
+
+### Commands actually run
+
+| Command | Exit | Result |
+|---|---:|---|
+| `npx vitest run tests/lab-03/test-environment.test.ts` before implementation | 1 | Expected Red: module `src/config/testEnvironment` did not exist. |
+| `DATABASE_URL_TEST=...toktickit_test... npm test -- tests/lab-03/test-environment.test.ts` in `server/` | 0 | Green: 1 file, 3 HARNESS-01 tests passed. This test does not connect to PostgreSQL. |
+| `npx playwright test --list` with an allowlisted test URL | 0 | Playwright configuration loaded and listed 21 existing tests without starting services. |
+| `npm run build` in `server/` | 0 | TypeScript build passed. |
+| `git diff --check` | 0 | No whitespace errors. |
+
+### Gate status and blocker
+
+- **P02:** Implemented but **not fully verified**. The fail-closed guard has unit evidence, but the
+  complete server/E2E suites have not run.
+- **P03:** **Blocked on a verified disposable PostgreSQL service.** A read-only Docker check found
+  that the Docker daemon is unavailable on this host. The agent did not fall back to the development
+  database and did not create, migrate, seed, truncate, or delete any database.
+- **Next safe action:** Configure `DATABASE_URL_TEST` to an accessible disposable database named
+  `toktickit_test` (or `toktickit_test_<suffix>`), then apply migration/seed there and run the
+  migration and regression suites. Authentication phases also require explicit approval to add the
+  contract-required Argon2id package before implementation.
