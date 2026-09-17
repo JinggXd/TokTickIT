@@ -1,10 +1,14 @@
 # TokTickIT — Test Plan & Traceability Matrix (Lab 3)
 
 **Document Version:** 1.1.0
-**Status:** REVISED DRAFT — Plan only; test harness is not implemented
+**Status:** F1 / P02 in progress — Test plan mapped; isolation harness partially verified, review fixes pending (2026-09-16)
 **Sprint:** Sprint 3 (Lab 3)
 **Standard Compliance:** CPE 334 Lab 3 Testing Standards (§10, AC-01 through AC-56)
 **TDD Rule:** All test rows start with status `Planned`. For each feature, write the failing test first (Red), verify the expected failure reason, implement the minimal solution (Green), and verify regression.
+
+**Phase mapping:** [PHASES.md](PHASES.md) defines F1=P00–P02, F2=P03–P06,
+F3=P07–P10, F4=P11–P12, F5=P13–P14. Work-package/test/AC IDs and gates stay unchanged.
+Review each Issue/PR throughout the work, not only in F5.
 
 ---
 
@@ -47,10 +51,10 @@ e2e/lab-03/
 ## 2. Test Environment Safety & Isolation Guard
 
 1. **Dedicated Disposable Test Database:**
-   - Planned: server/API/E2E test processes use a verified disposable `toktickit_test` database. The runner must validate DATABASE_URL_TEST and explicitly pass it as DATABASE_URL to Prisma and the child server before imports.
+   - Required: server/API/E2E test processes use a verified disposable `toktickit_test` database. The runner must validate DATABASE_URL_TEST and explicitly pass it as DATABASE_URL to Prisma, Playwright workers and the child server before imports. Server runner implemented; E2E worker propagation incomplete.
    - The shared development database (`toktickit`) is never used for automated test suites.
 2. **Dedicated Test Upload Directory:**
-   - Planned: run-specific directories under `server/test-uploads/<run-id>/`. The server must explicitly read the configured test upload path; setting an unused environment variable is insufficient. Teardown removes only tracked files created by that run after absolute-path containment checks.
+   - Required: run-specific directories under `server/test-uploads/<run-id>/`. Server test-mode storage now uses this path; existing fixture cleanup paths still need correction. Teardown removes only tracked files created by that run after absolute-path containment checks.
 3. **Strict Per-Test ID Tracking:**
    - All test fixtures track dynamically created record IDs in arrays (e.g. `createdTicketIds`, `createdUserIds`).
    - Teardowns delete **strictly** by primary key: `where: { id: { in: createdIds } }`.
@@ -58,15 +62,19 @@ e2e/lab-03/
 
 ---
 
-**Current gate: Blocked.** LCP-01 remains a proposal; the production Prisma singleton and upload
-configuration do not consume these test settings yet. Do not run DB suites against development
-as a fallback. The runner must reject missing/unsafe DB targets before opening a connection,
-use a dedicated test server (never reuse the development server), track IDs/files as soon as
-creation succeeds, and surface cleanup failures. New screenshots go to run-specific paths.
-Clock-controlled expiry/rate-limit tests and deterministic fixtures are also required by P02.
+**Current gate: In progress — fixes required before P02 closure.** LCP-01 has runtime code.
+Docker was made available; `toktickit_test` received Lab 2 migrations/seed and the earlier server
+run passed 15 files / 107 tests. The latest P02 review reran three pure guard tests successfully;
+these do not prove the full HARNESS-01 scenario. E2E still hardcodes development API URLs and
+does not propagate the test DB to its Prisma worker. Cleanup references legacy uploads,
+screenshots overwrite fixed Lab 2 paths, and the Vitest guard runs in beforeAll after imports.
+Do not run E2E until corrected. Validate before imports/I/O, track IDs/files immediately,
+surface cleanup failures, and verify unsafe paths/environment mismatches and runner/worker
+behavior. Clock-controlled expiry/rate-limit tests and deterministic fixtures are also required by P02.
 
-All test paths below are **proposed targets**, not files claimed to exist. Each row remains Planned
-until its actual test/inspection runs and the status is linked to raw output, source SHA and run ID.
+All test paths below are **proposed targets** except the existing partial HARNESS-01 test file.
+Product rows remain Planned; HARNESS-01 is In progress until its full scenario passes with
+raw output, source SHA and run ID. Document review is not product Pass evidence.
 Lab 3 tests inherit all Lab 2 business assertions; selector/header-specific tests need an approved
 migration to session identity. Do not skip legacy tests to make the final suite green.
 
@@ -170,7 +178,7 @@ migration to session identity. Do not skip legacy tests to make the final suite 
 | **SEC-11** | Security | AC-02, AC-03, AC-04, AC-23, AC-33, AC-48, R03, R04 | Full protected endpoint role/ownership matrix and forced-change bypass | Own/foreign/missing cases match permission matrix; header/body/query identity spoof never grants access; all business paths block forced-change session | `server/tests/lab-03/authorization.api.test.ts` | `npm run test:server` | **Planned** | Pending |
 | **SEC-12** | Security | AC-09, AC-10, AC-11, R15 | CSRF valid/invalid cases, trusted-origin login, independent rate-limit buckets and expiry | Allowed origin plus session token succeeds; missing/wrong origin/token 403; sixth failed-attempt window throttled; Retry-After decreases and expires; stale-role cookies 401 | `server/tests/lab-03/auth.api.test.ts` | `npm run test:server` | **Planned** | Pending |
 | **MIG-06** | Migration | AC-18, R13, R14 | Assert seed role counts and realistic fixtures after both seed runs | At least Requester 4 active/1 inactive, Staff 3 active/1 inactive, Admin 1 active; >=24 tickets across all 8 statuses/3 priorities/owner modes with comments and notes | `server/tests/lab-03/migration-regression.test.ts` | `npm run test:server` | **Planned** | Pending |
-| **HARNESS-01** | Integration | AC-15, R12, R24 | Missing/dev DB target, unsafe upload path or reused development server | Runner fails before DB/file writes; safe test target can execute fixtures and exact-ID/path cleanup; cleanup failures fail run | `server/tests/lab-03/test-environment.test.ts` | `npm run test:server` | **Planned** | Pending |
+| **HARNESS-01** | Integration | AC-15, R12, R24 | Missing/dev DB target, unsafe upload path or reused development server | Runner fails before DB/file writes; safe test target can execute fixtures and exact-ID/path cleanup; cleanup failures fail run | `server/tests/lab-03/test-environment.test.ts` | `npm run test:server` | **In progress** | 24 harness unit/integration cases passed; runtime Playwright CLI rejection, Playwright worker execution/env propagation without build artifacts (`e2e/lab-03/worker-env.spec.ts`), webServer skip strictly restricted to probe tests (non-probe rejected), shared `cleanupAttachmentFiles` helper between E2E and test, and simulated physical unlink failure verification; full live DB run pending disposable PostgreSQL service |
 | **UI-13** | UI | AC-02, AC-06, AC-12, R02 | Change Password mandatory/voluntary mode, validation, submitting, success and failure | Mandatory guard retained until server success; fields labeled; invalid confirmation/current/new shown; controls disabled; safe failures retain non-secret context | `client/tests/lab-03/ChangePassword.test.tsx` | `npm run test:client` | **Planned** | Pending |
 | **UI-14** | UI | AC-20, AC-34, AC-35, R05, R09, R10 | Requester detail public comments, resolution confirmation and attachments | No internal-note tab/count; permitted appears-resolved only; duplicate acknowledgment stable; Lab 2 removed-file UI intact | `client/tests/lab-03/RequesterTicketDetail.test.tsx` | `npm run test:client` | **Planned** | Pending |
 | **UI-15** | UI | AC-27, AC-28, AC-49, AC-53, R22 | 403/404/409/500 feedback on Queue, Detail and Admin views | Safe per-screen messages and retry; 409 no silent overwrite; drafts retained; no success on failure | `client/tests/lab-03/Feedback.test.tsx` | `npm run test:client` | **Planned** | Pending |
@@ -250,8 +258,8 @@ scenario table, not a product Pass result. Review expected behavior, not just ma
 
 - P01/P02 document review checks AC uniqueness/completeness, semantic mapping, endpoint and
   role coverage, inherited DTOs/statuses and actual theme tokens. This is not feature TDD.
-- Product tests above are Planned; automated files still need implementation. Commands become
-  runnable only after HARNESS-01/LCP-01 is verified. Run IDs/commands/exit codes/source SHA and
+- Product tests above are Planned; automated files still need implementation. HARNESS-01 is
+  partially implemented; E2E remains blocked by the isolation fixes above. Run IDs/commands/exit codes/source SHA and
   raw output must replace Pending in the evidence column when each run actually finishes.
 - Before closing a feature, run focused Red then Green and safe regression suites. Before
   final release run server, client, Playwright and both builds from final main, with zero skips.

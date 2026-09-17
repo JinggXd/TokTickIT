@@ -3,6 +3,11 @@
 กฎเสริมสำหรับต่อท้าย `pipeline3` ให้ coding agent อ่านก่อนทำงานทุกครั้ง
 กฎนี้ไม่ใช่หลักฐานว่า Antigravity โหลดไฟล์นี้อัตโนมัติ เจ้าของงานต้องแนบหรืออ้างไฟล์นี้ในคำสั่งเริ่มงาน
 
+แผนปัจจุบันใช้ 5 เฟสใหญ่ใน `docs/lab-03/PHASES.md`: F1=P00–P02, F2=P03–P06,
+F3=P07–P10, F4=P11–P12, F5=P13–P14 โดยเก็บ P00–P14 เป็นงานย่อยและคงทุก requirement/gate
+บันทึกทั้งเฟสใหญ่/งานย่อย และทำ Issue → branch → test → PR เข้า lab3-staging → peer review/merge
+ต่อชุดงานตลอดทาง; 5 เฟสไม่จำกัดจำนวน PRs และไม่เลื่อน peer review ไปทำเฉพาะ F5
+
 ## 1. รักษางานเดิม ไม่แก้โดยพลการ
 
 - เริ่มด้วยการอ่าน repository instructions, ใบ Lab 3, pipeline และ contract ปัจจุบัน ตรวจ branch, HEAD และ `git status` โดยไม่เปลี่ยนแปลงอะไร

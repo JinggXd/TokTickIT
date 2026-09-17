@@ -19,3 +19,7 @@ server/test-uploads/
 # playwright
 test-results/
 playwright-report/
+
+# artifacts handoff
+artifacts/**/handoff/
+*.zip

@@ -1,3 +1,4 @@
+import fs from "node:fs";
 import path from "node:path";
 
 export class TestEnvironmentError extends Error {
@@ -39,10 +40,28 @@ function databaseName(url: string): string {
   return name;
 }
 
-function assertContained(candidate: string, parent: string): void {
+export function assertContained(candidate: string, parent: string): void {
   const relative = path.relative(parent, candidate);
   if (relative === "" || relative.startsWith("..") || path.isAbsolute(relative)) {
-    throw new TestEnvironmentError("Test upload directory must be a child of server/test-uploads.");
+    throw new TestEnvironmentError(`Path must be strictly contained within parent directory: ${candidate}`);
+  }
+}
+
+export function cleanupAttachmentFiles(
+  runDir: string,
+  parentDir: string,
+  storedFileNames: (string | null | undefined)[],
+  unlinkFn: (filePath: string) => void = fs.unlinkSync,
+): void {
+  assertContained(runDir, parentDir);
+  for (const name of storedFileNames) {
+    if (name) {
+      const filePath = path.resolve(runDir, name);
+      assertContained(filePath, runDir);
+      if (fs.existsSync(filePath)) {
+        unlinkFn(filePath);
+      }
+    }
   }
 }
 
@@ -100,4 +119,40 @@ export function getUploadDirectory(): string {
     return requireTestEnvironment().uploadDir;
   }
   return path.resolve(getWorkspaceRoot(), "server", "uploads");
+}
+
+export function validateApiEndpoint(urlString: string): string {
+  let url: URL;
+  try {
+    url = new URL(urlString);
+  } catch {
+    throw new TestEnvironmentError(`Invalid API URL: ${urlString}`);
+  }
+  const isLocalhost =
+    url.hostname === "localhost" ||
+    url.hostname === "127.0.0.1" ||
+    url.hostname === "0.0.0.0" ||
+    url.hostname === "[::1]" ||
+    url.hostname === "::1";
+
+  if (url.port === "3000" || (!url.port && isLocalhost)) {
+    throw new TestEnvironmentError(
+      `Refusing to target development server at ${urlString}. Test server runs on port 3001.`,
+    );
+  }
+  return urlString;
+}
+
+export function resolveApiBase(
+  env: { API_URL?: string; VITE_API_URL?: string; TOKTICKIT_TEST_MODE?: string } = process.env,
+): string {
+  // In test mode, default strictly to isolated test server on port 3001 and ignore dev-server VITE_API_URL
+  let candidate = env.API_URL;
+  if (!candidate) {
+    candidate =
+      env.TOKTICKIT_TEST_MODE === "true"
+        ? "http://localhost:3001"
+        : env.VITE_API_URL || "http://localhost:3001";
+  }
+  return validateApiEndpoint(candidate);
 }

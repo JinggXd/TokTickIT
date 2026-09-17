@@ -1,6 +1,9 @@
-# Lab 3 — Phase Overview
+# Lab 3 — แผน 5 เฟสใหญ่
 
-เอกสารสรุปแผน ไม่ใช่รายงานว่าทำเสร็จแล้ว ทุก Phase เริ่มต้นเป็น Planned จนมีหลักฐานจริง
+อัปเดตแผน: 2026-09-16 ตามคำขอให้รวมงานเป็น 5 เฟสใหญ่ (F1–F5)
+เก็บ P00–P14 เดิมเป็นรหัสงานย่อยสำหรับอ้างอิง requirement, dependencies, Issue, PR และประวัติผลทดสอบ
+การรวมเฟสไม่ลด scope/AC/test/หลักฐาน และไม่เปลี่ยนลำดับ dependency ของงานย่อย
+เอกสารนี้เป็นแผน ไม่ใช่รายงานว่าทำเสร็จแล้ว ทุกงานเริ่มต้นเป็น Planned จนมีหลักฐานจริง
 อ่านกฎและรายละเอียดทั้งหมดใน [`.antigravityrules`](../../.antigravityrules) ก่อนเริ่มงาน
 
 ## ตำแหน่งไฟล์
@@ -16,9 +19,34 @@
 พร้อมเอกสารสนับสนุน เช่น `baseline.md`, `legacy-change-proposals.md` และ `implementation-log.md`
 อย่าสร้างผล Pass หรือ reviewer approval ล่วงหน้าเพื่อเติมเอกสารให้ดูครบ
 
-## แผน 15 Phase
+## แผน 5 เฟสใหญ่และเกณฑ์จบงาน
 
-| Phase | งาน | ผลลัพธ์ที่ต้องยืนยัน |
+| เฟสใหญ่ | งานย่อยเดิม | ต้องทำอะไร | ผลลัพธ์ก่อนจบเฟส |
+|---|---|---|---|
+| F1 — เตรียมแผนและระบบทดสอบ | P00–P02 | ตรวจ baseline Lab 2; จัด specification/API/UI/test plan; แยก DB/uploads/server/worker; แก้และตรวจ isolation/cleanup | Contract และ test mapping ครบ; HARNESS-01 ครบทุกกรณี; baseline suites ที่จำเป็นรันบน environment แยกได้; งานผ่าน review |
+| F2 — ฐานข้อมูลและระบบเข้าสู่ระบบ | P03–P06 | Additive migration/seed; users/roles; login/logout/session/password lifecycle; server authorization; auth UI และเมนูตาม role | Migration fresh/populated DB และ seed idempotency ผ่าน; ข้อมูลเดิมอยู่ครบ; auth/role/forced-change/security tests ผ่าน พร้อม review |
+| F3 — ระบบ Requester และ Staff | P07–P10 | Requester regression; Staff Queue; claim/reassign/priority/status; Public Comments/Internal Notes/appears-resolved | Ticket workflow ผ่าน API/UI/integration ตาม AC; ownership และ note visibility ถูกต้อง; Lab 2 regression ผ่าน พร้อม review |
+| F4 — ระบบ Admin และทดสอบรวม | P11–P12 | User management/reset/activation/role safety; full E2E/security/migration/regression/responsive; screenshots และ visual checklist | ฟีเจอร์และ AC ครบ; suites ที่กำหนดผ่านจริง ไม่มี skip; ตรวจภาพ desktop/tablet/mobile และเก็บหลักฐาน พร้อม review |
+| F5 — รวมงานและส่งงาน | P13–P14 | ตรวจหลักฐาน peer review; release lab3-staging → main; ทดสอบ final main; PDF Answer Part 1–9 | Reviewer approval/merge จริง; final-main SHA และผลทดสอบตรงกัน; เอกสารและลิงก์ส่งงานครบ |
+
+ทำ F1 → F2 → F3 → F4 → F5 ตามภาพรวม และรักษา dependencies งานย่อยใน `.antigravityrules`
+ให้รายงานสถานะทั้งสองระดับ เช่น **F1 / P02 — In progress** เพื่อไม่สับสนกับ P01 เดิม
+
+## Issue / branch / PR ระหว่างทุกเฟส
+
+5 เฟสใหญ่ไม่ใช่ข้อกำหนดให้มีเพียง 5 Issues หรือ 5 PRs ให้แบ่งตามชุดงานที่ตรวจได้
+ตัวอย่าง F2 แยก migration, authentication backend, authorization และ auth UI ได้ตาม P03–P06
+
+1. เปิดหรือใช้ Issue ที่มีอยู่ ระบุเฟสใหญ่/งานย่อย, requirement/AC, planned tests และ dependencies; อย่าสร้างซ้ำ
+2. ทำทีละ Issue บน branch ของชุดงานนั้น พร้อม Spec DD → Test DD → TDD และบันทึกผลจริง
+3. เมื่อพร้อม review ให้ผู้ทำงานเปิด PR เข้า `lab3-staging` ระบุ scope/tests/known gaps
+4. ผูก Issue ใน Development panel และตรวจลิงก์ก่อนย้ายการ์ดเป็น PR Review; ข้อความ `Closes #N` อย่างเดียวไม่พอสำหรับ staging
+5. เพื่อนที่ไม่ใช่ผู้เปิด PR รีวิว; ผู้ทำงานแก้/ตอบ feedback; reviewer ตรวจซ้ำ approve และเป็นผู้ merge
+6. ทำ review ต่อชุดงานตลอด F1–F4; F5 รวบรวมหลักฐานและทำ release PR `lab3-staging` → `main` ที่ต้องผ่าน review เช่นกัน
+
+## รายการงานย่อยเดิม (คงรหัส P00–P14)
+
+| งานย่อย | งาน | ผลลัพธ์ที่ต้องยืนยัน |
 |---|---|---|
 | P00 — Baseline | อ่าน repo และตรวจ Lab 2 โดยไม่แก้โค้ด | สถานะจริงของงานเดิม, branch/HEAD, ผลทดสอบที่ปลอดภัย และรายการเสนอแก้ legacy |
 | P01 — Specification | กำหนด requirements, roles, workflow, API, UI และ migration | Contract ครบ ไม่ขัดกัน และอนุมัติขอบเขต patch ก่อน implement |
@@ -36,7 +64,7 @@
 | P13 — Review and Integration | Peer review, feature → lab3-staging → main | หลักฐาน review/approval/merge จริง และ rerun บน final main พร้อม SHA |
 | P14 — Submission | จัดเอกสารและหลักฐานส่งงาน | PDF เดียว Answer Part 1–9 ครบ ลิงก์ใช้งานได้ ภาพอ่านได้ และตรง final main |
 
-## กติกาทุก Phase
+## กติกาทุกเฟสและงานย่อย
 
 1. เริ่ม P00 ก่อน ไม่เริ่มสร้างระบบทั้งชุดทันที
 2. ถ้าจำเป็นต้องแก้ไฟล์เดิม ให้เสนอ minimal patch พร้อม requirement/ผลกระทบ/regression tests และรออนุมัติ
@@ -56,15 +84,27 @@
 - AGENTS.md แยก Lab 2/Lab 3 และ staging branch ตาม scope แล้ว
 - ใช้ AC-01–AC-56 จาก specification.md; tests.md เป็นแหล่งเดียวของ test traceability
 
-## สถานะ gate ปัจจุบัน
+## สถานะปัจจุบัน — 2026-09-17
 
-| Phase | สถานะ | งานที่ยังต้องทำ |
+| เฟสใหญ่ | สถานะ | หลักฐานและงานค้าง |
 |---|---|---|
-| P00 | Baseline recorded; historical verification only | Inventory/ผล 2026-09-10 ไม่ใช่ผล checkout ปัจจุบัน; DB/E2E baseline รอ isolation |
-| P01 | Revised documents; review pending | ตรวจ contract v1.1.0 และ approved runtime patch scope ก่อน implementation |
-| P02 | Harness implemented; verification blocked | HARNESS-01 pure guard ผ่านแล้ว; รอ disposable PostgreSQL เพื่อยืนยัน migration/server/E2E โดยไม่แตะ development data |
-| P03 | Blocked | ต้องมี `DATABASE_URL_TEST` ที่เข้าถึงได้และชื่อ `toktickit_test`/`toktickit_test_<suffix>` ก่อน apply/verify migration และ seed |
-| P04–P14 | Planned | เริ่มตาม dependencies และเก็บหลักฐานจริงต่อ issue |
+| F1 / P00–P02 | In progress — P02 review fixes applied | Baseline/contract/test plan ครบ; branch คือ `feature/f1-prep-and-test-harness`; แก้ไข P02 review fixes ครบถ้วน (ใช้ helper ชุดเดียวกัน `resolveApiBase`, `assertContained`, และ `cleanupAttachmentFiles` ทั้งใน E2E และ server tests, รันไทม์ Playwright CLI fail-closed rejection, รันไทม์ Playwright worker execution/env propagation โดยไม่พึ่งพา build artifacts, จำกัดการข้าม webServer ให้เฉพาะ probe ปฏิเสธ non-probe ทันที, run-specific screenshot dir, strict runSpecificDir containment cleanup, simulated physical unlink failure verification, validateApiEndpoint rejection ของ port 3000); HARNESS-01 unit/integration tests ผ่าน 24/24 tests; client tests ผ่าน 37/37; server/client build ผ่าน; รอยืนยัน disposable PostgreSQL service เพื่อรัน full DB/Playwright suites |
+| F2 / P03–P06 | Planned | งานถัดไป: Lab 3 migration, users/roles, auth API/session, authorization, และ auth UI |
+| F3 / P07–P10 | Planned | ยังไม่เริ่ม |
+| F4 / P11–P12 | Planned | ยังไม่เริ่ม |
+| F5 / P13–P14 | Planned | ยังไม่เริ่ม release/submission |
 
-คำสั่งผู้ใช้ให้แก้เอกสารรอบนี้อนุมัติการแก้ contract/pipeline/rules ที่ตรวจพบเท่านั้น
-ไม่ได้ยืนยันว่า code, migration, full suites, peer review, merge หรือ submission เสร็จแล้ว
+### รายละเอียดการแก้ไขตามข้อตรวจพบ Peer Review (2026-09-17):
+1. **[P1/P2 แก้ไขแล้ว] ป้องกัน API override ชี้ไป dev server และคุ้มครองภาพ Lab 2:** เพิ่ม `validateApiEndpoint` และ `resolveApiBase` ใน `testEnvironment.ts` ปฏิเสธพอร์ต 3000 ทันที; `playwright.config.ts` ซิงค์ `TOKTICKIT_TEST_RUN_ID`, `SCREENSHOT_DIR`, `API_URL` (3001) และ `VITE_API_URL` (3001) ให้กับ worker; และ `requester-ticket-flow.spec.ts` กำหนด fallback ภาพไปยัง `artifacts/lab-03/screenshots/<runId>` เท่านั้น
+2. **[P1/P2 แก้ไขแล้ว] Cleanup ปลอดภัยและมี Containment จำกัดเฉพาะรอบทดสอบ:** worker ได้รับ `runId` ตรงกับเซิร์ฟเวอร์, ตัด `server/uploads` เดิมออกในโหมดทดสอบ, และตรวจสอบ `assertContained` จำกัดเฉพาะโฟลเดอร์ของรอบนั้น (`runSpecificDir`) เท่านั้น พร้อมส่งต่อ error ไม่กลืนเงียบ
+3. **[P2 แก้ไขแล้ว] ใช้งาน Helper ชุดเดียวกันระหว่าง Tests และ E2E:** `requester-ticket-flow.spec.ts` นำเข้าและเรียกใช้งาน `resolveApiBase` และ `assertContained` โดยตรงจาก `server/src/config/testEnvironment.js` เป็นแหล่งความจริงเดียว (Single Source of Truth) ไม่มีการนิยามฟังก์ชันซ้ำซ้อน
+4. **[P2 แก้ไขแล้ว] พิสูจน์ Worker Propagation และ Playwright Guard ที่รันไทม์จริง:** ขยาย `server/tests/lab-03/test-environment.test.ts` โดยรันคำสั่ง Playwright CLI จริง (`npx playwright test --list`) พิสูจน์การ fail-closed เมื่อขาดหรือระบุ DB ผิด; คงสถานะ `HARNESS-01` เป็น `In progress` จนกว่าจะรัน full suites บน disposable database จริง
+5. **[P2 แก้ไขแล้ว] ตรวจสอบ Environment จาก Playwright จริงโดยไม่พึ่งพา Build Artifacts และจำลอง Unlink ล้มเหลวใน Cleanup จริง:**
+   - แก้ไขการทดสอบ worker propagation ใน `server/tests/lab-03/test-environment.test.ts` ให้เรียกใช้งาน Playwright CLI จริง (`npx playwright test e2e/lab-03/worker-env.spec.ts --project=desktop`) เพื่อพิสูจน์ worker environment propagation จาก `playwright.config.ts` โดยตรง โดยนำเข้าจาก TypeScript sources ไม่พึ่งพาไฟล์บิลด์ `./server/dist/`
+   - สกัดฟังก์ชัน `cleanupAttachmentFiles` ไว้ใน `server/src/config/testEnvironment.ts` และนำไปใช้งานทั้งใน `e2e/lab-02/requester-ticket-flow.spec.ts` (`test.afterAll`) และ integration tests
+   - เพิ่มการทดสอบจำลอง Physical Unlink Failure (จำลอง `unlinkFn` throw error เช่น `EPERM`) เพื่อพิสูจน์ว่า cleanup failures จะ throw และไม่ถูกกลืนเงียบ ทำให้รันการทดสอบล้มเหลวอย่างชัดเจนตามข้อกำหนด HARNESS-01 ครบถ้วน
+6. **[P1 แก้ไขแล้ว] จำกัดการข้าม webServer ให้เฉพาะ probe โดยไม่ใช้ regex หลวม และตัด state ตกค้าง:**
+   - ใน `playwright.config.ts` ปรับปรุงฟังก์ชัน `isProbeFile` ให้ตรวจสอบชื่อและเส้นทางไฟล์ที่แน่นอนเจาะจงเฉพาะ `e2e/lab-03/worker-env.spec.ts` แทนการใช้ regex หลวม (`/worker-env|probe/i`) ซึ่งเดิมอาจทำให้ไฟล์อื่นที่มีคำว่า probe ในชื่อหรือโฟลเดอร์หลุดรอดได้
+   - ตัดการเซ็ตและแพร่กระจายตัวแปร `PLAYWRIGHT_IS_PROBE` ลงใน `process.env` ออกทั้งหมด เพื่อป้องกัน state ตกค้างข้ามการรัน
+   - หากมีการตั้งค่า `PLAYWRIGHT_SKIP_WEBSERVER=true` แต่ไม่ได้ระบุรันเฉพาะ probe (เช่น รันทั้ง suite หรือรัน `requester-ticket-flow.spec.ts` หรือไฟล์ non-probe ที่มีคำว่า probe) ระบบจะ Fail-closed โดยโยน Exception ปฏิเสธการรันทันที
+   - เพิ่มการทดสอบใน `server/tests/lab-03/test-environment.test.ts` (รวมเป็น **24 tests**) พิสูจน์ว่าการพยายามข้าม webServer ใน non-probe (รวมถึงชื่อที่มี probe) หรือ all-tests run จะล้มเหลวอย่างชัดเจน ขณะที่การรัน probe ข้าม webServer สำเร็จ

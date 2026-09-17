@@ -1,7 +1,7 @@
 # TokTickIT Lab 3 — Detailed coding-agent rules and execution pipeline
 
 ผู้รับคำสั่ง: coding agent ที่ผู้ใช้เรียกว่า “Gemini 3.8 Flash”
-วันที่จัดทำ: 2026-09-10; แก้ไข contract consistency: 2026-09-13 (v1.1.0)
+วันที่จัดทำ: 2026-09-10; แก้ไข contract consistency: 2026-09-13 (v1.1.0); รวมแผน 5 เฟสใหญ่: 2026-09-16
 แหล่งหลัก: Lab_3_sheet.pdf, 18 หน้า, CPE 334, Sprint 3, คะแนนรวม 60
 ภาษาในการอธิบายงานและ implementation log: ไทย; identifiers/code ใช้ convention ของ repo เดิม
 
@@ -127,7 +127,16 @@ claim ที่มี owner อยู่แล้วเป็น 409 รวม o
 ตาม Lab 2; Staff Queue ใช้ contract ใหม่ใน api-spec.md §5.1 ไม่ใช้ตัวอย่าง queue เปลี่ยน
 Requester API โดยพลการ รายการ decisions นี้ไม่ใช่หลักฐานว่า feature ทำงานแล้ว
 
-## 4. Pipeline — ทำตาม dependency ทีละ phase
+## 4. Pipeline — 5 เฟสใหญ่และงานย่อยตาม dependency
+
+ใช้ `docs/lab-03/PHASES.md` เป็นภาพรวมและสถานะปัจจุบัน:
+F1 = P00–P02 (แผน/ระบบทดสอบ), F2 = P03–P06 (ข้อมูล/auth),
+F3 = P07–P10 (Requester/Staff), F4 = P11–P12 (Admin/verification),
+F5 = P13–P14 (release/submission)
+หัวข้อ P00–P14 ด้านล่างเป็น **งานย่อย** ที่คงรหัสเดิมไว้เพื่อ trace requirement/test/Issue/PR;
+ไม่ใช่ 15 เฟสใหญ่ และไม่เปลี่ยน dependencies, scope หรือ gates ของแต่ละงาน
+รายงานทั้งเฟสใหญ่และงานย่อย เช่น F1 / P02; แบ่ง Issues/branches/PRs ตามชุดงานที่ review ได้
+ทำ peer review ต่อชุดงานตลอด F1–F4 ไม่รอ F5 และไม่บังคับรวมงานเป็น 5 PRs
 
 ### P00 — Read-only baseline และตรวจสิ่งที่เสร็จจริง
 
@@ -467,6 +476,7 @@ Source modules ต้อง reuse actual repo convention; proposed new folders s
 
 ```markdown
 ## YYYY-MM-DD — Pxx / Issue title
+- Major phase / work package: F1–F5 / P00–P14 (mapping in docs/lab-03/PHASES.md)
 - Status: Planned / In progress / Implemented-unverified / Verified / Blocked
 - Actual branch and HEAD:
 - Issue URL / PR URL: Pending if not created
