@@ -1,8 +1,8 @@
 # TokTickIT Lab 3 — Legacy Change Proposals
 
-**Status:** Runtime patches PROPOSED; LCP-05 documentation scope applied on 2026-09-13
+**Status (2026-09-16):** F1 / P02 — LCP-01 partially implemented, server baseline passed, isolation/cleanup fixes pending; remaining runtime patches PROPOSED; LCP-05 documentation scope applied on 2026-09-13
 **Rule Reference:** [`.antigravityrules`](../../.antigravityrules) Section 0 & 4 (P00)
-**Notice:** Runtime proposals remain unapplied. AGENTS.md documentation alignment (LCP-05) was applied under the user's request to fix the audit findings; this is not approval of database/code/dependency changes.
+**Notice:** LCP-01 has runtime changes in `06ada5d`; LCP-02–04 remain proposals. Five major phases and their P00–P14 work packages are defined in [PHASES.md](PHASES.md). Grouping the plan does not change patch scope, dependencies or verification requirements.
 
 ---
 
@@ -10,7 +10,7 @@
 
 | Patch ID | Target Path | Purpose / Requirement | Impact on Lab 2 | Status |
 |---|---|---|---|---|
-| **LCP-01** | `playwright.config.ts`, server test/bootstrap/upload configuration | Isolated test DB & uploads folder (Safety Gate) | Zero regression; protects live DB from test writes | **Proposed** |
+| **LCP-01** | `playwright.config.ts`, server test/bootstrap/upload configuration | Isolated test DB & uploads folder (Safety Gate) | Intended to protect development DB/uploads; E2E gaps remain | **Partially implemented — review fixes pending** |
 | **LCP-02** | `server/prisma/schema.prisma` | Additive schema expansion for Lab 3 models/enums | Fully backwards-compatible; no column drops | **Proposed** |
 | **LCP-03** | `server/src/app.ts` | Auth router mounting & session middleware integration | Replaces header spoofing with real session | **Proposed** |
 | **LCP-04** | `client/src/App.tsx`, `AppShell.tsx` | Authenticated shell & role navigation | Removes temporary Dev Requester selector | **Proposed** |
@@ -20,10 +20,11 @@
 
 ## Detailed Proposals
 
-### LCP-01: Isolated Test Environment and Upload Directory (Proposed)
+### LCP-01: Isolated Test Environment and Upload Directory (F1 / P02, partially implemented)
 
-Requirement: P02 safety gate, tests.md §2 and HARNESS-01. A variable declaration alone does
-not isolate tests: Prisma reads DATABASE_URL and app.ts currently hardcodes uploads.
+Requirement: P02 safety gate, tests.md §2 and HARNESS-01. The table below preserves the original
+before/proposed design. Server runner now maps DATABASE_URL_TEST to DATABASE_URL and app.ts
+uses a storage helper; worker environment, pre-import guard and fixture cleanup remain incomplete.
 
 | Target / symbol | Before | Proposed after |
 |---|---|---|
@@ -37,10 +38,11 @@ not isolate tests: Prisma reads DATABASE_URL and app.ts currently hardcodes uplo
 Affected existing paths include package.json, server/package.json, server/vitest.config.ts,
 server/src/app.ts, server/tests/lab-02/create-ticket.api.test.ts, existing API fixture helpers,
 playwright.config.ts and e2e/lab-02/requester-ticket-flow.spec.ts. Inspect exact current setup
-before producing the executable patch; no edits to these runtime/test files are applied here.
+before completing the patch. Runtime changes exist; see implementation-log.md for actual scope/results.
 Recovery is a normal revert of the isolated config/code patch; never reset development DB or
-remove shared uploads. Preserve all existing Lab 2 screenshots. Approve the concrete diff
-before applying. Server/client/Playwright regression results remain pending after this patch.
+remove shared uploads. Preserve all existing Lab 2 screenshots. Review the concrete diff before
+integration. The earlier server baseline passed 107 tests; full HARNESS-01 and corrected E2E
+evidence remain pending.
 
 ---
 

@@ -9,6 +9,7 @@ import path from "path";
 import multer from "multer";
 import { clampPagination, ALLOWED_PAGE_SIZES } from "./utils/pagination.js";
 import { sanitizeFileName, validateAttachmentType } from "./utils/safeFilename.js";
+import { getUploadDirectory } from "./config/testEnvironment.js";
 // getPrisma() is your lazy database handle. Call it INSIDE a route when you
 // need the DB (Issue 4). It is intentionally unused until then.
 void getPrisma;
@@ -467,9 +468,7 @@ app.get(
 // Lab 2: Phase 5 — Attachment Endpoints (api-spec.md Section 6.7, 6.8, 6.9)
 // ---------------------------------------------------------------------------
 
-const UPLOADS_DIR = fs.existsSync(path.resolve(process.cwd(), "server"))
-  ? path.resolve(process.cwd(), "server", "uploads")
-  : path.resolve(process.cwd(), "uploads");
+const UPLOADS_DIR = getUploadDirectory();
 
 if (!fs.existsSync(UPLOADS_DIR)) {
   fs.mkdirSync(UPLOADS_DIR, { recursive: true });

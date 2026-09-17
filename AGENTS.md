@@ -5,6 +5,10 @@
 Select the contract by the requested lab. For Lab 3 use all four files in
 `docs/lab-03/`: `specification.md`, `api-spec.md`, `ui-spec.md`, and `tests.md`.
 Use `.antigravityrules` and `docs/lab-03/PHASES.md` for Lab 3 phase order.
+Report Lab 3 progress using five major phases: F1 (P00–P02), F2 (P03–P06),
+F3 (P07–P10), F4 (P11–P12), F5 (P13–P14). P00–P14 remain work-package IDs
+with their original dependencies and acceptance gates. Split Issues/branches/PRs by
+reviewable work package; peer review occurs throughout, not only in F5.
 Lab 3 extends the Lab 2 baseline; the Lab 2 exclusion of authentication, Staff workflow,
 comments/notes, additional statuses, and user administration applies only to Lab 2 work.
 Lab 3 exclusions in its own specification still apply, including Actions Taken.

@@ -16,9 +16,36 @@ interface TestFixture {
   attachmentFileName: string;
 }
 
+import {
+  resolveApiBase,
+  assertContained,
+  cleanupAttachmentFiles,
+} from "../../server/src/config/testEnvironment.js";
+
 let cachedFixture: TestFixture | null = null;
 const createdTicketIds: number[] = [];
-const prisma = new PrismaClient();
+
+const API_BASE = resolveApiBase();
+// Lab 3 requirement: never overwrite Lab 2 screenshots. Default strictly to run-specific directory under artifacts/lab-03/screenshots/
+const runId = process.env.TOKTICKIT_TEST_RUN_ID || `run-${Date.now()}`;
+const SCREENSHOT_BASE = process.env.SCREENSHOT_DIR
+  ? process.env.SCREENSHOT_DIR
+  : path.resolve("artifacts", "lab-03", "screenshots", runId);
+
+const testDbUrl = process.env.DATABASE_URL_TEST || process.env.DATABASE_URL;
+if (process.env.TOKTICKIT_TEST_MODE === "true" && testDbUrl) {
+  try {
+    const dbName = decodeURIComponent(new URL(testDbUrl).pathname.replace(/^\//, ""));
+    if (!/^toktickit_test(?:_[a-z0-9_]+)?$/i.test(dbName)) {
+      throw new Error("E2E worker refusing to run against non-test database: " + dbName);
+    }
+  } catch (err: any) {
+    if (err.message && err.message.startsWith("E2E worker refusing")) throw err;
+  }
+}
+const prisma = new PrismaClient(
+  testDbUrl ? { datasources: { db: { url: testDbUrl } } } : undefined,
+);
 
 // Dynamic fixture setup: queries active requester, creates a ticket with long summary and long attachment filename
 async function getOrCreateTestFixture(request: APIRequestContext): Promise<TestFixture> {
@@ -27,25 +54,25 @@ async function getOrCreateTestFixture(request: APIRequestContext): Promise<TestF
   }
 
   // 1. Fetch active requesters and reference data from API
-  const reqRes = await request.get("http://localhost:3000/api/requesters/active");
+  const reqRes = await request.get(`${API_BASE}/api/requesters/active`);
   expect(reqRes.ok()).toBe(true);
   const requesters = await reqRes.json();
   const activeRequester = requesters.find((r: any) => r.isActive) || requesters[0];
   expect(activeRequester).toBeDefined();
 
-  const catRes = await request.get("http://localhost:3000/api/categories");
+  const catRes = await request.get(`${API_BASE}/api/categories`);
   expect(catRes.ok()).toBe(true);
   const categories = await catRes.json();
   const activeCategory = categories.find((c: any) => c.isActive) || categories[0];
 
-  const sysRes = await request.get("http://localhost:3000/api/related-systems");
+  const sysRes = await request.get(`${API_BASE}/api/related-systems`);
   expect(sysRes.ok()).toBe(true);
   const systems = await sysRes.json();
   const activeSystem = systems.find((s: any) => s.isActive) || systems[0];
 
   // 2. Create a dedicated test ticket with a long summary (<= 100 chars per BR-09)
   const longSummary = "RESP-03 Polish Ticket with Long Summary Testing Text Wrapping and Layout Integrity";
-  const createRes = await request.post("http://localhost:3000/api/tickets", {
+  const createRes = await request.post(`${API_BASE}/api/tickets`, {
     headers: {
       "X-Requester-Id": String(activeRequester.id),
     },
@@ -67,7 +94,7 @@ async function getOrCreateTestFixture(request: APIRequestContext): Promise<TestF
   // 3. Upload an attachment with a long filename to verify ellipsis truncation and title attribute
   const longAttachmentName = "very_long_attachment_filename_testing_ellipsis_truncation_spec.pdf";
   const dummyPdf = Buffer.from("%PDF-1.4\n1 0 obj<</Type/Catalog>>endobj\ntrailer<</Root 1 0 R>>\n%%EOF");
-  const uploadRes = await request.post(`http://localhost:3000/api/tickets/${createdTicket.id}/attachments`, {
+  const uploadRes = await request.post(`${API_BASE}/api/tickets/${createdTicket.id}/attachments`, {
     headers: {
       "X-Requester-Id": String(activeRequester.id),
     },
@@ -99,20 +126,21 @@ test.afterAll(async () => {
         where: { ticketId: { in: createdTicketIds } },
         select: { storedFileName: true },
       });
-      const possibleDirs = [
-        path.resolve(process.cwd(), "server", "uploads"),
-        path.resolve(process.cwd(), "uploads"),
-      ];
-      for (const att of attachments) {
-        if (att.storedFileName) {
-          for (const dir of possibleDirs) {
-            const filePath = path.join(dir, att.storedFileName);
-            if (fs.existsSync(filePath)) {
-              fs.unlinkSync(filePath);
-            }
-          }
-        }
+
+      const testUploadsRoot = path.resolve(process.cwd(), "server", "test-uploads");
+      const runId = process.env.TOKTICKIT_TEST_RUN_ID;
+      if (!runId) {
+        throw new Error("TOKTICKIT_TEST_RUN_ID is required for test fixture cleanup.");
       }
+      const runSpecificDir = path.resolve(testUploadsRoot, runId);
+
+      // Perform strict containment cleanup using shared helper; throws visibly on containment or unlink failure
+      cleanupAttachmentFiles(
+        runSpecificDir,
+        testUploadsRoot,
+        attachments.map((a) => a.storedFileName),
+      );
+
       await prisma.attachment.deleteMany({
         where: { ticketId: { in: createdTicketIds } },
       });
@@ -394,19 +422,19 @@ test.describe("Phase 7 — Visual Inspection Screenshot Captures (Project-Isolat
       const sel = document.querySelector("#category-select") as HTMLSelectElement | null;
       return !!sel && sel.options.length > 1;
     });
-    const ctPath = `artifacts/lab-02/screenshots/create-ticket/${proj}.png`;
+    const ctPath = `${SCREENSHOT_BASE}/create-ticket/${proj}.png`;
     await captureCleanScreenshot(page, ctPath);
 
     // 2. My Tickets
     await page.goto("/my-tickets");
     await page.waitForSelector(".card-zen");
-    const mtPath = `artifacts/lab-02/screenshots/my-tickets/${proj}.png`;
+    const mtPath = `${SCREENSHOT_BASE}/my-tickets/${proj}.png`;
     await captureCleanScreenshot(page, mtPath);
 
     // 3. Requester Ticket Detail
     await page.goto(`/tickets/${fixture.ticketId}`);
     await page.waitForSelector(".card-zen");
-    const tdPath = `artifacts/lab-02/screenshots/ticket-detail/${proj}.png`;
+    const tdPath = `${SCREENSHOT_BASE}/ticket-detail/${proj}.png`;
     await captureCleanScreenshot(page, tdPath);
   });
 });
@@ -426,7 +454,7 @@ test.describe("Phase 8 — End-to-End Integration Flows (E2E-01, E2E-02, E2E-03 
     await page.waitForSelector("#requester-select");
 
     // Capture Step 1 screenshot
-    const shot1 = `artifacts/lab-02/screenshots/e2e/01-select-requester-${proj}.png`;
+    const shot1 = `${SCREENSHOT_BASE}/e2e/01-select-requester-${proj}.png`;
     await captureCleanScreenshot(page, shot1);
 
     // Step 2: Select first active Development Requester (e.g. Requester 1 - Jennifer Anderson)
@@ -488,7 +516,7 @@ test.describe("Phase 8 — End-to-End Integration Flows (E2E-01, E2E-02, E2E-03 
     await expect(page.locator("text=e2e_happy_attachment.pdf")).toBeVisible();
 
     // Capture Step 2 screenshot
-    const shot2 = `artifacts/lab-02/screenshots/e2e/02-create-ticket-form-${proj}.png`;
+    const shot2 = `${SCREENSHOT_BASE}/e2e/02-create-ticket-form-${proj}.png`;
     await captureCleanScreenshot(page, shot2);
 
     // Step 6: Submit Ticket and verify Success screen
@@ -520,7 +548,7 @@ test.describe("Phase 8 — End-to-End Integration Flows (E2E-01, E2E-02, E2E-03 
     }
 
     // Capture Step 3 screenshot
-    const shot3 = `artifacts/lab-02/screenshots/e2e/03-ticket-created-success-${proj}.png`;
+    const shot3 = `${SCREENSHOT_BASE}/e2e/03-ticket-created-success-${proj}.png`;
     await captureCleanScreenshot(page, shot3);
 
     // Step 7: Click View My Tickets and verify ticket appears in list
@@ -542,7 +570,7 @@ test.describe("Phase 8 — End-to-End Integration Flows (E2E-01, E2E-02, E2E-03 
     }
 
     // Capture Step 4 screenshot
-    const shot4 = `artifacts/lab-02/screenshots/e2e/04-my-tickets-owner-${proj}.png`;
+    const shot4 = `${SCREENSHOT_BASE}/e2e/04-my-tickets-owner-${proj}.png`;
     await captureCleanScreenshot(page, shot4);
 
     // Step 8: Switch Requester to second active requester (AC-13, BR-14)
@@ -578,7 +606,7 @@ test.describe("Phase 8 — End-to-End Integration Flows (E2E-01, E2E-02, E2E-03 
     await expect(page.locator(`text=${uniqueSummary}`)).toHaveCount(0);
 
     // Capture Step 5 screenshot
-    const shot5 = `artifacts/lab-02/screenshots/e2e/05-switched-requester-${proj}.png`;
+    const shot5 = `${SCREENSHOT_BASE}/e2e/05-switched-requester-${proj}.png`;
     await captureCleanScreenshot(page, shot5);
   });
 
@@ -643,7 +671,7 @@ test.describe("Phase 8 — End-to-End Integration Flows (E2E-01, E2E-02, E2E-03 
     await expect(page.locator("button[type='submit']")).toBeEnabled();
 
     // Capture screenshot
-    const shot = `artifacts/lab-02/screenshots/e2e/06-backend-failure-retained-${proj}.png`;
+    const shot = `${SCREENSHOT_BASE}/e2e/06-backend-failure-retained-${proj}.png`;
     await captureCleanScreenshot(page, shot);
 
     await page.unroute("**/api/tickets");
@@ -654,18 +682,18 @@ test.describe("Phase 8 — End-to-End Integration Flows (E2E-01, E2E-02, E2E-03 
     const proj = testInfo.project.name;
 
     // Fetch active requesters
-    const reqRes = await request.get("http://localhost:3000/api/requesters/active");
+    const reqRes = await request.get(`${API_BASE}/api/requesters/active`);
     const requesters = await reqRes.json();
     const req1 = requesters[0]; // Jennifer Anderson
     const req2 = requesters[1]; // Sarah Johnson
 
-    const catRes = await request.get("http://localhost:3000/api/categories");
+    const catRes = await request.get(`${API_BASE}/api/categories`);
     const cats = await catRes.json();
-    const sysRes = await request.get("http://localhost:3000/api/related-systems");
+    const sysRes = await request.get(`${API_BASE}/api/related-systems`);
     const syss = await sysRes.json();
 
     // Part A: Create a ticket owned by Requester 2 (Sarah Johnson)
-    const sarahTicketRes = await request.post("http://localhost:3000/api/tickets", {
+    const sarahTicketRes = await request.post(`${API_BASE}/api/tickets`, {
       headers: { "X-Requester-Id": String(req2.id) },
       data: {
         summary: `E2E-03 Sarah Private Ticket ${Date.now()}`,
@@ -689,7 +717,7 @@ test.describe("Phase 8 — End-to-End Integration Flows (E2E-01, E2E-02, E2E-03 
     await expect(page.locator("text=You do not own this ticket and cannot view its details.")).toBeVisible();
     await expect(page.locator(`text=${sarahTicket.summary}`)).toHaveCount(0);
 
-    const shotA = `artifacts/lab-02/screenshots/e2e/07-cross-requester-403-${proj}.png`;
+    const shotA = `${SCREENSHOT_BASE}/e2e/07-cross-requester-403-${proj}.png`;
     await captureCleanScreenshot(page, shotA);
 
     // Click Return to My Tickets
@@ -698,7 +726,7 @@ test.describe("Phase 8 — End-to-End Integration Flows (E2E-01, E2E-02, E2E-03 
 
     // Part B: Direct URL download of a soft-removed attachment (410 Gone)
     // Create a ticket owned by Requester 1 (Jennifer Anderson)
-    const jenniferTicketRes = await request.post("http://localhost:3000/api/tickets", {
+    const jenniferTicketRes = await request.post(`${API_BASE}/api/tickets`, {
       headers: { "X-Requester-Id": String(req1.id) },
       data: {
         summary: `E2E-03 Jennifer Attachment Ticket ${Date.now()}`,
@@ -714,7 +742,7 @@ test.describe("Phase 8 — End-to-End Integration Flows (E2E-01, E2E-02, E2E-03 
 
     // Upload an attachment
     const dummyPdf = Buffer.from("%PDF-1.4\n1 0 obj<</Type/Catalog>>endobj\ntrailer<</Root 1 0 R>>\n%%EOF");
-    const uploadRes = await request.post(`http://localhost:3000/api/tickets/${jenniferTicket.id}/attachments`, {
+    const uploadRes = await request.post(`${API_BASE}/api/tickets/${jenniferTicket.id}/attachments`, {
       headers: { "X-Requester-Id": String(req1.id) },
       multipart: {
         file: {
@@ -739,7 +767,7 @@ test.describe("Phase 8 — End-to-End Integration Flows (E2E-01, E2E-02, E2E-03 
     await expect(page.locator("span.badge:has-text('Unavailable')")).toHaveCount(0);
 
     // Concurrently soft-remove the attachment on the server via API (stale UI simulation)
-    const removeRes = await request.delete(`http://localhost:3000/api/attachments/${uploadedAtt.id}`, {
+    const removeRes = await request.delete(`${API_BASE}/api/attachments/${uploadedAtt.id}`, {
       headers: { "X-Requester-Id": String(req1.id) },
       data: { removalReason: "Soft-removed for E2E-03 verification" },
     });
@@ -760,7 +788,7 @@ test.describe("Phase 8 — End-to-End Integration Flows (E2E-01, E2E-02, E2E-03 
     await expect(page.locator("text=Removal reason:")).toBeVisible();
 
     // Direct download API request by owner returns 410 Gone per api-spec.md Section 6.8
-    const dlRes = await request.get(`http://localhost:3000/api/attachments/${uploadedAtt.id}/download`, {
+    const dlRes = await request.get(`${API_BASE}/api/attachments/${uploadedAtt.id}/download`, {
       headers: { "X-Requester-Id": String(req1.id) },
     });
     expect(dlRes.status()).toBe(410);
@@ -768,14 +796,14 @@ test.describe("Phase 8 — End-to-End Integration Flows (E2E-01, E2E-02, E2E-03 
     expect(dlBody.error).toContain("This attachment has been removed and cannot be downloaded");
 
     // Direct download API request by non-owner returns 403 Forbidden per api-spec.md Section 6.8
-    const crossDlRes = await request.get(`http://localhost:3000/api/attachments/${uploadedAtt.id}/download`, {
+    const crossDlRes = await request.get(`${API_BASE}/api/attachments/${uploadedAtt.id}/download`, {
       headers: { "X-Requester-Id": String(req2.id) },
     });
     expect(crossDlRes.status()).toBe(403);
     const crossBody = await crossDlRes.json();
     expect(crossBody.error).toContain("Access denied: You do not own this attachment");
 
-    const shotB = `artifacts/lab-02/screenshots/e2e/08-removed-attachment-410-${proj}.png`;
+    const shotB = `${SCREENSHOT_BASE}/e2e/08-removed-attachment-410-${proj}.png`;
     await captureCleanScreenshot(page, shotB);
   });
 });
