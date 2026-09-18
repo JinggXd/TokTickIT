@@ -953,5 +953,79 @@ F2 / P03 is next after peer review and gate approval; no Lab 3 migration/auth co
 
 ### Gate status
 
-- **Major Phase F2 (P03–P06):** Complete and hardened (100% test pass rate across unit, API, integration, and multi-viewport E2E).
+- **Major Phase F2 (P03–P06):** Complete and hardened (100% test pass rate across unit, API, integration, and multi-viewport E2E). Merged into `lab3-staging` via PR #39.
+
+---
+
+## 2026-09-18 — Major Phase F3 (P07–P10): Requester Regression & IT Staff Operational Workflow
+
+- **Authorization:** Implementation of Phase F3 per specification.md, api-spec.md, ui-spec.md, and tests.md.
+- **Active Branch:** `feature/f3-requester-and-staff`
+- **Target Staging Branch:** `lab3-staging`
+
+### Objectives & Deliverables Completed
+
+1. **P07 — Requester Regression (AC-14 to AC-18, R05):**
+   - Requester endpoints updated to strictly use session-authenticated identity instead of `X-Requester-Id`.
+   - Creation, listing, details, attachments, soft removal all preserve Lab 2 business rules.
+   - Tested and verified: `server/tests/lab-03/requester-regression.api.test.ts` (**10/10 passed**).
+
+2. **P08 — Staff Queue (AC-19 to AC-24, R16):**
+   - Backend endpoint `GET /api/staff/tickets` supporting full-text search, multi-field filtering (status, priority, ownership: all/me/unassigned), semantic sorting, and boundary-checked pagination.
+   - Frontend component `client/src/pages/StaffTicketQueue.tsx` with debounced search, responsive layout (table on desktop/tablet, card list on mobile via `d-md-none`), `--zg-*` color token badges, and distinct empty/loading/error states.
+   - Tested and verified: `server/tests/lab-03/staff-queue.api.test.ts` (**15/15 passed**), `client/tests/lab-03/StaffTicketQueue.test.tsx` (**7/7 passed**).
+
+3. **P09 — Staff Operations (AC-25 to AC-34, R06, R07, R08):**
+   - Backend routes in `server/src/routes/staff.ts`:
+     - `POST /api/staff/tickets/:id/claim`: Claims unassigned ticket for authenticated staff member.
+     - `PATCH /api/staff/tickets/:id/owner`: Reassigns ticket to active IT Staff or Administrator.
+     - `PATCH /api/staff/tickets/:id/it-priority`: Updates IT priority while keeping requested priority immutable.
+     - `PATCH /api/staff/tickets/:id/status`: Transitions status following the 8-state lifecycle matrix in `server/src/utils/workflow.ts`.
+   - **Atomic Optimistic Locking:** Enforces `version: expectedVersion` directly in Prisma `update` WHERE clause across all mutations, returning HTTP 409 `CONFLICT` on race conditions.
+   - **Write-Time Owner Eligibility Re-Check:** Re-verifies ticket owner is active and eligible at the exact moment of status progression.
+   - Frontend component `client/src/pages/StaffTicketDetail.tsx` operational panel with status transition select, confirm modals, and badge styling.
+   - Tested and verified: `server/tests/lab-03/staff-ticket-detail.api.test.ts` (**18/18 passed**), `server/tests/lab-03/workflow.unit.test.ts` (**6/6 passed**), `client/tests/lab-03/StaffTicketDetail.test.tsx` (**11/11 passed**).
+
+4. **P10 — Communication (AC-35 to AC-39, R09, R10, R11):**
+   - Backend routes in `server/src/routes/communication.ts`:
+     - Public comments (`/api/tickets/:id/public-comments`): Append-only, sanitized plain text, accessible to Requester, Staff, and Admin.
+     - Internal notes (`/api/staff/tickets/:id/internal-notes`): Restricted strictly to Staff and Admin (403 for Requester).
+     - Problem Appears Resolved (`POST /api/tickets/:id/appears-resolved`): Allows Requester to indicate problem resolved without changing formal status.
+   - Frontend integration:
+     - Staff detail view: Tabbed public comments and highlighted internal notes.
+     - Requester detail view (`RequesterTicketDetail.tsx`): Public comments panel with comment submission + "Problem Appears Resolved" banner and action button.
+   - Tested and verified: `server/tests/lab-03/comments-notes.api.test.ts` (**9/9 passed**), `client/tests/lab-03/RequesterTicketDetailP10.test.tsx` (**4/4 passed**).
+
+5. **Playwright E2E Staff Flow (`e2e/lab-03/staff-ticket-flow.spec.ts`):**
+   - Automated end-to-end tests for E2E-09 (queue search & filter), E2E-11 (full triage: claim, priority, status, comment, note), and E2E-15 (admin read-only & back navigation).
+   - Tested across all three viewports: **Desktop (1280x800)**, **Tablet (768x1024)**, and **Mobile (375x667)**.
+   - Result: **36/36 tests passed** (12 tests per viewport in 51.6s).
+
+### Commands Actually Run & Results
+
+| Command | Exit | Result |
+|---|---:|---|
+| `$env:DATABASE_URL_TEST=".../toktickit_test"; npx playwright test e2e/lab-03/staff-ticket-flow.spec.ts` | 0 | **36/36 passed (3 projects: desktop, tablet, mobile in 51.6s)**. |
+| `$env:DATABASE_URL_TEST=".../toktickit_test"; npm --prefix server test tests/lab-03/` | 0 | **5 test files, 58/58 tests passed** (0 fail, 0 skip). |
+| `npm run test:client` | 0 | **14 test files, 70/70 tests passed** (0 fail, 0 skip). |
+| `npm --prefix server run build` | 0 | Server TypeScript compilation (`tsc`) succeeded with 0 errors. |
+| `npm --prefix client run build` | 0 | Client production build (`tsc && vite build`) succeeded with 0 errors. |
+
+### Peer Review Hardening & Assertion Verification (2026-09-18)
+
+- **Feedback Addressed:**
+  1. **Removed Conditional Guards in E2E Triage Tests:** Eliminated all `if` condition checks in `e2e/lab-03/staff-ticket-flow.spec.ts` (claim, update IT priority, transition NEW → OPEN). All operations now assert element visibility/enabled state explicitly, trigger the action, and verify the resulting UI state (success alert and updated status badge) without bypass paths.
+  2. **Admin Read-Only Detail View:** Implemented route `/admin/tickets/:id` in `client/src/App.tsx` and `readOnly` mode in `client/src/pages/StaffTicketDetail.tsx` backed by `GET /api/admin/tickets/:id` via `fetchAdminTicketDetail`. Verified operational panel and comment/note post forms are completely omitted for Administrators while comment and note threads remain readable (per AC-28, AC-37, `ui-spec.md` §10.2).
+  3. **Re-verified Full E2E & Unit Test Suites:**
+     - `staff-ticket-flow.spec.ts`: **36/36 passed** across desktop, tablet, mobile (with strict unconditional assertions).
+     - `authentication.spec.ts`: **15/15 passed** across desktop, tablet, mobile.
+     - `worker-env.spec.ts`: **3/3 passed**.
+     - Server tests: **24 test files, 229/229 passed**.
+     - Client tests: **14 test files, 71/71 passed**.
+
+### Gate Status
+
+- **Major Phase F3 (P07–P10):** **100% Proven & Verified**. Hardened assertions executed and verified without conditional bypasses.
+- **GitHub Tracking:** Issue [#40](https://github.com/JinggXd/TokTickIT/issues/40) opened and explicitly linked in Development panel to Pull Request [#41](https://github.com/JinggXd/TokTickIT/pull/41) targeting `lab3-staging`.
+- **Next Step:** Awaiting peer review on PR #41 before reviewer merges to `lab3-staging`.
 

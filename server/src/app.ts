@@ -10,6 +10,8 @@ import {
   csrfProtection,
 } from "./middleware/sessionAuth.js";
 import { authRouter } from "./routes/auth.js";
+import { staffRouter, getDetailedTicket } from "./routes/staff.js";
+import { communicationRouter } from "./routes/communication.js";
 import { validateTicketInput } from "./utils/validation.js";
 import { generateTicketNumber, TicketNumberGenerationError } from "./utils/ticketNumber.js";
 import fs from "fs";
@@ -64,6 +66,60 @@ app.get("/api/health", (_req: Request, res: Response) => {
 // Authentication routes
 // ---------------------------------------------------------------------------
 app.use("/api/auth", authRouter);
+app.use("/api/staff", staffRouter);
+app.use("/api", communicationRouter);
+
+// Administrator read-only ticket detail (api-spec §5.6)
+app.get(
+  "/api/admin/tickets/:id",
+  requireAuth,
+  requirePasswordChanged,
+  requireRole("ADMINISTRATOR"),
+  async (req: Request, res: Response): Promise<void> => {
+    const rawId = req.params.id;
+    if (!/^[1-9]\d*$/.test(rawId)) {
+      res.status(404).json({ error: "Ticket not found" });
+      return;
+    }
+    const ticketId = parseInt(rawId, 10);
+    try {
+      const ticket = await getDetailedTicket(ticketId);
+      if (!ticket) {
+        res.status(404).json({ error: "Ticket not found" });
+        return;
+      }
+      res.status(200).json({
+        id: ticket.id,
+        ticketNo: ticket.ticketNo,
+        summary: ticket.summary,
+        description: ticket.description,
+        requester: ticket.requester,
+        category: ticket.category,
+        relatedSystem: ticket.relatedSystem,
+        requestedPriority: ticket.requestedPriority,
+        itPriority: ticket.itPriority,
+        currentStatus: ticket.currentStatus,
+        ticketOwner: ticket.ticketOwner,
+        version: ticket.version,
+        appearsResolvedAt: ticket.appearsResolvedAt?.toISOString() ?? null,
+        appearsResolvedById: ticket.appearsResolvedById,
+        createdAt: ticket.createdAt.toISOString(),
+        updatedAt: ticket.updatedAt.toISOString(),
+        attachments: ticket.attachments.map((a) => ({
+          id: a.id,
+          fileName: a.fileName,
+          fileSize: a.fileSize,
+          mimeType: a.mimeType,
+          removedAt: a.removedAt?.toISOString() ?? null,
+          removalReason: a.removalReason,
+          createdAt: a.createdAt.toISOString(),
+        })),
+      });
+    } catch (err) {
+      res.status(500).json({ error: "Unable to retrieve ticket detail." });
+    }
+  },
+);
 
 // ---------------------------------------------------------------------------
 // Categories list — requires completed-password active session
@@ -505,6 +561,19 @@ app.post(
       return;
     }
     const ticketId = parseInt(rawId, 10);
+    if (req.body && typeof req.body === "object") {
+      const disallowed = ["actor", "appearsResolvedAt", "appearsResolvedById", "status", "version", "requesterId"];
+      const errors: Record<string, string> = {};
+      for (const field of disallowed) {
+        if (field in req.body) {
+          errors[field] = `Field '${field}' is not permitted`;
+        }
+      }
+      if (Object.keys(errors).length > 0) {
+        res.status(400).json({ error: "Validation failed", details: errors });
+        return;
+      }
+    }
 
     try {
       const prisma = getPrisma();
