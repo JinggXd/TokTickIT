@@ -561,6 +561,17 @@ export async function fetchStaffTicketDetail(ticketId: number): Promise<StaffTic
   return response.json();
 }
 
+export async function fetchAdminTicketDetail(ticketId: number): Promise<StaffTicketDetail> {
+  const response = await apiFetch(`${API_URL}/api/admin/tickets/${ticketId}`);
+  if (!response.ok) {
+    const data = await response.json().catch(() => ({}));
+    const err: any = new Error(data.error || "Unable to load ticket details.");
+    err.status = response.status;
+    throw err;
+  }
+  return response.json();
+}
+
 export async function claimTicket(ticketId: number, expectedVersion: number): Promise<any> {
   const response = await apiFetch(`${API_URL}/api/staff/tickets/${ticketId}/claim`, {
     method: "POST",

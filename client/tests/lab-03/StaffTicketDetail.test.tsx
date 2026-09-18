@@ -1,10 +1,11 @@
-﻿import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 import React from "react";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
 vi.mock("../../src/api.js", () => ({
   fetchStaffTicketDetail: vi.fn(),
+  fetchAdminTicketDetail: vi.fn(),
   fetchTicketOwners: vi.fn(),
   fetchPublicComments: vi.fn(),
   fetchInternalNotes: vi.fn(),
@@ -151,6 +152,21 @@ describe("StaffTicketDetail UI Tests (UI-06, UI-07, UI-08)", () => {
       await waitFor(() => screen.getByTestId("staff-back-to-queue-btn"), { timeout: 4000 });
       await userEvent.click(screen.getByTestId("staff-back-to-queue-btn"));
       expect(onBack).toHaveBeenCalled();
+    });
+
+    it("renders read-only mode without operational panels or comment forms (AC-28, AC-37)", async () => {
+      vi.mocked(api.fetchAdminTicketDetail).mockResolvedValue(mockTicketDetail);
+      render(<StaffTicketDetail ticketId={1} onBack={vi.fn()} readOnly={true} />);
+      await waitFor(() => {
+        expect(screen.getByTestId("staff-detail-ticket-no")).toHaveTextContent("TKT-2024-0001");
+      }, { timeout: 4000 });
+
+      expect(api.fetchAdminTicketDetail).toHaveBeenCalledWith(1);
+      expect(screen.queryByTestId("staff-operations-panel")).not.toBeInTheDocument();
+      expect(screen.queryByTestId("public-comment-input")).not.toBeInTheDocument();
+      expect(screen.queryByTestId("internal-note-input")).not.toBeInTheDocument();
+      expect(screen.getByTestId("public-comments-panel")).toBeInTheDocument();
+      expect(screen.getByTestId("internal-notes-panel")).toBeInTheDocument();
     });
   });
 });

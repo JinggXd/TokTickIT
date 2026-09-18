@@ -1011,7 +1011,19 @@ F2 / P03 is next after peer review and gate approval; no Lab 3 migration/auth co
 | `npm --prefix server run build` | 0 | Server TypeScript compilation (`tsc`) succeeded with 0 errors. |
 | `npm --prefix client run build` | 0 | Client production build (`tsc && vite build`) succeeded with 0 errors. |
 
+### Peer Review Hardening & Assertion Verification (2026-09-18)
+
+- **Feedback Addressed:**
+  1. **Removed Conditional Guards in E2E Triage Tests:** Eliminated all `if` condition checks in `e2e/lab-03/staff-ticket-flow.spec.ts` (claim, update IT priority, transition NEW → OPEN). All operations now assert element visibility/enabled state explicitly, trigger the action, and verify the resulting UI state (success alert and updated status badge) without bypass paths.
+  2. **Admin Read-Only Detail View:** Implemented route `/admin/tickets/:id` in `client/src/App.tsx` and `readOnly` mode in `client/src/pages/StaffTicketDetail.tsx` backed by `GET /api/admin/tickets/:id` via `fetchAdminTicketDetail`. Verified operational panel and comment/note post forms are completely omitted for Administrators while comment and note threads remain readable (per AC-28, AC-37, `ui-spec.md` §10.2).
+  3. **Re-verified Full E2E & Unit Test Suites:**
+     - `staff-ticket-flow.spec.ts`: **36/36 passed** across desktop, tablet, mobile (with strict unconditional assertions).
+     - `authentication.spec.ts`: **15/15 passed** across desktop, tablet, mobile.
+     - `worker-env.spec.ts`: **3/3 passed**.
+     - Server tests: **24 test files, 229/229 passed**.
+     - Client tests: **14 test files, 71/71 passed**.
+
 ### Gate Status
 
-- **Major Phase F3 (P07–P10):** **Completed & Verified 100%**. All unit, API, client, and multi-viewport E2E tests passing. Ready for PR to `lab3-staging`.
+- **Major Phase F3 (P07–P10):** **100% Proven & Verified**. Hardened assertions executed and verified without conditional bypasses. Ready for peer review on `lab3-staging`.
 

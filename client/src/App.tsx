@@ -18,6 +18,7 @@ type TabType =
   | "ticket-detail"
   | "staff-queue"
   | "staff-ticket-detail"
+  | "admin-ticket-detail"
   | "admin-users";
 
 const TAB_PATHS: Record<TabType, string> = {
@@ -28,6 +29,7 @@ const TAB_PATHS: Record<TabType, string> = {
   "ticket-detail": "/tickets",
   "staff-queue": "/staff/queue",
   "staff-ticket-detail": "/staff/tickets",
+  "admin-ticket-detail": "/admin/tickets",
   "admin-users": "/admin/users",
 };
 
@@ -37,6 +39,10 @@ function getRouteFromPath(pathname = window.location.pathname): { tab: TabType; 
   if (pathname === "/create-ticket") return { tab: "create-ticket", ticketId: null };
   if (pathname === "/staff/queue") return { tab: "staff-queue", ticketId: null };
   if (pathname === "/admin/users") return { tab: "admin-users", ticketId: null };
+  const adminMatch = pathname.match(/^\/admin\/tickets\/(\d+)$/);
+  if (adminMatch) {
+    return { tab: "admin-ticket-detail", ticketId: parseInt(adminMatch[1], 10) };
+  }
   const staffMatch = pathname.match(/^\/staff\/tickets\/(\d+)$/);
   if (staffMatch) {
     return { tab: "staff-ticket-detail", ticketId: parseInt(staffMatch[1], 10) };
@@ -59,6 +65,9 @@ function MainContent() {
     }
     if (tab === "staff-ticket-detail" && ticketId) {
       nextPath = `/staff/tickets/${ticketId}`;
+    }
+    if (tab === "admin-ticket-detail" && ticketId) {
+      nextPath = `/admin/tickets/${ticketId}`;
     }
     if (window.location.pathname !== nextPath) {
       window.history[replace ? "replaceState" : "pushState"]({}, "", nextPath);
@@ -197,14 +206,24 @@ function MainContent() {
         </>
       )}
 
-      {/* Administrator Views (User Management in F4) */}
+      {/* Administrator Views (User Management in F4 + Read-only ticket detail) */}
       {effectiveUser.role === "ADMINISTRATOR" && (
-        <div className="container py-4">
-          <div className="card shadow-sm p-4 text-center">
-            <h2 className="h4 fw-bold mb-2">Administrator Portal</h2>
-            <p className="text-muted">User Management will be active in Phase F4.</p>
-          </div>
-        </div>
+        <>
+          {(activeTab === "admin-ticket-detail" || activeTab === "staff-ticket-detail") && selectedTicketId ? (
+            <StaffTicketDetail
+              ticketId={selectedTicketId}
+              onBack={() => navigate("admin-users")}
+              readOnly={true}
+            />
+          ) : (
+            <div className="container py-4">
+              <div className="card shadow-sm p-4 text-center">
+                <h2 className="h4 fw-bold mb-2">Administrator Portal</h2>
+                <p className="text-muted">User Management will be active in Phase F4.</p>
+              </div>
+            </div>
+          )}
+        </>
       )}
     </AppShell>
   );

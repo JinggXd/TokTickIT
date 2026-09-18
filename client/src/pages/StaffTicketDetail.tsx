@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import {
   fetchStaffTicketDetail,
+  fetchAdminTicketDetail,
   fetchTicketOwners,
   claimTicket,
   reassignTicket,
@@ -21,11 +22,12 @@ import { ALLOWED_TRANSITIONS, TicketStatus, Priority } from "../types.js";
 interface StaffTicketDetailProps {
   ticketId: number;
   onBack: () => void;
+  readOnly?: boolean;
 }
 
 const CONFIRMATION_STATUSES = new Set(["RESOLVED", "CLOSED", "CANCELLED", "REOPENED"]);
 
-export const StaffTicketDetail: React.FC<StaffTicketDetailProps> = ({ ticketId, onBack }) => {
+export const StaffTicketDetail: React.FC<StaffTicketDetailProps> = ({ ticketId, onBack, readOnly = false }) => {
   const [ticket, setTicket] = useState<StaffTicketDetailType | null>(null);
   const [ticketOwners, setTicketOwners] = useState<TicketOwner[]>([]);
   const [comments, setComments] = useState<CommentItem[]>([]);
@@ -59,9 +61,14 @@ export const StaffTicketDetail: React.FC<StaffTicketDetailProps> = ({ ticketId, 
     setConflictError(null);
 
     try {
+      const fetchDetailFn = readOnly ? fetchAdminTicketDetail : fetchStaffTicketDetail;
+      const ownersPromise = readOnly
+        ? Promise.resolve([] as TicketOwner[])
+        : fetchTicketOwners().catch(() => [] as TicketOwner[]);
+
       const [ticketData, ownersData, commentsData, notesData] = await Promise.all([
-        fetchStaffTicketDetail(ticketId),
-        fetchTicketOwners().catch(() => [] as TicketOwner[]),
+        fetchDetailFn(ticketId),
+        ownersPromise,
         fetchPublicComments(ticketId).catch(() => [] as CommentItem[]),
         fetchInternalNotes(ticketId).catch(() => [] as CommentItem[]),
       ]);
@@ -79,7 +86,7 @@ export const StaffTicketDetail: React.FC<StaffTicketDetailProps> = ({ ticketId, 
     } finally {
       setIsLoading(false);
     }
-  }, [ticketId]);
+  }, [ticketId, readOnly]);
 
   useEffect(() => {
     loadData();
@@ -364,127 +371,129 @@ export const StaffTicketDetail: React.FC<StaffTicketDetailProps> = ({ ticketId, 
       </div>
 
       {/* Operational Actions Panel */}
-      <div className="card shadow-sm border-0 mb-4" data-testid="staff-operations-panel">
-        <div className="card-header bg-light fw-bold py-3 text-dark">🛠️ Ticket Operations & Triage</div>
-        <div className="card-body p-4">
-          <div className="row g-4">
-            {/* Claim Ticket */}
-            <div className="col-12 col-md-3 border-end-md">
-              <label className="form-label small fw-bold text-muted">Ticket Assignment</label>
-              {ticket.ticketOwner === null ? (
-                <div>
-                  <button
-                    type="button"
-                    className="btn btn-success w-100"
-                    onClick={handleClaim}
-                    disabled={isSubmittingAction}
-                    data-testid="staff-claim-ticket-btn"
-                  >
-                    Claim Ticket
-                  </button>
-                  <span className="small text-muted d-block mt-1">Assign ticket to yourself</span>
-                </div>
-              ) : (
-                <div>
-                  <span className="badge bg-light text-dark p-2 w-100 border text-start mb-2">
-                    Assigned: {ticket.ticketOwner.name}
-                  </span>
-                  <div className="input-group">
-                    <select
-                      className="form-select form-select-sm"
-                      value={selectedOwnerId}
-                      onChange={(e) => setSelectedOwnerId(e.target.value ? Number(e.target.value) : "")}
-                      data-testid="staff-reassign-owner-select"
-                    >
-                      <option value="">Select new owner...</option>
-                      {ticketOwners.map((o) => (
-                        <option key={o.id} value={o.id}>
-                          {o.name} ({o.role === "IT_STAFF" ? "Staff" : "Admin"})
-                        </option>
-                      ))}
-                    </select>
+      {!readOnly && (
+        <div className="card shadow-sm border-0 mb-4" data-testid="staff-operations-panel">
+          <div className="card-header bg-light fw-bold py-3 text-dark">🛠️ Ticket Operations & Triage</div>
+          <div className="card-body p-4">
+            <div className="row g-4">
+              {/* Claim Ticket */}
+              <div className="col-12 col-md-3 border-end-md">
+                <label className="form-label small fw-bold text-muted">Ticket Assignment</label>
+                {ticket.ticketOwner === null ? (
+                  <div>
                     <button
                       type="button"
-                      className="btn btn-sm btn-outline-primary"
-                      onClick={handleReassignOwner}
-                      disabled={isSubmittingAction || !selectedOwnerId || selectedOwnerId === ticket.ticketOwner.id}
-                      data-testid="staff-reassign-owner-btn"
+                      className="btn btn-success w-100"
+                      onClick={handleClaim}
+                      disabled={isSubmittingAction}
+                      data-testid="staff-claim-ticket-btn"
                     >
-                      Reassign
+                      Claim Ticket
                     </button>
+                    <span className="small text-muted d-block mt-1">Assign ticket to yourself</span>
                   </div>
+                ) : (
+                  <div>
+                    <span className="badge bg-light text-dark p-2 w-100 border text-start mb-2">
+                      Assigned: {ticket.ticketOwner.name}
+                    </span>
+                    <div className="input-group">
+                      <select
+                        className="form-select form-select-sm"
+                        value={selectedOwnerId}
+                        onChange={(e) => setSelectedOwnerId(e.target.value ? Number(e.target.value) : "")}
+                        data-testid="staff-reassign-owner-select"
+                      >
+                        <option value="">Select new owner...</option>
+                        {ticketOwners.map((o) => (
+                          <option key={o.id} value={o.id}>
+                            {o.name} ({o.role === "IT_STAFF" ? "Staff" : "Admin"})
+                          </option>
+                        ))}
+                      </select>
+                      <button
+                        type="button"
+                        className="btn btn-sm btn-outline-primary"
+                        onClick={handleReassignOwner}
+                        disabled={isSubmittingAction || !selectedOwnerId || selectedOwnerId === ticket.ticketOwner.id}
+                        data-testid="staff-reassign-owner-btn"
+                      >
+                        Reassign
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* IT Priority */}
+              <div className="col-12 col-md-4 border-end-md">
+                <label htmlFor="staff-it-priority-select" className="form-label small fw-bold text-muted">
+                  IT Priority Assessment
+                </label>
+                <div className="input-group">
+                  <select
+                    id="staff-it-priority-select"
+                    className="form-select"
+                    value={selectedItPriority}
+                    onChange={(e) => setSelectedItPriority(e.target.value as Priority)}
+                    data-testid="staff-it-priority-select"
+                  >
+                    <option value="HIGH">High</option>
+                    <option value="MEDIUM">Medium</option>
+                    <option value="LOW">Low</option>
+                  </select>
+                  <button
+                    type="button"
+                    className="btn btn-outline-success"
+                    onClick={handleUpdatePriority}
+                    disabled={isSubmittingAction || selectedItPriority === ticket.itPriority}
+                    data-testid="staff-update-priority-btn"
+                  >
+                    Update
+                  </button>
                 </div>
-              )}
-            </div>
-
-            {/* IT Priority */}
-            <div className="col-12 col-md-4 border-end-md">
-              <label htmlFor="staff-it-priority-select" className="form-label small fw-bold text-muted">
-                IT Priority Assessment
-              </label>
-              <div className="input-group">
-                <select
-                  id="staff-it-priority-select"
-                  className="form-select"
-                  value={selectedItPriority}
-                  onChange={(e) => setSelectedItPriority(e.target.value as Priority)}
-                  data-testid="staff-it-priority-select"
-                >
-                  <option value="HIGH">High</option>
-                  <option value="MEDIUM">Medium</option>
-                  <option value="LOW">Low</option>
-                </select>
-                <button
-                  type="button"
-                  className="btn btn-outline-success"
-                  onClick={handleUpdatePriority}
-                  disabled={isSubmittingAction || selectedItPriority === ticket.itPriority}
-                  data-testid="staff-update-priority-btn"
-                >
-                  Update
-                </button>
+                <span className="small text-muted d-block mt-1">Requested by user: {ticket.requestedPriority}</span>
               </div>
-              <span className="small text-muted d-block mt-1">Requested by user: {ticket.requestedPriority}</span>
-            </div>
 
-            {/* Status Transition */}
-            <div className="col-12 col-md-5">
-              <label htmlFor="staff-status-select" className="form-label small fw-bold text-muted">
-                Status Progression
-              </label>
-              <div className="input-group">
-                <select
-                  id="staff-status-select"
-                  className="form-select"
-                  value={selectedTargetStatus}
-                  onChange={(e) => setSelectedTargetStatus(e.target.value as TicketStatus)}
-                  disabled={validNextStatuses.length === 0}
-                  data-testid="staff-status-select"
-                >
-                  <option value="">
-                    {validNextStatuses.length === 0 ? "Terminal status (no transitions)" : "Select next status..."}
-                  </option>
-                  {validNextStatuses.map((st) => (
-                    <option key={st} value={st}>
-                      {st}
+              {/* Status Transition */}
+              <div className="col-12 col-md-5">
+                <label htmlFor="staff-status-select" className="form-label small fw-bold text-muted">
+                  Status Progression
+                </label>
+                <div className="input-group">
+                  <select
+                    id="staff-status-select"
+                    className="form-select"
+                    value={selectedTargetStatus}
+                    onChange={(e) => setSelectedTargetStatus(e.target.value as TicketStatus)}
+                    disabled={validNextStatuses.length === 0}
+                    data-testid="staff-status-select"
+                  >
+                    <option value="">
+                      {validNextStatuses.length === 0 ? "Terminal status (no transitions)" : "Select next status..."}
                     </option>
-                  ))}
-                </select>
-                <button
-                  type="button"
-                  className="btn btn-primary"
-                  onClick={handleStatusChangeRequest}
-                  disabled={isSubmittingAction || !selectedTargetStatus}
-                  data-testid="staff-change-status-btn"
-                >
-                  Change Status
-                </button>
+                    {validNextStatuses.map((st) => (
+                      <option key={st} value={st}>
+                        {st}
+                      </option>
+                    ))}
+                  </select>
+                  <button
+                    type="button"
+                    className="btn btn-primary"
+                    onClick={handleStatusChangeRequest}
+                    disabled={isSubmittingAction || !selectedTargetStatus}
+                    data-testid="staff-change-status-btn"
+                  >
+                    Change Status
+                  </button>
+                </div>
+                <span className="small text-muted d-block mt-1">Current status: {ticket.currentStatus}</span>
               </div>
-              <span className="small text-muted d-block mt-1">Current status: {ticket.currentStatus}</span>
             </div>
           </div>
         </div>
-      </div>
+      )}
 
       {/* Attachments Section */}
       <div className="card shadow-sm border-0 mb-4">
@@ -556,30 +565,32 @@ export const StaffTicketDetail: React.FC<StaffTicketDetailProps> = ({ ticketId, 
               </div>
 
               {/* Comment Input */}
-              <form onSubmit={handlePostComment} className="pt-2 border-top">
-                {commentError && <div className="alert alert-danger py-1 small mb-2">{commentError}</div>}
-                <div className="mb-2">
-                  <textarea
-                    className="form-control form-control-sm"
-                    rows={3}
-                    placeholder="Write a public comment for the requester..."
-                    value={commentInput}
-                    onChange={(e) => setCommentInput(e.target.value)}
-                    data-testid="public-comment-input"
-                  ></textarea>
-                </div>
-                <div className="d-flex justify-content-between align-items-center">
-                  <span className="small text-muted">{commentInput.length}/2000</span>
-                  <button
-                    type="submit"
-                    className="btn btn-sm btn-success"
-                    disabled={isSubmittingComment || !commentInput.trim()}
-                    data-testid="submit-public-comment-btn"
-                  >
-                    Post Comment
-                  </button>
-                </div>
-              </form>
+              {!readOnly && (
+                <form onSubmit={handlePostComment} className="pt-2 border-top">
+                  {commentError && <div className="alert alert-danger py-1 small mb-2">{commentError}</div>}
+                  <div className="mb-2">
+                    <textarea
+                      className="form-control form-control-sm"
+                      rows={3}
+                      placeholder="Write a public comment for the requester..."
+                      value={commentInput}
+                      onChange={(e) => setCommentInput(e.target.value)}
+                      data-testid="public-comment-input"
+                    ></textarea>
+                  </div>
+                  <div className="d-flex justify-content-between align-items-center">
+                    <span className="small text-muted">{commentInput.length}/2000</span>
+                    <button
+                      type="submit"
+                      className="btn btn-sm btn-success"
+                      disabled={isSubmittingComment || !commentInput.trim()}
+                      data-testid="submit-public-comment-btn"
+                    >
+                      Post Comment
+                    </button>
+                  </div>
+                </form>
+              )}
             </div>
           </div>
         </div>
@@ -618,30 +629,32 @@ export const StaffTicketDetail: React.FC<StaffTicketDetailProps> = ({ ticketId, 
               </div>
 
               {/* Note Input */}
-              <form onSubmit={handlePostNote} className="pt-2 border-top">
-                {noteError && <div className="alert alert-danger py-1 small mb-2">{noteError}</div>}
-                <div className="mb-2">
-                  <textarea
-                    className="form-control form-control-sm"
-                    rows={3}
-                    placeholder="Write a confidential internal note for the team..."
-                    value={noteInput}
-                    onChange={(e) => setNoteInput(e.target.value)}
-                    data-testid="internal-note-input"
-                  ></textarea>
-                </div>
-                <div className="d-flex justify-content-between align-items-center">
-                  <span className="small text-muted">{noteInput.length}/2000</span>
-                  <button
-                    type="submit"
-                    className="btn btn-sm btn-warning text-dark fw-semibold"
-                    disabled={isSubmittingNote || !noteInput.trim()}
-                    data-testid="submit-internal-note-btn"
-                  >
-                    Add Internal Note
-                  </button>
-                </div>
-              </form>
+              {!readOnly && (
+                <form onSubmit={handlePostNote} className="pt-2 border-top">
+                  {noteError && <div className="alert alert-danger py-1 small mb-2">{noteError}</div>}
+                  <div className="mb-2">
+                    <textarea
+                      className="form-control form-control-sm"
+                      rows={3}
+                      placeholder="Write a confidential internal note for the team..."
+                      value={noteInput}
+                      onChange={(e) => setNoteInput(e.target.value)}
+                      data-testid="internal-note-input"
+                    ></textarea>
+                  </div>
+                  <div className="d-flex justify-content-between align-items-center">
+                    <span className="small text-muted">{noteInput.length}/2000</span>
+                    <button
+                      type="submit"
+                      className="btn btn-sm btn-warning text-dark fw-semibold"
+                      disabled={isSubmittingNote || !noteInput.trim()}
+                      data-testid="submit-internal-note-btn"
+                    >
+                      Add Internal Note
+                    </button>
+                  </div>
+                </form>
+              )}
             </div>
           </div>
         </div>

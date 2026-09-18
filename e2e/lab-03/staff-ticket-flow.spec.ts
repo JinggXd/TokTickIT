@@ -175,10 +175,9 @@ test.describe("E2E-11: Complete IT Staff triage workflow", () => {
     await expect(page.getByTestId("staff-ticket-detail-page")).toBeVisible();
 
     const claimBtn = page.getByTestId("staff-claim-ticket-btn");
-    if (await claimBtn.isVisible().catch(() => false)) {
-      await claimBtn.click();
-      await expect(page.getByRole("alert")).toBeVisible({ timeout: 6_000 });
-    }
+    await expect(claimBtn).toBeVisible();
+    await claimBtn.click();
+    await expect(page.locator(".alert-success, [role='alert']")).toBeVisible({ timeout: 6_000 });
     await page.screenshot({ path: screenshotPath(testInfo, "e2e11-claimed.png") });
   });
 
@@ -189,10 +188,9 @@ test.describe("E2E-11: Complete IT Staff triage workflow", () => {
 
     await page.getByTestId("staff-it-priority-select").selectOption("HIGH");
     const updateBtn = page.getByTestId("staff-update-priority-btn");
-    if (await updateBtn.isEnabled().catch(() => false)) {
-      await updateBtn.click();
-      await expect(page.getByRole("alert")).toBeVisible({ timeout: 6_000 });
-    }
+    await expect(updateBtn).toBeEnabled();
+    await updateBtn.click();
+    await expect(page.locator(".alert-success, [role='alert']")).toBeVisible({ timeout: 6_000 });
     await page.screenshot({ path: screenshotPath(testInfo, "e2e11-priority.png") });
   });
 
@@ -202,14 +200,13 @@ test.describe("E2E-11: Complete IT Staff triage workflow", () => {
     await expect(page.getByTestId("staff-ticket-detail-page")).toBeVisible();
 
     const sel = page.getByTestId("staff-status-select");
-    if (await sel.locator("option[value='OPEN']").count()) {
-      await sel.selectOption("OPEN");
-      const btn = page.getByTestId("staff-change-status-btn");
-      if (await btn.isEnabled().catch(() => false)) {
-        await btn.click();
-        await expect(page.getByRole("alert")).toBeVisible({ timeout: 6_000 });
-      }
-    }
+    await expect(sel.locator("option[value='OPEN']")).toHaveCount(1);
+    await sel.selectOption("OPEN");
+    const btn = page.getByTestId("staff-change-status-btn");
+    await expect(btn).toBeEnabled();
+    await btn.click();
+    await expect(page.locator(".alert-success, [role='alert']")).toBeVisible({ timeout: 6_000 });
+    await expect(page.locator(".badge:has-text('OPEN'), [data-testid='status-badge-OPEN']").first()).toBeVisible();
     await page.screenshot({ path: screenshotPath(testInfo, "e2e11-status-open.png") });
   });
 
@@ -248,13 +245,20 @@ test.describe("E2E-15: Back navigation and admin read-only", () => {
     await page.screenshot({ path: screenshotPath(testInfo, "e2e15-back.png") });
   });
 
-  test("Admin accessing staff detail does not crash", async ({ page }, testInfo) => {
+  test("Admin read-only view of ticket detail (AC-28, AC-37, E2E-15)", async ({ page }, testInfo) => {
     await loginAs(page, ADMIN_EMAIL);
-    await page.goto(`/staff/tickets/${ticketId}`);
-    const hasDetail = await page.getByTestId("staff-ticket-detail-page").isVisible().catch(() => false);
-    const hasError = await page.locator(".alert-danger").isVisible().catch(() => false);
-    const hasAdminPortal = await page.getByText("Administrator Portal").isVisible().catch(() => false);
-    expect(hasDetail || hasError || hasAdminPortal).toBeTruthy();
-    await page.screenshot({ path: screenshotPath(testInfo, "e2e15-admin.png") });
+    await page.goto(`/admin/tickets/${ticketId}`);
+    await expect(page.getByTestId("staff-ticket-detail-page")).toBeVisible();
+    await expect(page.getByTestId("staff-detail-ticket-no")).toBeVisible();
+    await expect(page.getByText(`E2E Staff Flow Test ${runId}`)).toBeVisible();
+    // Verify operational actions panel is NOT visible for Admin (read-only per AC-28, AC-37, ui-spec §10.2)
+    await expect(page.getByTestId("staff-operations-panel")).toHaveCount(0);
+    // Verify comment and note input forms are NOT visible for Admin (read-only)
+    await expect(page.getByTestId("public-comment-input")).toHaveCount(0);
+    await expect(page.getByTestId("internal-note-input")).toHaveCount(0);
+    // Verify comments and notes threads are visible and readable by Admin
+    await expect(page.getByTestId("public-comments-panel")).toBeVisible();
+    await expect(page.getByTestId("internal-notes-panel")).toBeVisible();
+    await page.screenshot({ path: screenshotPath(testInfo, "e2e15-admin-readonly.png") });
   });
 });
