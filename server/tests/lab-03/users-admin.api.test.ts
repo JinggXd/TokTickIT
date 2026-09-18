@@ -780,19 +780,34 @@ describe("Phase F4 / P11 Administrator User Management API (API-20 to API-27, AP
       // Deactivation should always succeed
       expect(deactivateRes.status).toBe(200);
 
+      // assignRes MUST strictly be either 200 (if assignment executed before deactivation)
+      // or 400 Validation failed (if deactivation executed before assignment). It must never fail with 500.
+      expect([200, 400]).toContain(assignRes.status);
+
       // Inspect final ticket in DB
       const finalTicket = await prisma.ticket.findUnique({
         where: { id: ticket.id },
         include: { ticketOwner: true },
       });
 
+      expect(finalTicket).not.toBeNull();
       // The key safety invariant: The ticket must NEVER end up assigned to an inactive user!
-      // If assignment succeeded first (200), cascade must have unassigned it (ticketOwnerId === null).
-      // If deactivation succeeded first, assignment must have been rejected (400 invalidOwner).
-      if (finalTicket?.ticketOwnerId !== null) {
-        expect(finalTicket?.ticketOwner?.isActive).toBe(true);
+      // Ticket owner must be null at the end of both operations.
+      expect(finalTicket?.ticketOwnerId).toBeNull();
+
+      if (assignRes.status === 200) {
+        // Case 1: Assignment succeeded first (200), then deactivation cascaded and unassigned it
+        expect(deactivateRes.body.unassignedTicketsCount).toBe(1);
+        // Version was incremented by assignment (1 -> 2) and then by deactivation cascade (2 -> 3)
+        expect(finalTicket?.version).toBe(3);
       } else {
-        expect(finalTicket?.ticketOwnerId).toBeNull();
+        // Case 2: Deactivation succeeded first (unassigned count 0), then assignment was rejected (400)
+        expect(assignRes.status).toBe(400);
+        expect(assignRes.body.error).toBe("Validation failed");
+        expect(assignRes.body.details?.ownerId).toBe("Owner must be an active IT Staff or Administrator");
+        expect(deactivateRes.body.unassignedTicketsCount).toBe(0);
+        // Version remains unchanged at initial version
+        expect(finalTicket?.version).toBe(1);
       }
     });
   });
