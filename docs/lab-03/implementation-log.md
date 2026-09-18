@@ -842,3 +842,68 @@ F2 / P03 is next after peer review and gate approval; no Lab 3 migration/auth co
 
 - **Major Phase F1 (P00–P02):** **Merged to lab3-staging** (PR #37 merged, Issue #36 closed).
 - **Major Phase F2 (P03–P06):** **In progress** (Spec §7.2 Rule 6 and MIG-04 fully satisfied: atomic local provisioning helper strictly targeting unprovisioned accounts with session invalidation, no universal password for migrated accounts, login denied for unprovisioned users, strict test teardown without error suppression, 12-128 char password policy, role-based landing. Server tests: 171/171 passed [Lab 3: 67/67], Client tests: 47/47 passed, Builds clean).
+
+---
+
+## 2026-09-18 — Major Phase F2 / P06: E2E Authentication Suite (E2E-01 to E2E-05) & Test Evidence Integration
+
+- **Active Branch:** `feature/f2-database-and-auth`
+- **Target Staging Branch:** `lab3-staging` (PR #39)
+
+### Objectives & Deliverables Completed
+
+1. **Phase F2 E2E Authentication Suite (`e2e/lab-03/authentication.spec.ts`):**
+   - Implemented automated browser tests for **E2E-01 through E2E-05** using Playwright against isolated test database `toktickit_test` and isolated test servers (API on port 3001, Client on port 5174):
+     - `E2E-01` (AC-01, AC-08, AC-13): Valid requester login, AppShell profile & badge display ("Requester"), decommissioned legacy selector absence verification, and logout redirecting to `/login`.
+     - `E2E-02` (AC-02, R02): User with `mustChangePassword: true` logs in with temporary password, mandatory alert is displayed, submit valid new password ($\ge 12$ characters), green success banner appears, redirects to role view (`/my-tickets`), and DB confirms `mustChangePassword: false`.
+     - `E2E-03` (AC-08, R01): Session invalidation on logout; browser back navigation (`page.goBack()`) and direct URL navigation to protected views are blocked from displaying tickets or user data, remaining on login screen.
+     - `E2E-04` (AC-12, R01): Login error flows: blank input client validation, wrong password error alert, and inactive user uniform HTTP 401 error banner ("Invalid email or password") without page crash or status leaks.
+     - `E2E-05` (AC-13, R03): Role-based navigation routing:
+       - `REQUESTER` lands on `/my-tickets` with My Tickets and Create Ticket links.
+       - `IT_STAFF` lands on `/staff/queue` with Ticket Queue link and IT Staff Portal view.
+       - `ADMINISTRATOR` lands on `/admin/users` with User Management link and Administrator Portal view.
+   - Tested across all three device viewports: `desktop` (1280x800), `tablet` (768x1024), and `mobile` (375x667). **15/15 tests passed**.
+
+2. **Auth Context & Password Change UI Hardening:**
+   - In `client/src/context/AuthContext.tsx` and `client/src/pages/ChangePassword.tsx`, decoupled the immediate `setUser` call during `changePassword()` resolution to allow the green success alert banner (`change-password-success-alert`) to display for 1000ms before `updateUser` and `onSuccess` trigger role navigation, preventing premature React component tree unmounting.
+   - In `client/src/components/AppShell.tsx`, added responsive flex-wrapping (`flex-wrap gap-2`) and compact mobile user name styling to ensure action buttons ("Password" and "Sign Out") never overlap or intercept pointer events on 375px mobile viewports.
+
+3. **Traceability Matrix & Test Evidence Updates (`docs/lab-03/tests.md`):**
+   - Updated statuses from `Planned` to `Implemented` for:
+     - `API-01` through `API-06` (Authentication API)
+     - `API-40` (Password Change API)
+     - `SEC-03` (Brute-Force Rate Limiting)
+     - `SEC-12` (CSRF & Rate-Limit Isolation)
+     - `UNIT-01` (Password Policy & Unicode Code Point Validation)
+     - `MIG-01` through `MIG-06` (Database Schema, Migration, Seed Idempotency, and Credential Provisioning)
+     - `UI-01` through `UI-03` (Login UI & AppShell Navigation)
+     - `UI-13` (Change Password UI & Validation)
+     - `E2E-01` through `E2E-05` (End-to-End Authentication & RBAC Navigation)
+   - Appended **Section 6: Phase F2 Test Execution Evidence & Raw Output Logs** containing exact commit SHAs, execution commands, exit codes, and raw console test output logs for Server (`171/171 passed`), Client (`47/47 passed`), and E2E (`15/15 passed`).
+
+### Changes made
+
+| Path | Change |
+|---|---|
+| `e2e/lab-03/authentication.spec.ts` | Implemented complete E2E-01 through E2E-05 test suite covering login, forced password change, logout session invalidation, error handling, and role-based navigation across desktop, tablet, and mobile. |
+| `client/src/context/AuthContext.tsx` | Added `updateUser` to `AuthContextType` and returned updated user from `changePassword` to enable deferred state sync upon completion of success feedback. |
+| `client/src/pages/ChangePassword.tsx` | Updated `handleSubmit` to display green success alert and call `updateUser` alongside `onSuccess` after redirect timeout. |
+| `client/src/components/AppShell.tsx` | Responsive header layout: added wrapping and compact mobile user profile styling to prevent button collision on small viewports. |
+| `docs/lab-03/tests.md` | Updated traceability table status to `Implemented` for all completed F2 tests; appended Section 6 with raw execution logs and commit citations. |
+| `docs/lab-03/implementation-log.md` | Logged E2E suite implementation, UI hardening, and evidence integration. |
+
+### Commands actually run
+
+| Command | Exit | Result |
+|---|---:|---|
+| `$env:DATABASE_URL_TEST=".../toktickit_test"; npx playwright test e2e/lab-03/authentication.spec.ts` | 0 | **15 passed (15 tests across desktop, tablet, and mobile in 17.2s)**. |
+| `$env:DATABASE_URL_TEST=".../toktickit_test"; npm run test:server` | 0 | **19 test files passed, 171/171 tests passed** (0 skipped, 0 failed in 19.62s). |
+| `npm run test:client` | 0 | **11 test files passed, 47/47 tests passed** (0 skipped, 0 failed in 8.86s). |
+| `npm --prefix server run build` | 0 | Server TypeScript compilation (`tsc`) succeeded with 0 errors. |
+| `npm --prefix client run build` | 0 | Client production build (`tsc && vite build`) succeeded with 0 errors. |
+
+### Gate status
+
+- **Major Phase F1 (P00–P02):** **Merged to lab3-staging** (PR #37 merged, Issue #36 closed).
+- **Major Phase F2 (P03–P06):** **Ready for Peer Review / PR #39 Update** (All deliverables complete: DB migrations MIG-01..06, backend auth API-01..06/40, unit tests UNIT-01, client UI-01..03/13, and Playwright E2E-01..05 passing 100% with full evidence documented in tests.md).
+

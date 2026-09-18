@@ -36,7 +36,7 @@ export const AppShell: React.FC<AppShellProps> = ({
     <div className="min-vh-100 d-flex flex-column" style={{ backgroundColor: "var(--zg-canvas)" }}>
       {/* Zen Green Navigation Header */}
       <header className="navbar navbar-zen px-3 px-md-4 py-2 sticky-top shadow-sm flex-column align-items-stretch" style={{ backgroundColor: "var(--zg-primary)" }}>
-        <div className="container-fluid d-flex justify-content-between align-items-center p-0">
+        <div className="container-fluid d-flex justify-content-between align-items-center p-0 flex-wrap gap-2">
           {/* Brand Logo & Desktop Navigation */}
           <div className="d-flex align-items-center gap-3">
             <span
@@ -99,7 +99,7 @@ export const AppShell: React.FC<AppShellProps> = ({
           </div>
 
           {/* Right-side User Profile & Actions */}
-          <div className="d-flex align-items-center gap-2">
+          <div className="d-flex align-items-center gap-2 flex-wrap">
             {user && roleInfo ? (
               <div className="d-flex align-items-center gap-2" data-testid="user-profile-badge">
                 <div
@@ -110,7 +110,7 @@ export const AppShell: React.FC<AppShellProps> = ({
                   }}
                 >
                   <span>👤</span>
-                  <span className="fw-semibold text-truncate" style={{ maxWidth: "150px" }} data-testid="user-profile-name">
+                  <span className="fw-semibold text-truncate d-none d-sm-inline" style={{ maxWidth: "120px" }} data-testid="user-profile-name">
                     {user.name}
                   </span>
                   <span
@@ -128,7 +128,7 @@ export const AppShell: React.FC<AppShellProps> = ({
 
                 <button
                   type="button"
-                  className="btn btn-sm btn-outline-light py-1 px-2"
+                  className="btn btn-sm btn-outline-light py-1 px-2 flex-shrink-0"
                   style={{ fontSize: "0.8rem", borderRadius: "4px" }}
                   onClick={() => onTabChange("change-password")}
                   data-testid="nav-change-password-button"
@@ -139,7 +139,7 @@ export const AppShell: React.FC<AppShellProps> = ({
 
                 <button
                   type="button"
-                  className="btn btn-sm btn-light py-1 px-2 text-danger fw-semibold"
+                  className="btn btn-sm btn-light py-1 px-2 text-danger fw-semibold flex-shrink-0"
                   style={{ fontSize: "0.8rem", borderRadius: "4px" }}
                   onClick={handleSignOut}
                   data-testid="sign-out-button"

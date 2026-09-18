@@ -7,7 +7,7 @@ interface ChangePasswordProps {
 }
 
 export const ChangePassword: React.FC<ChangePasswordProps> = ({ onSuccess, onCancel }) => {
-  const { user, changePassword } = useAuth();
+  const { user, changePassword, updateUser } = useAuth();
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -59,9 +59,10 @@ export const ChangePassword: React.FC<ChangePasswordProps> = ({ onSuccess, onCan
     setIsSubmitting(true);
 
     try {
-      await changePassword(currentPassword, newPassword, confirmPassword);
+      const updatedUser = await changePassword(currentPassword, newPassword, confirmPassword);
       setSuccessMessage("Password changed successfully! Redirecting...");
       setTimeout(() => {
+        updateUser(updatedUser);
         onSuccess();
       }, 1000);
     } catch (err: any) {

@@ -10,8 +10,9 @@ interface AuthContextType {
   csrfToken: string | null;
   login: (email: string, password: string) => Promise<SafeUser>;
   logout: () => Promise<void>;
-  changePassword: (currentPassword: string, newPassword: string, confirmPassword: string) => Promise<void>;
+  changePassword: (currentPassword: string, newPassword: string, confirmPassword: string) => Promise<SafeUser>;
   refreshMe: () => Promise<SafeUser | null>;
+  updateUser: (updatedUser: SafeUser) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -122,11 +123,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, []);
 
+  const updateUser = useCallback((updatedUser: SafeUser) => {
+    setUser(updatedUser);
+  }, []);
+
   const changePassword = useCallback(
-    async (currentPassword: string, newPassword: string, confirmPassword: string): Promise<void> => {
+    async (currentPassword: string, newPassword: string, confirmPassword: string): Promise<SafeUser> => {
       const res = await api.changePassword({ currentPassword, newPassword, confirmPassword });
-      setUser(res.user);
       await fetchCsrf();
+      return res.user;
     },
     [fetchCsrf],
   );
@@ -143,6 +148,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         logout,
         changePassword,
         refreshMe,
+        updateUser,
       }}
     >
       {children}
@@ -162,8 +168,11 @@ export function useAuth(): AuthContextType {
         throw new Error("useAuth must be used within an AuthProvider");
       },
       logout: async () => {},
-      changePassword: async () => {},
+      changePassword: async () => {
+        throw new Error("useAuth must be used within an AuthProvider");
+      },
       refreshMe: async () => null,
+      updateUser: () => {},
       csrfToken: null,
     };
   }
