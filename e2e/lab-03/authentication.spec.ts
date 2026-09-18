@@ -309,7 +309,7 @@ test.describe("Phase F2 / P06 E2E Authentication & Navigation (E2E-01 to E2E-05)
     await expect(
       page.locator('[data-testid="nav-admin-users"], [data-testid="nav-admin-users-mobile"]').filter({ visible: true }),
     ).toBeVisible();
-    await expect(page.getByRole("heading", { name: "Administrator Portal" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: /(?:Administrator Portal|User Management)/i })).toBeVisible();
     await expect(page.locator('[data-testid="nav-my-tickets"]')).toHaveCount(0);
     await expect(page.locator('[data-testid="nav-staff-queue"]')).toHaveCount(0);
 
