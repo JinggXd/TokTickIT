@@ -213,9 +213,16 @@ authRouter.post(
 
     try {
       await prisma.$transaction(async (tx) => {
-        const freshUser = await tx.user.findUnique({
-          where: { id: user.id },
-        });
+        // 1. Lock user row FOR UPDATE in PostgreSQL
+        const freshUsers = await tx.$queryRaw<
+          Array<{ id: number; passwordHash: string | null; sessionVersion: number; isActive: boolean }>
+        >`
+          SELECT id, "passwordHash", "sessionVersion", "isActive"
+          FROM "RequesterUser"
+          WHERE id = ${user.id}
+          FOR UPDATE
+        `;
+        const freshUser = freshUsers[0] ?? null;
 
         if (
           !freshUser ||
@@ -227,15 +234,25 @@ authRouter.post(
           throw new Error("CREDENTIALS_INVALIDATED");
         }
 
-        const freshSessionVersion = freshUser.sessionVersion + 1;
-        await tx.user.update({
-          where: { id: user.id },
+        // 2. Perform conditional atomic update matching exact original hash and version
+        const updateResult = await tx.user.updateMany({
+          where: {
+            id: user.id,
+            passwordHash: user.passwordHash,
+            sessionVersion: user.sessionVersion,
+          },
           data: {
             passwordHash: newHash,
             mustChangePassword: false,
-            sessionVersion: freshSessionVersion,
+            sessionVersion: { increment: 1 },
           },
         });
+
+        if (updateResult.count === 0) {
+          throw new Error("CREDENTIALS_INVALIDATED");
+        }
+
+        const freshSessionVersion = freshUser.sessionVersion + 1;
 
         // Revoke all existing sessions for this user
         await tx.session.deleteMany({

@@ -955,6 +955,106 @@ describe("Phase F4 / P11 Administrator User Management API (API-20 to API-27, AP
       expect(isFinalAdminPass).toBe(true);
     });
 
+    it("API-27 / API-40: admin reset intervening deterministically between change-password read and write is rejected without overwriting reset credentials", async () => {
+      const prisma = getPrisma();
+      const victimEmail = `interleaved.pwd.${Date.now()}@example.com`;
+      const oldPassword = "OldPassword123!";
+      const victimHashed = await hashPassword(oldPassword);
+
+      const victim = await prisma.user.create({
+        data: {
+          name: "Interleaved Race Victim",
+          email: victimEmail,
+          department: "Security",
+          role: "REQUESTER",
+          isActive: true,
+          mustChangePassword: true,
+          passwordHash: victimHashed,
+        },
+      });
+      createdUserIds.push(victim.id);
+
+      const loginRes = await request(app)
+        .post("/api/auth/login")
+        .set("Origin", DEFAULT_ORIGIN)
+        .send({ email: victimEmail, password: oldPassword });
+      const victimCookie = loginRes.headers["set-cookie"];
+      const victimCsrf = await request(app).get("/api/auth/csrf").set("Cookie", victimCookie);
+      const victimCsrfToken = victimCsrf.body.csrfToken;
+
+      const userNewPass = "UserChosenPass2026!";
+      const adminTempPass = "AdminTempPass2026!";
+
+      // Deterministically force admin reset to intervene:
+      // Change-password reads the original user record & validates currentPassword outside the transaction.
+      // Right as prisma.$transaction is invoked for change-password, admin reset runs and commits to the DB first!
+      const originalTransaction = prisma.$transaction.bind(prisma);
+      let resetResStatus: number | null = null;
+      let intercepted = false;
+
+      try {
+        prisma.$transaction = (async (...args: any[]) => {
+          if (!intercepted && typeof args[0] === "function") {
+            intercepted = true;
+            // Intervene: execute Admin reset while change-password has already read the old hash/version
+            const resetRes = await request(app)
+              .post(`/api/admin/users/${victim.id}/initial-password`)
+              .set("Origin", DEFAULT_ORIGIN)
+              .set("Cookie", adminCookie)
+              .set("X-CSRF-Token", adminCsrfToken)
+              .send({ initialPassword: adminTempPass });
+            resetResStatus = resetRes.status;
+          }
+          return (originalTransaction as any)(...args);
+        }) as any;
+
+        const changeRes = await request(app)
+          .post("/api/auth/change-password")
+          .set("Origin", DEFAULT_ORIGIN)
+          .set("Cookie", victimCookie)
+          .set("X-CSRF-Token", victimCsrfToken)
+          .send({
+            currentPassword: oldPassword,
+            newPassword: userNewPass,
+            confirmPassword: userNewPass,
+          });
+
+        expect(resetResStatus).toBe(204);
+
+        // Change-password MUST detect that credentials/sessionVersion changed and reject with 400
+        expect(changeRes.status).toBe(400);
+        expect(changeRes.body.error).toBe("Validation failed");
+        expect(changeRes.body.details?.currentPassword).toBe("Incorrect current password");
+
+        // Inspect database state
+        const finalUser = await prisma.user.findUnique({
+          where: { id: victim.id },
+        });
+
+        // The admin temp password MUST NOT be overwritten, and mustChangePassword MUST remain true!
+        expect(finalUser?.mustChangePassword).toBe(true);
+        const isFinalAdminPass = await verifyPassword(adminTempPass, finalUser!.passwordHash!);
+        expect(isFinalAdminPass).toBe(true);
+
+        // Verify the user cannot log in with the rejected userNewPass
+        const failedLogin = await request(app)
+          .post("/api/auth/login")
+          .set("Origin", DEFAULT_ORIGIN)
+          .send({ email: victimEmail, password: userNewPass });
+        expect(failedLogin.status).toBe(401);
+
+        // Verify the user can log in with the adminTempPass
+        const successfulLogin = await request(app)
+          .post("/api/auth/login")
+          .set("Origin", DEFAULT_ORIGIN)
+          .send({ email: victimEmail, password: adminTempPass });
+        expect(successfulLogin.status).toBe(200);
+        expect(successfulLogin.body.user.mustChangePassword).toBe(true);
+      } finally {
+        prisma.$transaction = originalTransaction;
+      }
+    });
+
     it("API-27 / API-02: concurrent login with old password and admin reset never leaves a valid session on old password", async () => {
       const prisma = getPrisma();
       const victimEmail = `race.login.${Date.now()}@example.com`;
