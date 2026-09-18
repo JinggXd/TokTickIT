@@ -1,3 +1,4 @@
+import crypto from "node:crypto";
 import request from "supertest";
 import { describe, it, expect, beforeEach, afterAll } from "vitest";
 import { app } from "../../src/app.js";
@@ -136,11 +137,10 @@ describe("Phase F2 / P04 Authentication API (AC-01, AC-02, AC-05, AC-06, AC-07, 
 
     it("returns uniform 401 for unprovisioned account without passwordHash (Spec §7.2 Rule 6, MIG-04)", async () => {
       const prisma = getPrisma();
-      const unprovisionedEmail = "unprovisioned.legacy@example.com";
-      await prisma.user.upsert({
-        where: { email: unprovisionedEmail },
-        update: { isActive: true, passwordHash: null },
-        create: {
+      const uniqueSuffix = `${Date.now()}_${crypto.randomBytes(4).toString("hex")}`;
+      const unprovisionedEmail = `unprovisioned.legacy.${uniqueSuffix}@example.com`;
+      const createdUser = await prisma.user.create({
+        data: {
           email: unprovisionedEmail,
           name: "Unprovisioned Legacy User",
           department: "Operations",
@@ -150,13 +150,17 @@ describe("Phase F2 / P04 Authentication API (AC-01, AC-02, AC-05, AC-06, AC-07, 
         },
       });
 
-      const res = await request(app)
-        .post("/api/auth/login")
-        .set("Origin", DEFAULT_ORIGIN)
-        .send({ email: unprovisionedEmail, password: "AnyAttemptedPassword123!" });
+      try {
+        const res = await request(app)
+          .post("/api/auth/login")
+          .set("Origin", DEFAULT_ORIGIN)
+          .send({ email: unprovisionedEmail, password: "AnyAttemptedPassword123!" });
 
-      expect(res.status).toBe(401);
-      expect(res.body).toEqual({ error: "Invalid email or password" });
+        expect(res.status).toBe(401);
+        expect(res.body).toEqual({ error: "Invalid email or password" });
+      } finally {
+        await prisma.user.delete({ where: { id: createdUser.id } }).catch(() => {});
+      }
     });
 
     it("returns 400 if email or password missing in request body", async () => {

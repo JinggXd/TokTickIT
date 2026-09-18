@@ -788,29 +788,52 @@ F2 / P03 is next after peer review and gate approval; no Lab 3 migration/auth co
 
 ---
 
-## 2026-09-18 — F2 Peer Review Iteration 6: Unprovisioned Account Password Policy & Specification §7.2 Rule 6 Alignment
+## 2026-09-18 — F2 Peer Review Iteration 6: Local Provisioning Helper, Clean Test Isolation & Evidence Reconciliation
 
 - **Review Findings Addressed:**
-  1. `[P1] การแจก default password ให้บัญชีเก่าทุกบัญชีขัดกับ specification §7.2 ข้อ 6 (line 303)` — Resolved: In `server/prisma/seed.ts`, completely removed the blanket `usersWithoutHash` update loop that assigned a universal default password to unseeded DB users. Per Specification §7.2 Rule 6 and tests.md MIG-04, universal committed passwords must never be assigned to migrated real accounts; accounts without a hash must have login denied. Only explicit fictional seed accounts defined in `getDefaultSeedAccounts()` are provisioned with initial credentials (`mustChangePassword: true`), preserving existing credentials if already changed.
-  2. `[P1] MIG-04 test assertions & unprovisioned login denial proof` — Resolved: In `server/tests/lab-03/migration-regression.test.ts`, updated MIG-04 assertions to verify that legacy unprovisioned accounts (`legacyUser`, `legacyStaff`) retain `passwordHash = null` post-seeding without losing role/department. Documented seed accounts (`sarah.j@example.com`) verify provisioned Argon2id hash and `mustChangePassword: true`. In `server/tests/lab-03/auth.api.test.ts`, added an explicit test proving that unprovisioned accounts with `passwordHash: null` are denied login with uniform 401 (`Invalid email or password`).
-  3. `[P2] รหัสผ่านใหม่ 12–128 ตัวอักษร (BR-03, AC-06) & Role-based redirect (BR-04, AC-07)` — Clarified and aligned documentation: Passwords must be 12–128 Unicode characters (code points); code in `server/src/utils/password.ts` and `client/src/pages/ChangePassword.tsx` correctly enforces this boundary. Post-password change routing properly directs users according to role (`REQUESTER` -> `/my-tickets`, `IT_STAFF` -> `/staff/queue`, `ADMINISTRATOR` -> `/admin/users`).
-  4. `[P2] server/tests/helpers/session.ts` — Acknowledged origin: added by reviewer during this review round for regression test support.
+  1. `[P1] ยังไม่มี provisioning helper สำหรับบัญชีเก่า ตาม specification §7.2 ข้อ 6 (line 303) และ MIG-04` — Resolved:
+     - Implemented local provisioning helper in `server/src/utils/provisionUser.ts` exporting `provisionUserCredentials({ email, userId, temporaryPassword }, prisma)`.
+     - Validates temporary secret (12–128 Unicode code points) or generates secure 16-character secret, hashes with Argon2id, updates user with `passwordHash` and `mustChangePassword = true`.
+     - Strictly enforces Rule 6: never prints or commits plaintext secrets to console or disk.
+     - Added operator CLI script `server/scripts/provision-user.mjs` supporting `--email`, `--userId`, `--password`, and `PROVISION_PASSWORD` environment variable.
+     - In `server/tests/lab-03/migration-regression.test.ts` (MIG-04), verified the complete lifecycle:
+       a) Unprovisioned legacy user starts with `passwordHash: null` and login attempt is rejected (`401 Invalid email or password`).
+       b) Runtime provisioning helper is executed for that legacy user.
+       c) DB reflects updated Argon2id hash and `mustChangePassword = true`.
+       d) Provisioned user logs in successfully with assigned temporary secret (`200 OK`) and receives `mustChangePassword: true`.
+       e) Other unprovisioned legacy users (`legacyStaff`) still have `passwordHash: null` and login is rejected (`401`), proving no universal migrated password was assigned.
+  2. `[P1] Test ทิ้งข้อมูลค้าง — สร้าง unprovisioned.legacy@example.com แต่ไม่ได้ cleanup (auth.api.test.ts:137)` — Resolved:
+     - Cleaned up leftover test user from `toktickit_test` database (confirmed 0 residual rows via query).
+     - In `server/tests/lab-03/auth.api.test.ts`, refactored test to use unique timestamped/random suffix (`unprovisioned.legacy.${Date.now()}_${randomHex}@example.com`) and wrapped in `try ... finally` block that explicitly deletes the record by ID.
+  3. `[P2] ความถูกต้องของ Password Policy Reference และ Complexity` — Aligned references:
+     - Password Complexity & Policy: **§5.1 (BR-03)** and **AC-06** (12–128 Unicode code points; new password must differ from current; confirmation must match).
+     - Brute Force Rate Limiting: **§5.1 (BR-04)** and **AC-09** (max 5 failed attempts per 15 min -> 429).
+     - User Identity: **§5.1 (AC-07)** (`/api/auth/me`).
+     - Role-based redirect post-password change: **§3.2 (AC-12)** and UI-13.
+  4. `[P2] ความชัดเจนของหลักฐานผลทดสอบ (171 tests vs 67 tests)` — Reconciled and clearly separated:
+     - **Lab 3 Specific Suite:** `node scripts/run-tests.mjs tests/lab-03` $\rightarrow$ 5 files, 67/67 tests passed.
+     - **Full Server Suite (Lab 1 + Lab 2 + Lab 3):** `node scripts/run-tests.mjs` $\rightarrow$ 19 files, 171/171 tests passed.
+     - **Client Suite:** `npm --prefix client test` $\rightarrow$ 11 files, 47/47 tests passed.
 
 ### Changes made
 
 | Path | Change |
 |---|---|
+| `server/src/utils/provisionUser.ts` | Implemented local provisioning helper `provisionUserCredentials` accepting per-user temporary secrets at runtime, hashing via Argon2id, setting `mustChangePassword: true`, and never printing/committing plaintext secrets (Spec §7.2 Rule 6, MIG-04). |
+| `server/scripts/provision-user.mjs` | Created operator CLI script for provisioning user credentials via runtime arguments or environment variable without logging secrets. |
 | `server/prisma/seed.ts` | Removed blanket `usersWithoutHash` loop; seed credential initialization is strictly confined to explicit fictional accounts in `getDefaultSeedAccounts()` (Spec §7.2 Rule 6, AC-17). |
-| `server/tests/lab-03/migration-regression.test.ts` | Aligned MIG-04 assertions to prove unprovisioned accounts outside seed fixtures retain `passwordHash: null`, while documented seed fixtures receive credentials (MIG-04, AC-17). |
-| `server/tests/lab-03/auth.api.test.ts` | Added test verifying login attempt with unprovisioned account (`passwordHash: null`) is denied with uniform 401 `Invalid email or password` (Spec §7.2 Rule 6, MIG-04). |
-| `docs/lab-03/implementation-log.md` | Logged Iteration 6 changes, verification results, and gate status. |
+| `server/tests/lab-03/migration-regression.test.ts` | Expanded MIG-04 to verify full lifecycle: unprovisioned login denial, runtime provisioning helper execution, post-provisioning login success with forced password change, and confirmation that unprovisioned accounts remain denied without universal password (MIG-04, AC-17). |
+| `server/tests/lab-03/auth.api.test.ts` | Dynamic user email and strict `try ... finally` ID-based deletion for unprovisioned login denial test; zero residual database records. |
+| `docs/lab-03/implementation-log.md` | Logged Iteration 6 changes, provisioning helper implementation, test cleanups, and test evidence reconciliation. |
 
 ### Commands actually run
 
 | Command | Exit | Result |
 |---|---:|---|
-| `$env:DATABASE_URL_TEST=".../toktickit_test"; node scripts/run-tests.mjs tests/lab-03` | 0 | 5 test files passed, 67/67 tests passed (100% pass on disposable test DB). |
-| `npm --prefix client test` | 0 | 11 test files passed, 47/47 tests passed (0 skipped, 0 failed). |
+| `$env:DATABASE_URL_TEST=".../toktickit_test"; node scripts/run-tests.mjs tests/lab-03` | 0 | **5 test files passed, 67/67 tests passed** (Lab 3 test suite on disposable test DB). |
+| `$env:DATABASE_URL_TEST=".../toktickit_test"; node scripts/run-tests.mjs` | 0 | **19 test files passed, 171/171 tests passed** (Full Server regression suite including Lab 1, Lab 2, and Lab 3). |
+| `npm --prefix client test` | 0 | **11 test files passed, 47/47 tests passed** (Full Client suite: 0 skipped, 0 failed). |
+| `node scripts/provision-user.mjs --email sarah.j@example.com --password "..."` | 0 | Verified CLI provisioning tool provisions user without printing plaintext secrets. |
 | `npm --prefix server run build` | 0 | Server TypeScript compilation (`tsc`) succeeded with 0 errors. |
 | `npm --prefix client run build` | 0 | Client production build (`tsc && vite build`) succeeded with 0 errors. |
 | `git diff --check` | 0 | 0 whitespace or formatting errors. |
@@ -818,4 +841,4 @@ F2 / P03 is next after peer review and gate approval; no Lab 3 migration/auth co
 ### Gate status
 
 - **Major Phase F1 (P00–P02):** **Merged to lab3-staging** (PR #37 merged, Issue #36 closed).
-- **Major Phase F2 (P03–P06):** **In progress** (Spec §7.2 Rule 6 and MIG-04 fully satisfied: no universal password for migrated accounts, login denied for unprovisioned users, 12-128 char password policy, role-based landing. Lab 3 Server tests: 67/67 passed, Client tests: 47/47 passed, Builds clean).
+- **Major Phase F2 (P03–P06):** **In progress** (Spec §7.2 Rule 6 and MIG-04 fully satisfied: local provisioning helper implemented and tested, no universal password for migrated accounts, login denied for unprovisioned users, clean test teardown verified, 12-128 char password policy, role-based landing. Server tests: 171/171 passed [Lab 3: 67/67], Client tests: 47/47 passed, Builds clean).

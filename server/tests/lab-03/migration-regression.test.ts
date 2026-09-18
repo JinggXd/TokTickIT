@@ -3,10 +3,13 @@ import { describe, it, expect } from "vitest";
 import fs from "node:fs";
 import path from "node:path";
 import crypto from "node:crypto";
+import request from "supertest";
+import { app } from "../../src/app.js";
 import { getWorkspaceRoot, getUploadDirectory } from "../../src/config/testEnvironment.js";
 import { getPrisma } from "../../src/prisma.js";
 import { seed, getDefaultSeedAccounts } from "../../prisma/seed.js";
 import { hashPassword, verifyPassword } from "../../src/utils/password.js";
+import { provisionUserCredentials } from "../../src/utils/provisionUser.js";
 
     function stripComments(sql: string): string {
       return sql
@@ -607,6 +610,53 @@ describe("Phase F2 / P03 Data Migration & Idempotent Seeding (AC-14–AC-18, AC-
         expect(seedRequester!.passwordHash).toContain("$argon2id$");
         expect(seedRequester!.mustChangePassword).toBe(true);
 
+        // Specification §7.2 Rule 6 & MIG-04:
+        // 1. Prove unprovisioned legacy user CANNOT log in before provisioning helper is run (no hash means login denied)
+        const unprovisionedLoginRes = await request(app)
+          .post("/api/auth/login")
+          .set("Origin", "http://localhost:5173")
+          .send({ email: legacyUser.email, password: "AnyAttemptedPassword123!" });
+        expect(unprovisionedLoginRes.status).toBe(401);
+        expect(unprovisionedLoginRes.body).toEqual({ error: "Invalid email or password" });
+
+        // 2. Call local provisioning helper accepting per-user temporary secret at runtime (Spec §7.2 Rule 6, AC-17, MIG-04)
+        const tempSecret = "LegacyTempSecret2026!";
+        const provisionResult = await provisionUserCredentials(
+          {
+            email: legacyUser.email,
+            temporaryPassword: tempSecret,
+          },
+          prisma,
+        );
+        expect(provisionResult.id).toBe(legacyUser.id);
+        expect(provisionResult.email).toBe(legacyUser.email);
+        expect(provisionResult.mustChangePassword).toBe(true);
+
+        // 3. Verify DB reflects updated Argon2id hash and forced password change
+        const provisionedUserDb = await prisma.user.findUnique({
+          where: { id: legacyUser.id },
+        });
+        expect(provisionedUserDb!.passwordHash).toContain("$argon2id$");
+        expect(provisionedUserDb!.mustChangePassword).toBe(true);
+
+        // 4. Prove provisioned legacy requester can now log in with assigned temporary credential and must change
+        const provisionedLoginRes = await request(app)
+          .post("/api/auth/login")
+          .set("Origin", "http://localhost:5173")
+          .send({ email: legacyUser.email, password: tempSecret });
+        expect(provisionedLoginRes.status).toBe(200);
+        expect(provisionedLoginRes.body.user.email).toBe(legacyUser.email);
+        expect(provisionedLoginRes.body.user.mustChangePassword).toBe(true);
+
+        // 5. Prove other unprovisioned accounts (legacyStaff) still have passwordHash = null and login denied
+        // (Proves no universal migrated password was assigned)
+        const staffLoginRes = await request(app)
+          .post("/api/auth/login")
+          .set("Origin", "http://localhost:5173")
+          .send({ email: legacyStaff.email, password: tempSecret });
+        expect(staffLoginRes.status).toBe(401);
+        expect(staffLoginRes.body).toEqual({ error: "Invalid email or password" });
+
         // Verify legacy ticket was NOT overwritten by seed and ownership was preserved
         const ticketAfterSeed = await prisma.ticket.findUnique({
           where: { id: legacyTicket.id },
@@ -648,6 +698,9 @@ describe("Phase F2 / P03 Data Migration & Idempotent Seeding (AC-14–AC-18, AC-
         });
         await prisma.ticket.deleteMany({
           where: { id: { in: createdTicketIds } },
+        });
+        await prisma.session.deleteMany({
+          where: { userId: { in: [legacyUser.id, legacyStaff.id] } },
         });
         await prisma.user.deleteMany({
           where: { id: { in: [legacyUser.id, legacyStaff.id] } },
