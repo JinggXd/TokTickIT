@@ -332,7 +332,7 @@ All automated test suites for Phase F2 (Database Migration, Authentication, Auth
 - **Command:** `npm run test:client`
 - **Working Directory:** `client/` (invoked via root workspace)
 - **Exit Code:** `0`
-- **Result Summary:** `11 passed (11 files), 47 passed (47 tests)`
+- **Result Summary:** `11 passed (11 files), 48 passed (48 tests)`
 - **Raw Execution Log Excerpt:**
 ```text
  RUN  v2.1.9 D:/toktickit/client
@@ -343,10 +343,11 @@ All automated test suites for Phase F2 (Database Migration, Authentication, Auth
    ✓ UI-02: displays error alert on 401 invalid credentials
    ✓ UI-02: displays rate-limit error banner on 429 status
    ✓ UI-03: renders AppShell with user profile name, role badge, and role-specific navigation upon login
- ✓ tests/lab-03/ChangePassword.test.tsx (3 tests) 2254ms
+ ✓ tests/lab-03/ChangePassword.test.tsx (4 tests) 4479ms
    ✓ UI-13: renders mandatory change alert banner when user has mustChangePassword: true
    ✓ UI-13: validates inline errors for empty fields, short password (<12), and mismatched passwords without calling API
    ✓ UI-13: calls api.changePassword, displays green success alert, and invokes onSuccess after successful update
+   ✓ UI-13: cancels redirect timer and does not invoke onSuccess if unmounted before delay expires
  ✓ tests/lab-03/SessionTicketFlow.test.tsx (2 tests) 1510ms
    ✓ AC-13: submits ticket using authenticated session identity when legacy currentRequester is null
  ✓ tests/lab-02/CreateTicket.test.tsx (9 tests) 6991ms
@@ -359,19 +360,19 @@ All automated test suites for Phase F2 (Database Migration, Authentication, Auth
  ✓ tests/lab-02/AppShell.test.tsx (1 test) 172ms
 
  Test Files  11 passed (11)
-      Tests  47 passed (47)
-   Duration  8.86s
+      Tests  48 passed (48)
+   Duration  8.36s
 ```
 
 ### 6.3 Playwright E2E Test Suite Execution Evidence
 
-- **Commit SHA:** `6d520e6`
+- **Commit SHA:** `6d520e6` (with peer review follow-up)
 - **Command:** `$env:DATABASE_URL_TEST="postgresql://toktickit:toktickit@localhost:5433/toktickit_test?schema=public"; npx playwright test e2e/lab-03/authentication.spec.ts`
 - **Target File:** `e2e/lab-03/authentication.spec.ts`
 - **Projects Tested:** `desktop` (1280x800), `tablet` (768x1024), `mobile` (375x667)
 - **Exit Code:** `0`
 - **Result Summary:** `15 passed (15 tests across 3 device viewports)`
-- **Artifacts Location:** `artifacts/lab-03/screenshots/<runId>/`
+- **Artifacts Location:** `artifacts/lab-03/screenshots/<runId>/{desktop,tablet,mobile}/` (project-isolated subdirectories)
 - **Raw Execution Log Excerpt:**
 ```text
 Running 15 tests using 1 worker

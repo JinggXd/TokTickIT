@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { useAuth } from "../context/AuthContext.js";
 
 interface ChangePasswordProps {
@@ -19,6 +19,36 @@ export const ChangePassword: React.FC<ChangePasswordProps> = ({ onSuccess, onCan
     newPassword?: string;
     confirmPassword?: string;
   }>({});
+
+  const userRef = useRef(user);
+  const redirectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    userRef.current = user;
+    if (!user && redirectTimerRef.current) {
+      clearTimeout(redirectTimerRef.current);
+      redirectTimerRef.current = null;
+    }
+  }, [user]);
+
+  useEffect(() => {
+    return () => {
+      if (redirectTimerRef.current) {
+        clearTimeout(redirectTimerRef.current);
+        redirectTimerRef.current = null;
+      }
+    };
+  }, []);
+
+  const handleCancel = () => {
+    if (redirectTimerRef.current) {
+      clearTimeout(redirectTimerRef.current);
+      redirectTimerRef.current = null;
+    }
+    if (onCancel) {
+      onCancel();
+    }
+  };
 
   const isMandatory = user?.mustChangePassword === true;
 
@@ -61,9 +91,12 @@ export const ChangePassword: React.FC<ChangePasswordProps> = ({ onSuccess, onCan
     try {
       const updatedUser = await changePassword(currentPassword, newPassword, confirmPassword);
       setSuccessMessage("Password changed successfully! Redirecting...");
-      setTimeout(() => {
-        updateUser(updatedUser);
-        onSuccess();
+      redirectTimerRef.current = setTimeout(() => {
+        redirectTimerRef.current = null;
+        if (userRef.current) {
+          updateUser(updatedUser);
+          onSuccess();
+        }
       }, 1000);
     } catch (err: any) {
       if (err.details) {
@@ -237,7 +270,7 @@ export const ChangePassword: React.FC<ChangePasswordProps> = ({ onSuccess, onCan
                 type="button"
                 className="btn btn-outline-secondary px-4 py-2 fw-semibold"
                 disabled={isSubmitting}
-                onClick={onCancel}
+                onClick={handleCancel}
               >
                 Cancel
               </button>

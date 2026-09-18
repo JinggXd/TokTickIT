@@ -907,3 +907,51 @@ F2 / P03 is next after peer review and gate approval; no Lab 3 migration/auth co
 - **Major Phase F1 (P00–P02):** **Merged to lab3-staging** (PR #37 merged, Issue #36 closed).
 - **Major Phase F2 (P03–P06):** **Ready for Peer Review / PR #39 Update** (All deliverables complete: DB migrations MIG-01..06, backend auth API-01..06/40, unit tests UNIT-01, client UI-01..03/13, and Playwright E2E-01..05 passing 100% with full evidence documented in tests.md).
 
+---
+
+## 2026-09-18 — Major Phase F2: Peer Review Follow-up & Defect Remediation (Iteration 8)
+
+- **Authorization:** Direct peer review feedback resolution for Phase F2 on branch `feature/f2-database-and-auth`.
+- **Active Branch:** `feature/f2-database-and-auth`
+
+### Key Remediations
+
+1. **[P2] Mobile User Profile Name Visibility (AC-13):**
+   - Removed `d-none d-sm-inline` from `user-profile-name` in `client/src/components/AppShell.tsx`, ensuring user name is visible on mobile screens (<576px) alongside role pill and avatar.
+   - Added flexible wrapping (`flex-wrap`) to user profile action buttons in header so Password and Sign Out buttons remain fully operable without collision on 375px screens.
+   - Enhanced `E2E-01` to assert `user-profile-name` visibility across all viewports (desktop, tablet, mobile).
+
+2. **[P2] Multi-Viewport Screenshot Isolation:**
+   - Updated `e2e/lab-03/authentication.spec.ts` with `getScreenshotPath(testInfo, filename)` helper that routes screenshots to project-isolated subdirectories:
+     `artifacts/lab-03/screenshots/<runId>/{desktop,tablet,mobile}/<filename>.png`.
+   - Prevents later test projects (e.g. mobile) from overwriting earlier projects (desktop/tablet), preserving all 27 screenshot artifacts across runs.
+
+3. **[P2] Asynchronous Timer Cleanup on Unmount/Logout:**
+   - Added `redirectTimerRef`, `userRef`, and `useEffect` lifecycle cleanups in `client/src/pages/ChangePassword.tsx`.
+   - Guaranteed that if a user clicks Cancel, signs out, or navigates away before the 1000ms delay elapses, `clearTimeout` is invoked immediately and `updateUser`/`onSuccess` callbacks are safely cancelled.
+   - Added client regression test `cancels redirect timer and does not invoke onSuccess if unmounted before delay expires` in `client/tests/lab-03/ChangePassword.test.tsx` (now 4/4 passing).
+
+### Changes made
+
+| Path | Change |
+|---|---|
+| `client/src/components/AppShell.tsx` | Removed `d-none d-sm-inline` on `user-profile-name`; added `flex-wrap` to profile container for mobile screen support. |
+| `client/src/pages/ChangePassword.tsx` | Added timer ref and lifecycle cleanups on unmount, cancel, and logout to prevent asynchronous user state resurrection. |
+| `client/tests/lab-03/ChangePassword.test.tsx` | Added regression test proving timer cancellation on unmount (48/48 client tests passing). |
+| `e2e/lab-03/authentication.spec.ts` | Isolated screenshots per project directory (`desktop/`, `tablet/`, `mobile/`) and verified mobile username visibility. |
+| `docs/lab-03/tests.md` | Updated client test count to 48 and documented project-isolated screenshot directory structure. |
+
+### Commands actually run
+
+| Command | Exit | Result |
+|---|---:|---|
+| `npm --prefix client test tests/lab-03/ChangePassword.test.tsx` | 0 | 1 test file, 4/4 tests passed (timer cancellation verified). |
+| `npm run test:client` | 0 | 11 test files, 48/48 tests passed (0 fail, 0 skip). |
+| `$env:DATABASE_URL_TEST=".../toktickit_test"; npx playwright test e2e/lab-03/authentication.spec.ts` | 0 | 15/15 passed across desktop, tablet, and mobile in 16.3s (all 27 project-isolated screenshots saved). |
+| `npm --prefix server run build` | 0 | Server TypeScript compilation (`tsc`) succeeded with 0 errors. |
+| `npm --prefix client run build` | 0 | Client production build (`tsc && vite build`) succeeded with 0 errors. |
+
+### Gate status
+
+- **Major Phase F2 (P03–P06):** Complete and hardened (100% test pass rate across unit, API, integration, and multi-viewport E2E).
+

@@ -1,7 +1,7 @@
 import path from "node:path";
 import fs from "node:fs";
 import crypto from "node:crypto";
-import { test, expect } from "@playwright/test";
+import { test, expect, type TestInfo } from "@playwright/test";
 import { PrismaClient } from "../../server/node_modules/@prisma/client/index.js";
 import { hashPassword } from "../../server/src/utils/password.js";
 
@@ -21,6 +21,14 @@ const prisma = new PrismaClient({
 
 const runId = process.env.TOKTICKIT_TEST_RUN_ID || `playwright-${Date.now()}`;
 const SCREENSHOT_BASE = process.env.SCREENSHOT_DIR || path.resolve("artifacts", "lab-03", "screenshots", runId);
+
+function getScreenshotPath(testInfo: TestInfo, filename: string): string {
+  const projectDir = path.join(SCREENSHOT_BASE, testInfo.project.name);
+  if (!fs.existsSync(projectDir)) {
+    fs.mkdirSync(projectDir, { recursive: true });
+  }
+  return path.join(projectDir, filename);
+}
 
 // Track all IDs created dynamically across tests for strict teardown
 const createdUserIds: number[] = [];
@@ -76,7 +84,7 @@ test.describe("Phase F2 / P06 E2E Authentication & Navigation (E2E-01 to E2E-05)
   // -------------------------------------------------------------------------
   // E2E-01 (AC-01, AC-08, AC-13): Valid login, permitted role landing page, logout flow
   // -------------------------------------------------------------------------
-  test("E2E-01: Valid login, permitted role landing page, logout flow", async ({ page }) => {
+  test("E2E-01: Valid login, permitted role landing page, logout flow", async ({ page }, testInfo) => {
     const user = await createTestUser({ role: "REQUESTER", name: "Alice Requester" });
 
     await page.goto("/login");
@@ -90,6 +98,8 @@ test.describe("Phase F2 / P06 E2E Authentication & Navigation (E2E-01 to E2E-05)
     // Expect redirect to /my-tickets and landing view
     await page.waitForURL("**/my-tickets");
     await expect(page.locator('[data-testid="user-profile-badge"]')).toBeVisible();
+    await expect(page.locator('[data-testid="user-profile-name"]')).toBeVisible();
+    await expect(page.locator('[data-testid="user-profile-name"]')).toHaveText(user.name);
     await expect(page.locator('[data-testid="user-role-badge"]')).toHaveText("Requester");
     await expect(
       page.locator('[data-testid="nav-my-tickets"], [data-testid="nav-my-tickets-mobile"]').filter({ visible: true }),
@@ -99,7 +109,7 @@ test.describe("Phase F2 / P06 E2E Authentication & Navigation (E2E-01 to E2E-05)
     await expect(page.locator('[data-testid="requester-selector"]')).toHaveCount(0);
 
     // Capture screenshot of authenticated requester view
-    await page.screenshot({ path: path.join(SCREENSHOT_BASE, "e2e-01-requester-authenticated.png") });
+    await page.screenshot({ path: getScreenshotPath(testInfo, "e2e-01-requester-authenticated.png") });
 
     // Logout
     await page.locator('[data-testid="sign-out-button"]').click();
@@ -109,13 +119,13 @@ test.describe("Phase F2 / P06 E2E Authentication & Navigation (E2E-01 to E2E-05)
     await expect(page.locator('[data-testid="login-submit-button"]')).toBeVisible();
     await expect(page.locator('[data-testid="user-profile-badge"]')).toHaveCount(0);
 
-    await page.screenshot({ path: path.join(SCREENSHOT_BASE, "e2e-01-logged-out.png") });
+    await page.screenshot({ path: getScreenshotPath(testInfo, "e2e-01-logged-out.png") });
   });
 
   // -------------------------------------------------------------------------
   // E2E-02 (AC-02, R02): Forced initial password change flow
   // -------------------------------------------------------------------------
-  test("E2E-02: Forced initial password change flow", async ({ page }) => {
+  test("E2E-02: Forced initial password change flow", async ({ page }, testInfo) => {
     const tempPassword = "InitialTempSecret2026!";
     const newPassword = "BrandNewSecurePassword2026!";
     const user = await createTestUser({
@@ -140,7 +150,7 @@ test.describe("Phase F2 / P06 E2E Authentication & Navigation (E2E-01 to E2E-05)
     // Cancel button must not be present in mandatory mode
     await expect(page.getByRole("button", { name: "Cancel" })).toHaveCount(0);
 
-    await page.screenshot({ path: path.join(SCREENSHOT_BASE, "e2e-02-mandatory-change-screen.png") });
+    await page.screenshot({ path: getScreenshotPath(testInfo, "e2e-02-mandatory-change-screen.png") });
 
     // Fill new password form
     await page.locator('[data-testid="current-password-input"]').fill(tempPassword);
@@ -164,13 +174,13 @@ test.describe("Phase F2 / P06 E2E Authentication & Navigation (E2E-01 to E2E-05)
     const updatedUser = await prisma.user.findUniqueOrThrow({ where: { id: user.id } });
     expect(updatedUser.mustChangePassword).toBe(false);
 
-    await page.screenshot({ path: path.join(SCREENSHOT_BASE, "e2e-02-post-change-landing.png") });
+    await page.screenshot({ path: getScreenshotPath(testInfo, "e2e-02-post-change-landing.png") });
   });
 
   // -------------------------------------------------------------------------
   // E2E-03 (AC-08, R01): Invalidate session on logout and verify back navigation blocked
   // -------------------------------------------------------------------------
-  test("E2E-03: Invalidate session on logout and verify back navigation blocked", async ({ page }) => {
+  test("E2E-03: Invalidate session on logout and verify back navigation blocked", async ({ page }, testInfo) => {
     const user = await createTestUser({ role: "REQUESTER", name: "Charlie SessionGuard" });
 
     await page.goto("/login");
@@ -199,13 +209,13 @@ test.describe("Phase F2 / P06 E2E Authentication & Navigation (E2E-01 to E2E-05)
     await expect(page.locator('[data-testid="login-email-input"]')).toBeVisible();
     await expect(page.locator('[data-testid="user-profile-badge"]')).toHaveCount(0);
 
-    await page.screenshot({ path: path.join(SCREENSHOT_BASE, "e2e-03-back-navigation-blocked.png") });
+    await page.screenshot({ path: getScreenshotPath(testInfo, "e2e-03-back-navigation-blocked.png") });
   });
 
   // -------------------------------------------------------------------------
   // E2E-04 (AC-12, R01): Login error flows (wrong password, inactive account)
   // -------------------------------------------------------------------------
-  test("E2E-04: Login error flows (wrong password, inactive account, client validation)", async ({ page }) => {
+  test("E2E-04: Login error flows (wrong password, inactive account, client validation)", async ({ page }, testInfo) => {
     const activeUser = await createTestUser({ role: "REQUESTER", name: "David Active" });
     const inactiveUser = await createTestUser({
       role: "REQUESTER",
@@ -236,13 +246,13 @@ test.describe("Phase F2 / P06 E2E Authentication & Navigation (E2E-01 to E2E-05)
     await expect(page.locator('[data-testid="login-error-alert"]')).toBeVisible();
     await expect(page.locator('[data-testid="login-error-alert"]')).toHaveText("Invalid email or password");
 
-    await page.screenshot({ path: path.join(SCREENSHOT_BASE, "e2e-04-login-error-states.png") });
+    await page.screenshot({ path: getScreenshotPath(testInfo, "e2e-04-login-error-states.png") });
   });
 
   // -------------------------------------------------------------------------
   // E2E-05 (AC-13, R03): Role-based navigation routing (Requester, Staff, Admin)
   // -------------------------------------------------------------------------
-  test("E2E-05: Role-based navigation routing (Requester, Staff, Admin)", async ({ page }) => {
+  test("E2E-05: Role-based navigation routing (Requester, Staff, Admin)", async ({ page }, testInfo) => {
     const requester = await createTestUser({ role: "REQUESTER", name: "Frank Requester" });
     const staff = await createTestUser({ role: "IT_STAFF", name: "Grace Staff" });
     const admin = await createTestUser({ role: "ADMINISTRATOR", name: "Heidi Admin" });
@@ -261,7 +271,7 @@ test.describe("Phase F2 / P06 E2E Authentication & Navigation (E2E-01 to E2E-05)
     await expect(page.locator('[data-testid="nav-staff-queue"]')).toHaveCount(0);
     await expect(page.locator('[data-testid="nav-admin-users"]')).toHaveCount(0);
 
-    await page.screenshot({ path: path.join(SCREENSHOT_BASE, "e2e-05-role-requester.png") });
+    await page.screenshot({ path: getScreenshotPath(testInfo, "e2e-05-role-requester.png") });
     await page.locator('[data-testid="sign-out-button"]').click();
     await page.waitForURL("**/login");
 
@@ -279,7 +289,7 @@ test.describe("Phase F2 / P06 E2E Authentication & Navigation (E2E-01 to E2E-05)
     await expect(page.locator('[data-testid="nav-my-tickets"]')).toHaveCount(0);
     await expect(page.locator('[data-testid="nav-admin-users"]')).toHaveCount(0);
 
-    await page.screenshot({ path: path.join(SCREENSHOT_BASE, "e2e-05-role-staff.png") });
+    await page.screenshot({ path: getScreenshotPath(testInfo, "e2e-05-role-staff.png") });
     await page.locator('[data-testid="sign-out-button"]').click();
     await page.waitForURL("**/login");
 
@@ -297,7 +307,7 @@ test.describe("Phase F2 / P06 E2E Authentication & Navigation (E2E-01 to E2E-05)
     await expect(page.locator('[data-testid="nav-my-tickets"]')).toHaveCount(0);
     await expect(page.locator('[data-testid="nav-staff-queue"]')).toHaveCount(0);
 
-    await page.screenshot({ path: path.join(SCREENSHOT_BASE, "e2e-05-role-admin.png") });
+    await page.screenshot({ path: getScreenshotPath(testInfo, "e2e-05-role-admin.png") });
     await page.locator('[data-testid="sign-out-button"]').click();
     await page.waitForURL("**/login");
   });

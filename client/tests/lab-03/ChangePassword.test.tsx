@@ -101,4 +101,53 @@ describe("Phase F2 / P06 UI-13 Change Password Screen Tests", () => {
       expect(screen.getByTestId("change-password-success-alert")).toBeInTheDocument();
     });
   });
+
+  it("cancels redirect timer and does not invoke onSuccess if unmounted before delay expires", async () => {
+    vi.spyOn(api, "fetchMe").mockResolvedValue({
+      user: {
+        id: 1,
+        name: "Jennifer Anderson",
+        email: "jennifer.a@example.com",
+        role: "REQUESTER",
+        mustChangePassword: false,
+      },
+    });
+    vi.spyOn(api, "fetchCsrf").mockResolvedValue({ csrfToken: "csrf" });
+
+    vi.spyOn(api, "changePassword").mockResolvedValueOnce({
+      message: "Password changed successfully",
+      user: {
+        id: 1,
+        name: "Jennifer Anderson",
+        email: "jennifer.a@example.com",
+        role: "REQUESTER",
+        mustChangePassword: false,
+      },
+    });
+
+    const onSuccess = vi.fn();
+    const { unmount } = render(
+      <AuthProvider>
+        <ChangePassword onSuccess={onSuccess} />
+      </AuthProvider>,
+    );
+
+    await userEvent.type(screen.getByTestId("current-password-input"), "CurrentPassword123!");
+    await userEvent.type(screen.getByTestId("new-password-input"), "BrandNewSecurePassword2026!");
+    await userEvent.type(screen.getByTestId("confirm-password-input"), "BrandNewSecurePassword2026!");
+    await userEvent.click(screen.getByTestId("update-password-submit-button"));
+
+    await waitFor(() => {
+      expect(screen.getByTestId("change-password-success-alert")).toBeInTheDocument();
+    });
+
+    // Unmount before 1000ms delay elapses (e.g. user clicked Sign Out or navigated away)
+    unmount();
+
+    // Wait past the 1000ms timer window
+    await new Promise((resolve) => setTimeout(resolve, 1100));
+
+    // onSuccess should NOT have been invoked because timer was cancelled on unmount
+    expect(onSuccess).not.toHaveBeenCalled();
+  });
 });

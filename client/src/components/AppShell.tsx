@@ -101,7 +101,7 @@ export const AppShell: React.FC<AppShellProps> = ({
           {/* Right-side User Profile & Actions */}
           <div className="d-flex align-items-center gap-2 flex-wrap">
             {user && roleInfo ? (
-              <div className="d-flex align-items-center gap-2" data-testid="user-profile-badge">
+              <div className="d-flex align-items-center gap-2 flex-wrap" data-testid="user-profile-badge">
                 <div
                   className="d-flex align-items-center gap-2 px-2 py-1 rounded"
                   style={{
@@ -110,7 +110,7 @@ export const AppShell: React.FC<AppShellProps> = ({
                   }}
                 >
                   <span>👤</span>
-                  <span className="fw-semibold text-truncate d-none d-sm-inline" style={{ maxWidth: "120px" }} data-testid="user-profile-name">
+                  <span className="fw-semibold text-truncate" style={{ maxWidth: "120px" }} data-testid="user-profile-name">
                     {user.name}
                   </span>
                   <span
