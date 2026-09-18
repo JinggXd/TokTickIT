@@ -1025,5 +1025,7 @@ F2 / P03 is next after peer review and gate approval; no Lab 3 migration/auth co
 
 ### Gate Status
 
-- **Major Phase F3 (P07–P10):** **100% Proven & Verified**. Hardened assertions executed and verified without conditional bypasses. Ready for peer review on `lab3-staging`.
+- **Major Phase F3 (P07–P10):** **100% Proven & Verified**. Hardened assertions executed and verified without conditional bypasses.
+- **GitHub Tracking:** Issue [#40](https://github.com/JinggXd/TokTickIT/issues/40) opened and explicitly linked in Development panel to Pull Request [#41](https://github.com/JinggXd/TokTickIT/pull/41) targeting `lab3-staging`.
+- **Next Step:** Awaiting peer review on PR #41 before reviewer merges to `lab3-staging`.
 
