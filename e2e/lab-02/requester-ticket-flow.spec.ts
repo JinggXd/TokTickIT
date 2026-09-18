@@ -1,3 +1,5 @@
+import crypto from "node:crypto";
+import { hash } from "../../server/node_modules/argon2/argon2.cjs";
 import { test, expect, Page, APIRequestContext } from "@playwright/test";
 import path from "path";
 import fs from "fs";
@@ -47,25 +49,45 @@ const prisma = new PrismaClient(
   testDbUrl ? { datasources: { db: { url: testDbUrl } } } : undefined,
 );
 
+const fixturePassword = 'E2EFixturePassword2026!';
+const fixtureUsers: TestFixture['requester'][] = [];
+async function getFixtureUsers() {
+  if (fixtureUsers.length) return fixtureUsers;
+  const passwordHash = await hash(fixturePassword, { memoryCost: 19456, timeCost: 2, parallelism: 1 });
+  for (const name of ['Requester A', 'Requester B']) {
+    const user = await prisma.user.create({ data: {
+      name, email: crypto.randomUUID() + '@e2e.example.com', department: 'E2E',
+      passwordHash, mustChangePassword: false, role: 'REQUESTER',
+    } });
+    fixtureUsers.push(user);
+  }
+  return fixtureUsers;
+}
+async function apiHeaders(request: APIRequestContext, id: number) {
+  const user = (await getFixtureUsers()).find(u => u.id === id)!;
+  const login = await request.post(API_BASE + '/api/auth/login', {
+    headers: { Origin: 'http://localhost:5174' }, data: { email: user.email, password: fixturePassword },
+  });
+  expect(login.status()).toBe(200);
+  const cookie = login.headers()['set-cookie'].split(';')[0];
+  const csrf = await request.get(API_BASE + '/api/auth/csrf', { headers: { Cookie: cookie } });
+  expect(csrf.status()).toBe(200);
+  return { Cookie: cookie, Origin: 'http://localhost:5174', 'X-CSRF-Token': (await csrf.json()).csrfToken };
+}
+
 // Dynamic fixture setup: queries active requester, creates a ticket with long summary and long attachment filename
 async function getOrCreateTestFixture(request: APIRequestContext): Promise<TestFixture> {
   if (cachedFixture) {
     return cachedFixture;
   }
 
-  // 1. Fetch active requesters and reference data from API
-  const reqRes = await request.get(`${API_BASE}/api/requesters/active`);
-  expect(reqRes.ok()).toBe(true);
-  const requesters = await reqRes.json();
-  const activeRequester = requesters.find((r: any) => r.isActive) || requesters[0];
-  expect(activeRequester).toBeDefined();
-
-  const catRes = await request.get(`${API_BASE}/api/categories`);
+  const activeRequester = (await getFixtureUsers())[0];
+  const catRes = await request.get(`${API_BASE}/api/categories`, { headers: await apiHeaders(request, (await getFixtureUsers())[0].id) });
   expect(catRes.ok()).toBe(true);
   const categories = await catRes.json();
   const activeCategory = categories.find((c: any) => c.isActive) || categories[0];
 
-  const sysRes = await request.get(`${API_BASE}/api/related-systems`);
+  const sysRes = await request.get(`${API_BASE}/api/related-systems`, { headers: await apiHeaders(request, (await getFixtureUsers())[0].id) });
   expect(sysRes.ok()).toBe(true);
   const systems = await sysRes.json();
   const activeSystem = systems.find((s: any) => s.isActive) || systems[0];
@@ -73,9 +95,7 @@ async function getOrCreateTestFixture(request: APIRequestContext): Promise<TestF
   // 2. Create a dedicated test ticket with a long summary (<= 100 chars per BR-09)
   const longSummary = "RESP-03 Polish Ticket with Long Summary Testing Text Wrapping and Layout Integrity";
   const createRes = await request.post(`${API_BASE}/api/tickets`, {
-    headers: {
-      "X-Requester-Id": String(activeRequester.id),
-    },
+    headers: await apiHeaders(request, activeRequester.id),
     data: {
       summary: longSummary,
       description: "Detailed description verifying responsive rules, no clipped labels, proper padding, and centered alignment.",
@@ -95,9 +115,7 @@ async function getOrCreateTestFixture(request: APIRequestContext): Promise<TestF
   const longAttachmentName = "very_long_attachment_filename_testing_ellipsis_truncation_spec.pdf";
   const dummyPdf = Buffer.from("%PDF-1.4\n1 0 obj<</Type/Catalog>>endobj\ntrailer<</Root 1 0 R>>\n%%EOF");
   const uploadRes = await request.post(`${API_BASE}/api/tickets/${createdTicket.id}/attachments`, {
-    headers: {
-      "X-Requester-Id": String(activeRequester.id),
-    },
+    headers: await apiHeaders(request, activeRequester.id),
     multipart: {
       file: {
         name: longAttachmentName,
@@ -148,16 +166,20 @@ test.afterAll(async () => {
         where: { id: { in: createdTicketIds } },
       });
     }
+    await prisma.user.deleteMany({ where: { id: { in: fixtureUsers.map(u => u.id) } } });
   } finally {
     await prisma.$disconnect();
   }
 });
 
-// Inject requester session into localStorage before page load
+// Authenticate through the real UI; no development selector or storage injection.
 async function injectRequester(page: Page, requester: TestFixture["requester"]) {
-  await page.addInitScript((req) => {
-    window.localStorage.setItem("toktickit_current_requester", JSON.stringify(req));
-  }, requester);
+  await page.goto('/login');
+  await page.getByLabel('Email address').fill(requester.email);
+  await page.locator('#login-password').fill(fixturePassword);
+  await page.getByRole('button', { name: 'Sign In', exact: true }).click();
+  await page.waitForURL('**/my-tickets');
+  await expect(page.getByTestId('user-profile-name')).toHaveText(requester.name);
 }
 
 // Helper to ensure screenshot directory exists
@@ -441,45 +463,15 @@ test.describe("Phase 7 — Visual Inspection Screenshot Captures (Project-Isolat
 
 test.describe("Phase 8 — End-to-End Integration Flows (E2E-01, E2E-02, E2E-03 per tests.md)", () => {
   // E2E-01 (AC-01, AC-02, AC-03, AC-13)
-  test("E2E-01: Full happy path — select Requester, verify read-only fields, create ticket with attachment, find in My Tickets, switch Requester", async ({ page }, testInfo) => {
+  test("E2E-01: Full happy path — sign in, verify read-only fields, create ticket with attachment, find in My Tickets, sign out and switch account", async ({ page }, testInfo) => {
     const proj = testInfo.project.name;
 
-    // Step 1: Start with unauthenticated / clean state to verify AC-02 route guard
-    await page.goto("/select-requester");
-    await page.evaluate(() => window.localStorage.clear());
-
-    // Navigating to /my-tickets directly without requester must redirect to /select-requester
-    await page.goto("/my-tickets");
-    await page.waitForURL("**/select-requester");
-    await page.waitForSelector("#requester-select");
-
-    // Capture Step 1 screenshot
-    const shot1 = `${SCREENSHOT_BASE}/e2e/01-select-requester-${proj}.png`;
-    await captureCleanScreenshot(page, shot1);
-
-    // Step 2: Select first active Development Requester (e.g. Requester 1 - Jennifer Anderson)
-    await page.waitForSelector("#requester-select");
-    await page.waitForFunction(() => {
-      const sel = document.querySelector("#requester-select") as HTMLSelectElement | null;
-      return !!sel && sel.options.length > 2;
-    });
-
-    const firstReqId = await page.evaluate(() => {
-      const sel = document.querySelector("#requester-select") as HTMLSelectElement;
-      return sel.options[1].value;
-    });
-    const firstReqText = await page.evaluate(() => {
-      const sel = document.querySelector("#requester-select") as HTMLSelectElement;
-      return sel.options[1].textContent || "";
-    });
-    expect(firstReqId).toBeTruthy();
-    await page.selectOption("#requester-select", firstReqId);
-    await page.click("[data-testid='continue-button']");
-
-    // Redirects to /my-tickets and AppShell shows user profile badge
-    await page.waitForURL("**/my-tickets");
-    const profileBadge = page.locator("[data-testid='user-profile-badge']");
-    await expect(profileBadge).toBeVisible();
+    const users = await getFixtureUsers();
+    const firstReqText = users[0].name;
+    await page.goto('/my-tickets');
+    await expect(page.getByRole('button', { name: 'Sign In', exact: true })).toBeVisible();
+    await expect(page.locator('#requester-select')).toHaveCount(0);
+    await injectRequester(page, users[0]);
 
     // Step 3: Navigate to Create Ticket screen
     const navCreate = page.locator("[data-testid='nav-create-ticket']:visible, [data-testid='nav-create-ticket-mobile']:visible").first();
@@ -573,33 +565,15 @@ test.describe("Phase 8 — End-to-End Integration Flows (E2E-01, E2E-02, E2E-03 
     const shot4 = `${SCREENSHOT_BASE}/e2e/04-my-tickets-owner-${proj}.png`;
     await captureCleanScreenshot(page, shot4);
 
-    // Step 8: Switch Requester to second active requester (AC-13, BR-14)
-    await page.click("[data-testid='change-requester-button']");
-    await page.waitForURL("**/select-requester");
-    await page.waitForSelector("#requester-select");
-    await page.waitForFunction(() => {
-      const sel = document.querySelector("#requester-select") as HTMLSelectElement | null;
-      return !!sel && sel.options.length > 2;
-    });
-
-    const secondReqId = await page.evaluate(() => {
-      const sel = document.querySelector("#requester-select") as HTMLSelectElement;
-      return sel.options[2].value;
-    });
-    expect(secondReqId).toBeTruthy();
-    expect(secondReqId).not.toBe(firstReqId);
-    await page.selectOption("#requester-select", secondReqId);
-
-    // Wait for the switched requester's tickets response and ensure loading finishes before asserting
+    // Switch identity through logout/login, then wait for real ticket data.
+    await page.getByTestId('sign-out-button').click();
+    await expect(page.getByRole('button', { name: 'Sign In', exact: true })).toBeVisible();
     const switchedTicketsResPromise = page.waitForResponse(
-      (res) => res.url().includes("/api/tickets") && res.request().method() === "GET" && res.status() === 200
+      res => res.url().includes('/api/tickets') && res.request().method() === 'GET' && res.status() === 200
     );
-    await page.click("[data-testid='continue-button']");
-
-    await page.waitForURL("**/my-tickets");
+    await injectRequester(page, users[1]);
     await switchedTicketsResPromise;
-    await expect(page.locator("text=Loading your tickets...")).toHaveCount(0);
-    await page.waitForSelector(".card-zen");
+    await expect(page.getByText('Loading your tickets...')).toHaveCount(0);
 
     // Verify Jennifer's ticket is NOT present in Sarah's My Tickets list
     await expect(page.locator(`text=${createdTicketNo}`)).toHaveCount(0);
@@ -681,20 +655,15 @@ test.describe("Phase 8 — End-to-End Integration Flows (E2E-01, E2E-02, E2E-03 
   test("E2E-03: Negative security flows — cross-requester direct URL (403) and removed attachment direct download (410)", async ({ page, request }, testInfo) => {
     const proj = testInfo.project.name;
 
-    // Fetch active requesters
-    const reqRes = await request.get(`${API_BASE}/api/requesters/active`);
-    const requesters = await reqRes.json();
-    const req1 = requesters[0]; // Jennifer Anderson
-    const req2 = requesters[1]; // Sarah Johnson
-
-    const catRes = await request.get(`${API_BASE}/api/categories`);
+    const [req1, req2] = await getFixtureUsers();
+    const catRes = await request.get(`${API_BASE}/api/categories`, { headers: await apiHeaders(request, (await getFixtureUsers())[0].id) });
     const cats = await catRes.json();
-    const sysRes = await request.get(`${API_BASE}/api/related-systems`);
+    const sysRes = await request.get(`${API_BASE}/api/related-systems`, { headers: await apiHeaders(request, (await getFixtureUsers())[0].id) });
     const syss = await sysRes.json();
 
     // Part A: Create a ticket owned by Requester 2 (Sarah Johnson)
     const sarahTicketRes = await request.post(`${API_BASE}/api/tickets`, {
-      headers: { "X-Requester-Id": String(req2.id) },
+      headers: await apiHeaders(request, req2.id),
       data: {
         summary: `E2E-03 Sarah Private Ticket ${Date.now()}`,
         description: "Confidential ticket belonging exclusively to Sarah Johnson.",
@@ -727,7 +696,7 @@ test.describe("Phase 8 — End-to-End Integration Flows (E2E-01, E2E-02, E2E-03 
     // Part B: Direct URL download of a soft-removed attachment (410 Gone)
     // Create a ticket owned by Requester 1 (Jennifer Anderson)
     const jenniferTicketRes = await request.post(`${API_BASE}/api/tickets`, {
-      headers: { "X-Requester-Id": String(req1.id) },
+      headers: await apiHeaders(request, req1.id),
       data: {
         summary: `E2E-03 Jennifer Attachment Ticket ${Date.now()}`,
         description: "Ticket to verify 410 Gone on removed attachment direct download.",
@@ -743,7 +712,7 @@ test.describe("Phase 8 — End-to-End Integration Flows (E2E-01, E2E-02, E2E-03 
     // Upload an attachment
     const dummyPdf = Buffer.from("%PDF-1.4\n1 0 obj<</Type/Catalog>>endobj\ntrailer<</Root 1 0 R>>\n%%EOF");
     const uploadRes = await request.post(`${API_BASE}/api/tickets/${jenniferTicket.id}/attachments`, {
-      headers: { "X-Requester-Id": String(req1.id) },
+      headers: await apiHeaders(request, req1.id),
       multipart: {
         file: {
           name: "e2e_removed_file.pdf",
@@ -768,7 +737,7 @@ test.describe("Phase 8 — End-to-End Integration Flows (E2E-01, E2E-02, E2E-03 
 
     // Concurrently soft-remove the attachment on the server via API (stale UI simulation)
     const removeRes = await request.delete(`${API_BASE}/api/attachments/${uploadedAtt.id}`, {
-      headers: { "X-Requester-Id": String(req1.id) },
+      headers: await apiHeaders(request, req1.id),
       data: { removalReason: "Soft-removed for E2E-03 verification" },
     });
     expect(removeRes.ok()).toBe(true);
@@ -789,7 +758,7 @@ test.describe("Phase 8 — End-to-End Integration Flows (E2E-01, E2E-02, E2E-03 
 
     // Direct download API request by owner returns 410 Gone per api-spec.md Section 6.8
     const dlRes = await request.get(`${API_BASE}/api/attachments/${uploadedAtt.id}/download`, {
-      headers: { "X-Requester-Id": String(req1.id) },
+      headers: await apiHeaders(request, req1.id),
     });
     expect(dlRes.status()).toBe(410);
     const dlBody = await dlRes.json();
@@ -797,7 +766,7 @@ test.describe("Phase 8 — End-to-End Integration Flows (E2E-01, E2E-02, E2E-03 
 
     // Direct download API request by non-owner returns 403 Forbidden per api-spec.md Section 6.8
     const crossDlRes = await request.get(`${API_BASE}/api/attachments/${uploadedAtt.id}/download`, {
-      headers: { "X-Requester-Id": String(req2.id) },
+      headers: await apiHeaders(request, req2.id),
     });
     expect(crossDlRes.status()).toBe(403);
     const crossBody = await crossDlRes.json();

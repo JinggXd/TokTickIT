@@ -1,3 +1,4 @@
+import { sessionHeaders } from "../helpers/session.js";
 import request from "supertest";
 import { describe, it, expect, vi, afterEach } from "vitest";
 import { app } from "../../src/app.js";
@@ -13,7 +14,7 @@ describe("POST /api/tickets (API-01 to API-05, API-21, API-28, API-29)", () => {
   // API-01 — AC-01, AC-03; BR-02, BR-16, BR-17: valid creation
   it("API-01: creates a new ticket with 201 Created and backend-issued fields", async () => {
     // Find an active requester, category, and related system
-    const requester = await prisma.requesterUser.findFirst({ where: { isActive: true } });
+    const requester = await prisma.requesterUser.findFirst({ where: { isActive: true, role: "REQUESTER" } });
     const category = await prisma.category.findFirst({ where: { isActive: true } });
     const relatedSystem = await prisma.relatedSystem.findFirst({ where: { isActive: true } });
 
@@ -30,8 +31,8 @@ describe("POST /api/tickets (API-01 to API-05, API-21, API-28, API-29)", () => {
     };
 
     const res = await request(app)
-      .post("/api/tickets")
-      .set("X-Requester-Id", String(requester!.id))
+      .post("/api/tickets").set("Origin", "http://localhost:5173")
+      .set(await sessionHeaders(requester!.id))
       .send(payload);
 
     expect(res.status).toBe(201);
@@ -54,11 +55,11 @@ describe("POST /api/tickets (API-01 to API-05, API-21, API-28, API-29)", () => {
 
   // API-02 — AC-04: missing / invalid fields
   it("API-02: returns 400 with details object naming all invalid fields at once", async () => {
-    const requester = await prisma.requesterUser.findFirst({ where: { isActive: true } });
+    const requester = await prisma.requesterUser.findFirst({ where: { isActive: true, role: "REQUESTER" } });
 
     const res = await request(app)
-      .post("/api/tickets")
-      .set("X-Requester-Id", String(requester!.id))
+      .post("/api/tickets").set("Origin", "http://localhost:5173")
+      .set(await sessionHeaders(requester!.id))
       .send({
         summary: "123", // too short (< 5)
         description: "short", // too short (< 10)
@@ -80,7 +81,7 @@ describe("POST /api/tickets (API-01 to API-05, API-21, API-28, API-29)", () => {
   // API-03 — AC-18: missing header -> 401 without details
   it("API-03: returns 401 Unauthorized without details key when X-Requester-Id is missing", async () => {
     const res = await request(app)
-      .post("/api/tickets")
+      .post("/api/tickets").set("Origin", "http://localhost:5173")
       .send({
         summary: "Valid summary here",
         description: "Valid description here for testing.",
@@ -90,14 +91,14 @@ describe("POST /api/tickets (API-01 to API-05, API-21, API-28, API-29)", () => {
       });
 
     expect(res.status).toBe(401);
-    expect(res.body).toEqual({ error: "Requester context is missing or invalid" });
+    expect(res.body).toEqual({ error: "Authentication required" });
     expect(res.body).not.toHaveProperty("details");
   });
 
   // API-04 — AC-18: malformed header -> 400 without details
-  it("API-04: returns 400 Bad Request without details key when header is malformed (e.g. abc)", async () => {
+  it("API-04: ignores malformed legacy header; missing session returns 401", async () => {
     const res = await request(app)
-      .post("/api/tickets")
+      .post("/api/tickets").set("Origin", "http://localhost:5173")
       .set("X-Requester-Id", "abc")
       .send({
         summary: "Valid summary here",
@@ -107,8 +108,8 @@ describe("POST /api/tickets (API-01 to API-05, API-21, API-28, API-29)", () => {
         requestedPriority: "LOW",
       });
 
-    expect(res.status).toBe(400);
-    expect(res.body).toEqual({ error: "Bad Request: Malformed X-Requester-Id header" });
+    expect(res.status).toBe(401);
+    expect(res.body).toEqual({ error: "Authentication required" });
     expect(res.body).not.toHaveProperty("details");
   });
 
@@ -118,8 +119,8 @@ describe("POST /api/tickets (API-01 to API-05, API-21, API-28, API-29)", () => {
     expect(inactive).toBeTruthy();
 
     const res = await request(app)
-      .post("/api/tickets")
-      .set("X-Requester-Id", String(inactive!.id))
+      .post("/api/tickets").set("Origin", "http://localhost:5173")
+      .set(await sessionHeaders(inactive!.id))
       .send({
         summary: "Valid summary here",
         description: "Valid description here for testing.",
@@ -129,14 +130,14 @@ describe("POST /api/tickets (API-01 to API-05, API-21, API-28, API-29)", () => {
       });
 
     expect(res.status).toBe(401);
-    expect(res.body).toEqual({ error: "Requester context is missing or invalid" });
+    expect(res.body).toEqual({ error: "Authentication required" });
     expect(res.body).not.toHaveProperty("details");
   });
 
   // API-28 — AC-18, BR-06: header with unknown requester ID -> 401
   it("API-28: returns 401 Unauthorized without details key when requester ID does not exist", async () => {
     const res = await request(app)
-      .post("/api/tickets")
+      .post("/api/tickets").set("Origin", "http://localhost:5173")
       .set("X-Requester-Id", "999999")
       .send({
         summary: "Valid summary here",
@@ -147,18 +148,18 @@ describe("POST /api/tickets (API-01 to API-05, API-21, API-28, API-29)", () => {
       });
 
     expect(res.status).toBe(401);
-    expect(res.body).toEqual({ error: "Requester context is missing or invalid" });
+    expect(res.body).toEqual({ error: "Authentication required" });
     expect(res.body).not.toHaveProperty("details");
   });
 
   // API-29 — AC-04: nonexistent, inactive, and simultaneous syntax + reference errors
   it("API-29: returns 400 with details when category or related system does not exist or is inactive, collecting all errors", async () => {
-    const requester = await prisma.requesterUser.findFirst({ where: { isActive: true } });
+    const requester = await prisma.requesterUser.findFirst({ where: { isActive: true, role: "REQUESTER" } });
 
     // 1. Nonexistent IDs with simultaneous syntax error on summary (Finding 3)
     const resNonexistent = await request(app)
-      .post("/api/tickets")
-      .set("X-Requester-Id", String(requester!.id))
+      .post("/api/tickets").set("Origin", "http://localhost:5173")
+      .set(await sessionHeaders(requester!.id))
       .send({
         summary: "123", // syntax error: < 5 chars
         description: "Valid description with plenty of characters.",
@@ -188,8 +189,8 @@ describe("POST /api/tickets (API-01 to API-05, API-21, API-28, API-29)", () => {
     });
 
     const resInactive = await request(app)
-      .post("/api/tickets")
-      .set("X-Requester-Id", String(requester!.id))
+      .post("/api/tickets").set("Origin", "http://localhost:5173")
+      .set(await sessionHeaders(requester!.id))
       .send({
         summary: "Valid summary for inactive test",
         description: "Valid description for inactive category test.",
@@ -206,7 +207,7 @@ describe("POST /api/tickets (API-01 to API-05, API-21, API-28, API-29)", () => {
 
   // API-21 — BR-01: ticket-number collision retries 3 times before 500
   it("API-21: retries ticket creation 3 times on collision before returning 500", async () => {
-    const requester = await prisma.requesterUser.findFirst({ where: { isActive: true } });
+    const requester = await prisma.requesterUser.findFirst({ where: { isActive: true, role: "REQUESTER" } });
     const category = await prisma.category.findFirst({ where: { isActive: true } });
     const relatedSystem = await prisma.relatedSystem.findFirst({ where: { isActive: true } });
 
@@ -218,8 +219,8 @@ describe("POST /api/tickets (API-01 to API-05, API-21, API-28, API-29)", () => {
     const createSpy = vi.spyOn(prisma.ticket, "create").mockRejectedValue(p2002Collision);
 
     const res = await request(app)
-      .post("/api/tickets")
-      .set("X-Requester-Id", String(requester!.id))
+      .post("/api/tickets").set("Origin", "http://localhost:5173")
+      .set(await sessionHeaders(requester!.id))
       .send({
         summary: "Collision test ticket",
         description: "Detailed description that triggers collision retry.",
@@ -238,10 +239,10 @@ describe("POST /api/tickets (API-01 to API-05, API-21, API-28, API-29)", () => {
 
   // Regression: JSON null body returns 400 with details
   it("API-02 (regression): returns 400 when body is null or array", async () => {
-    const requester = await prisma.requesterUser.findFirst({ where: { isActive: true } });
+    const requester = await prisma.requesterUser.findFirst({ where: { isActive: true, role: "REQUESTER" } });
     const res = await request(app)
-      .post("/api/tickets")
-      .set("X-Requester-Id", String(requester!.id))
+      .post("/api/tickets").set("Origin", "http://localhost:5173")
+      .set(await sessionHeaders(requester!.id))
       .set("Content-Type", "application/json")
       .send("null");
 
@@ -253,10 +254,10 @@ describe("POST /api/tickets (API-01 to API-05, API-21, API-28, API-29)", () => {
 
   // Regression: string and boolean categoryId / relatedSystemId rejected
   it("API-02 (regression): rejects string and boolean categoryId and relatedSystemId", async () => {
-    const requester = await prisma.requesterUser.findFirst({ where: { isActive: true } });
+    const requester = await prisma.requesterUser.findFirst({ where: { isActive: true, role: "REQUESTER" } });
     const res = await request(app)
-      .post("/api/tickets")
-      .set("X-Requester-Id", String(requester!.id))
+      .post("/api/tickets").set("Origin", "http://localhost:5173")
+      .set(await sessionHeaders(requester!.id))
       .send({
         summary: "Valid summary here",
         description: "Valid description here for testing.",
@@ -273,12 +274,12 @@ describe("POST /api/tickets (API-01 to API-05, API-21, API-28, API-29)", () => {
 
   // Regression: unexpected database error during lookup returns flat 500
   it("API-02 (regression): returns flat 500 when category lookup fails unexpectedly", async () => {
-    const requester = await prisma.requesterUser.findFirst({ where: { isActive: true } });
+    const requester = await prisma.requesterUser.findFirst({ where: { isActive: true, role: "REQUESTER" } });
     vi.spyOn(prisma.category, "findUnique").mockRejectedValue(new Error("Database disconnected"));
 
     const res = await request(app)
-      .post("/api/tickets")
-      .set("X-Requester-Id", String(requester!.id))
+      .post("/api/tickets").set("Origin", "http://localhost:5173")
+      .set(await sessionHeaders(requester!.id))
       .send({
         summary: "Valid summary here",
         description: "Valid description here for testing.",

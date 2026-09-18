@@ -1,3 +1,4 @@
+import { sessionHeaders } from "../helpers/session.js";
 import request from "supertest";
 import { describe, it, expect, beforeAll, afterAll, vi } from "vitest";
 import { app } from "../../src/app.js";
@@ -106,7 +107,7 @@ describe("Attachment API (API-13 to API-20, API-23 to API-25, API-32 to API-34)"
 
     const res = await request(app)
       .post(`/api/tickets/${testTicketId}/attachments`)
-      .set("X-Requester-Id", String(requesterOwner.id))
+      .set(await sessionHeaders(requesterOwner.id))
       .attach("file", oversizedBuffer, "large.pdf");
 
     expect(res.status).toBe(400);
@@ -126,7 +127,7 @@ describe("Attachment API (API-13 to API-20, API-23 to API-25, API-32 to API-34)"
 
     const res = await request(app)
       .post(`/api/tickets/${testTicketId}/attachments`)
-      .set("X-Requester-Id", String(requesterOwner.id))
+      .set(await sessionHeaders(requesterOwner.id))
       .attach("file", textBuffer, "script.js");
 
     expect(res.status).toBe(400);
@@ -144,7 +145,7 @@ describe("Attachment API (API-13 to API-20, API-23 to API-25, API-32 to API-34)"
 
     const res = await request(app)
       .post(`/api/tickets/${testTicketId}/attachments`)
-      .set("X-Requester-Id", String(requesterOwner.id))
+      .set(await sessionHeaders(requesterOwner.id))
       .attach("file", spoofedBuffer, "malicious.pdf");
 
     expect(res.status).toBe(400);
@@ -161,7 +162,7 @@ describe("Attachment API (API-13 to API-20, API-23 to API-25, API-32 to API-34)"
 
     const res = await request(app)
       .post(`/api/tickets/${testTicketId}/attachments`)
-      .set("X-Requester-Id", String(requesterOwner.id))
+      .set(await sessionHeaders(requesterOwner.id))
       .attach("file", shortBuffer, "tiny.pdf");
 
     expect(res.status).toBe(400);
@@ -179,7 +180,7 @@ describe("Attachment API (API-13 to API-20, API-23 to API-25, API-32 to API-34)"
   it("API-23: POST /api/tickets/:id/attachments cross-Requester upload returns 403 Forbidden", async () => {
     const res = await request(app)
       .post(`/api/tickets/${testTicketId}/attachments`)
-      .set("X-Requester-Id", String(requesterOther.id))
+      .set(await sessionHeaders(requesterOther.id))
       .attach("file", validPdfBuffer, "report.pdf");
 
     expect(res.status).toBe(403);
@@ -197,7 +198,7 @@ describe("Attachment API (API-13 to API-20, API-23 to API-25, API-32 to API-34)"
   it("API-16: POST /api/tickets/:id/attachments valid file returns 201 Created and saves record", async () => {
     const res = await request(app)
       .post(`/api/tickets/${testTicketId}/attachments`)
-      .set("X-Requester-Id", String(requesterOwner.id))
+      .set(await sessionHeaders(requesterOwner.id))
       .attach("file", validPdfBuffer, "diagnostic_log.pdf");
 
     expect(res.status).toBe(201);
@@ -237,7 +238,7 @@ describe("Attachment API (API-13 to API-20, API-23 to API-25, API-32 to API-34)"
     for (let i = 2; i <= 5; i++) {
       const res = await request(app)
         .post(`/api/tickets/${testTicketId}/attachments`)
-        .set("X-Requester-Id", String(requesterOwner.id))
+        .set(await sessionHeaders(requesterOwner.id))
         .attach("file", validPngBuffer, `image_${i}.png`);
 
       expect(res.status).toBe(201);
@@ -247,7 +248,7 @@ describe("Attachment API (API-13 to API-20, API-23 to API-25, API-32 to API-34)"
     // Attempting to upload the 6th active file
     const res6 = await request(app)
         .post(`/api/tickets/${testTicketId}/attachments`)
-        .set("X-Requester-Id", String(requesterOwner.id))
+        .set(await sessionHeaders(requesterOwner.id))
         .attach("file", validPngBuffer, "image_6.png");
 
     expect(res6.status).toBe(400);
@@ -295,11 +296,11 @@ describe("Attachment API (API-13 to API-20, API-23 to API-25, API-32 to API-34)"
     const [resA, resB] = await Promise.all([
       request(app)
         .post(`/api/tickets/${concurrentTicket.id}/attachments`)
-        .set("X-Requester-Id", String(requesterOwner.id))
+        .set(await sessionHeaders(requesterOwner.id))
         .attach("file", validPngBuffer, "concurrent_a.png"),
       request(app)
         .post(`/api/tickets/${concurrentTicket.id}/attachments`)
-        .set("X-Requester-Id", String(requesterOwner.id))
+        .set(await sessionHeaders(requesterOwner.id))
         .attach("file", validPngBuffer, "concurrent_b.png"),
     ]);
 
@@ -337,7 +338,7 @@ describe("Attachment API (API-13 to API-20, API-23 to API-25, API-32 to API-34)"
   it("API-32: GET /api/attachments/:id/download owned active file streams bytes with Content-Disposition", async () => {
     const res = await request(app)
       .get(`/api/attachments/${uploadedAttachmentId}/download`)
-      .set("X-Requester-Id", String(requesterOwner.id));
+      .set(await sessionHeaders(requesterOwner.id));
 
     expect(res.status).toBe(200);
     expect(res.headers["content-type"]).toContain("application/pdf");
@@ -351,7 +352,7 @@ describe("Attachment API (API-13 to API-20, API-23 to API-25, API-32 to API-34)"
   it("API-20: GET /api/attachments/:id/download cross-Requester download returns 403 Forbidden", async () => {
     const res = await request(app)
       .get(`/api/attachments/${uploadedAttachmentId}/download`)
-      .set("X-Requester-Id", String(requesterOther.id));
+      .set(await sessionHeaders(requesterOther.id));
 
     expect(res.status).toBe(403);
     expect(res.body).toEqual({
@@ -366,7 +367,7 @@ describe("Attachment API (API-13 to API-20, API-23 to API-25, API-32 to API-34)"
     // Missing body or empty reason
     const res1 = await request(app)
       .delete(`/api/attachments/${uploadedAttachmentId}`)
-      .set("X-Requester-Id", String(requesterOwner.id))
+      .set(await sessionHeaders(requesterOwner.id))
       .send({ removalReason: "  " });
 
     expect(res1.status).toBe(400);
@@ -380,7 +381,7 @@ describe("Attachment API (API-13 to API-20, API-23 to API-25, API-32 to API-34)"
     // 2 characters
     const res2 = await request(app)
       .delete(`/api/attachments/${uploadedAttachmentId}`)
-      .set("X-Requester-Id", String(requesterOwner.id))
+      .set(await sessionHeaders(requesterOwner.id))
       .send({ removalReason: "ab" });
 
     expect(res2.status).toBe(400);
@@ -394,7 +395,7 @@ describe("Attachment API (API-13 to API-20, API-23 to API-25, API-32 to API-34)"
     // Over 200 characters
     const res3 = await request(app)
       .delete(`/api/attachments/${uploadedAttachmentId}`)
-      .set("X-Requester-Id", String(requesterOwner.id))
+      .set(await sessionHeaders(requesterOwner.id))
       .send({ removalReason: "x".repeat(201) });
 
     expect(res3.status).toBe(400);
@@ -412,7 +413,7 @@ describe("Attachment API (API-13 to API-20, API-23 to API-25, API-32 to API-34)"
   it("API-25: DELETE /api/attachments/:id cross-Requester removal returns 403 Forbidden", async () => {
     const res = await request(app)
       .delete(`/api/attachments/${uploadedAttachmentId}`)
-      .set("X-Requester-Id", String(requesterOther.id))
+      .set(await sessionHeaders(requesterOther.id))
       .send({ removalReason: "Trying to remove someone else's attachment" });
 
     expect(res.status).toBe(403);
@@ -427,7 +428,7 @@ describe("Attachment API (API-13 to API-20, API-23 to API-25, API-32 to API-34)"
   it("API-17: DELETE /api/attachments/:id valid removal sets removedAt and removalReason, returns 200", async () => {
     const res = await request(app)
       .delete(`/api/attachments/${uploadedAttachmentId}`)
-      .set("X-Requester-Id", String(requesterOwner.id))
+      .set(await sessionHeaders(requesterOwner.id))
       .send({ removalReason: "No longer needed diagnostic" });
 
     expect(res.status).toBe(200);
@@ -452,7 +453,7 @@ describe("Attachment API (API-13 to API-20, API-23 to API-25, API-32 to API-34)"
   it("API-18: DELETE /api/attachments/:id double removal returns 409 Conflict", async () => {
     const res = await request(app)
       .delete(`/api/attachments/${uploadedAttachmentId}`)
-      .set("X-Requester-Id", String(requesterOwner.id))
+      .set(await sessionHeaders(requesterOwner.id))
       .send({ removalReason: "Attempting duplicate removal" });
 
     expect(res.status).toBe(409);
@@ -467,7 +468,7 @@ describe("Attachment API (API-13 to API-20, API-23 to API-25, API-32 to API-34)"
   it("API-19: GET /api/attachments/:id/download on removed file returns 410 Gone with no binary stream", async () => {
     const res = await request(app)
       .get(`/api/attachments/${uploadedAttachmentId}/download`)
-      .set("X-Requester-Id", String(requesterOwner.id));
+      .set(await sessionHeaders(requesterOwner.id));
 
     expect(res.status).toBe(410);
     expect(res.body).toEqual({
@@ -481,7 +482,7 @@ describe("Attachment API (API-13 to API-20, API-23 to API-25, API-32 to API-34)"
   it("API-33: Missing ticket ID on upload returns 404", async () => {
     const res = await request(app)
       .post("/api/tickets/999999/attachments")
-      .set("X-Requester-Id", String(requesterOwner.id))
+      .set(await sessionHeaders(requesterOwner.id))
       .attach("file", validPdfBuffer, "report.pdf");
 
     expect(res.status).toBe(404);
@@ -493,7 +494,7 @@ describe("Attachment API (API-13 to API-20, API-23 to API-25, API-32 to API-34)"
   it("API-33: Missing attachment ID on download returns 404", async () => {
     const res = await request(app)
       .get("/api/attachments/999999/download")
-      .set("X-Requester-Id", String(requesterOwner.id));
+      .set(await sessionHeaders(requesterOwner.id));
 
     expect(res.status).toBe(404);
     expect(res.body).toEqual({
@@ -504,7 +505,7 @@ describe("Attachment API (API-13 to API-20, API-23 to API-25, API-32 to API-34)"
   it("API-33: Missing attachment ID on delete returns 404", async () => {
     const res = await request(app)
       .delete("/api/attachments/999999")
-      .set("X-Requester-Id", String(requesterOwner.id))
+      .set(await sessionHeaders(requesterOwner.id))
       .send({ removalReason: "Removing ghost" });
 
     expect(res.status).toBe(404);
@@ -524,7 +525,7 @@ describe("Attachment API (API-13 to API-20, API-23 to API-25, API-32 to API-34)"
 
     const res = await request(app)
       .post(`/api/tickets/${testTicketId}/attachments`)
-      .set("X-Requester-Id", String(requesterOwner.id))
+      .set(await sessionHeaders(requesterOwner.id))
       .attach("file", validPdfBuffer, "failing_write.pdf");
 
     expect(res.status).toBe(500);

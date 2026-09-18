@@ -1,3 +1,4 @@
+import { sessionHeaders } from "../helpers/session.js";
 import request from "supertest";
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import { app } from "../../src/app.js";
@@ -115,7 +116,7 @@ describe("GET /api/tickets/:id (API-10, API-11, API-12)", () => {
     // requesterOther tries to view ticket owned by requesterOwner
     const res = await request(app)
       .get(`/api/tickets/${ownedTicketId}`)
-      .set("X-Requester-Id", String(requesterOther.id));
+      .set(await sessionHeaders(requesterOther.id));
 
     expect(res.status).toBe(403);
     expect(res.body).toEqual({
@@ -132,7 +133,7 @@ describe("GET /api/tickets/:id (API-10, API-11, API-12)", () => {
     const nonExistentId = 99999999;
     const res = await request(app)
       .get(`/api/tickets/${nonExistentId}`)
-      .set("X-Requester-Id", String(requesterOwner.id));
+      .set(await sessionHeaders(requesterOwner.id));
 
     expect(res.status).toBe(404);
     expect(res.body).toEqual({
@@ -143,7 +144,7 @@ describe("GET /api/tickets/:id (API-10, API-11, API-12)", () => {
   it("API-12: GET /api/tickets/:id owned ticket returns 200 OK with full attachments array", async () => {
     const res = await request(app)
       .get(`/api/tickets/${ownedTicketId}`)
-      .set("X-Requester-Id", String(requesterOwner.id));
+      .set(await sessionHeaders(requesterOwner.id));
 
     expect(res.status).toBe(200);
     expect(res.body).toMatchObject({
@@ -182,7 +183,7 @@ describe("GET /api/tickets/:id (API-10, API-11, API-12)", () => {
   it("GET /api/tickets/:id with invalid/malformed ID returns 400 Bad Request", async () => {
     const res = await request(app)
       .get("/api/tickets/abc")
-      .set("X-Requester-Id", String(requesterOwner.id));
+      .set(await sessionHeaders(requesterOwner.id));
 
     expect(res.status).toBe(400);
     expect(res.body).toEqual({
@@ -194,7 +195,7 @@ describe("GET /api/tickets/:id (API-10, API-11, API-12)", () => {
     const res = await request(app).get(`/api/tickets/${ownedTicketId}`);
     expect(res.status).toBe(401);
     expect(res.body).toEqual({
-      error: "Requester context is missing or invalid",
+      error: "Authentication required",
     });
   });
 });

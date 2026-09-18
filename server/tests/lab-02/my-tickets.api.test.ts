@@ -1,3 +1,4 @@
+import { sessionHeaders } from "../helpers/session.js";
 import request from "supertest";
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import { app } from "../../src/app.js";
@@ -242,7 +243,7 @@ describe("GET /api/tickets (API-06 to API-09, API-22, API-30, API-31)", () => {
   it("API-06: returns only tickets owned by the current requester", async () => {
     const resA = await request(app)
       .get("/api/tickets")
-      .set("X-Requester-Id", String(requesterA.id));
+      .set(await sessionHeaders(requesterA.id));
 
     expect(resA.status).toBe(200);
     expect(resA.body).toHaveProperty("data");
@@ -257,7 +258,7 @@ describe("GET /api/tickets (API-06 to API-09, API-22, API-30, API-31)", () => {
     // Scoping for Requester B
     const resB = await request(app)
       .get("/api/tickets")
-      .set("X-Requester-Id", String(requesterB.id));
+      .set(await sessionHeaders(requesterB.id));
 
     expect(resB.status).toBe(200);
     expect(resB.body.pagination.totalItems).toBe(2);
@@ -271,7 +272,7 @@ describe("GET /api/tickets (API-06 to API-09, API-22, API-30, API-31)", () => {
   it("API-07: sorts by requestedPriority asc correctly", async () => {
     const res = await request(app)
       .get("/api/tickets?sortBy=requestedPriority&sortOrder=asc&limit=20")
-      .set("X-Requester-Id", String(requesterA.id));
+      .set(await sessionHeaders(requesterA.id));
 
     expect(res.status).toBe(200);
     expect(res.body.data.length).toBe(10);
@@ -288,7 +289,7 @@ describe("GET /api/tickets (API-06 to API-09, API-22, API-30, API-31)", () => {
   it("API-08: clamps out-of-range page numbers to the last valid page", async () => {
     const res = await request(app)
       .get("/api/tickets?page=9999&limit=5")
-      .set("X-Requester-Id", String(requesterA.id));
+      .set(await sessionHeaders(requesterA.id));
 
     expect(res.status).toBe(200);
     expect(res.body.pagination.currentPage).toBe(2); // totalItems=10, limit=5 -> 2 pages
@@ -297,7 +298,7 @@ describe("GET /api/tickets (API-06 to API-09, API-22, API-30, API-31)", () => {
 
     const resLow = await request(app)
       .get("/api/tickets?page=-5&limit=5")
-      .set("X-Requester-Id", String(requesterA.id));
+      .set(await sessionHeaders(requesterA.id));
 
     expect(resLow.status).toBe(200);
     expect(resLow.body.pagination.currentPage).toBe(1);
@@ -309,7 +310,7 @@ describe("GET /api/tickets (API-06 to API-09, API-22, API-30, API-31)", () => {
     // 1. Search by summary keyword
     const resSummary = await request(app)
       .get("/api/tickets?search=battery")
-      .set("X-Requester-Id", String(requesterA.id));
+      .set(await sessionHeaders(requesterA.id));
 
     expect(resSummary.status).toBe(200);
     expect(resSummary.body.data.length).toBeGreaterThanOrEqual(1);
@@ -318,7 +319,7 @@ describe("GET /api/tickets (API-06 to API-09, API-22, API-30, API-31)", () => {
     // 2. Search by ticket number substring (uppercase/lowercase)
     const resTicketNo = await request(app)
       .get("/api/tickets?search=900002")
-      .set("X-Requester-Id", String(requesterA.id));
+      .set(await sessionHeaders(requesterA.id));
 
     expect(resTicketNo.status).toBe(200);
     expect(resTicketNo.body.data.length).toBe(1);
@@ -327,7 +328,7 @@ describe("GET /api/tickets (API-06 to API-09, API-22, API-30, API-31)", () => {
     // 3. Search with no matches returns empty array (200 OK)
     const resEmpty = await request(app)
       .get("/api/tickets?search=nonexistenttermxyz")
-      .set("X-Requester-Id", String(requesterA.id));
+      .set(await sessionHeaders(requesterA.id));
 
     expect(resEmpty.status).toBe(200);
     expect(resEmpty.body.data).toEqual([]);
@@ -339,7 +340,7 @@ describe("GET /api/tickets (API-06 to API-09, API-22, API-30, API-31)", () => {
     // 1. Unsupported sortBy
     const resSort = await request(app)
       .get("/api/tickets?sortBy=invalidField")
-      .set("X-Requester-Id", String(requesterA.id));
+      .set(await sessionHeaders(requesterA.id));
 
     expect(resSort.status).toBe(400);
     expect(resSort.body.error).toBe("Validation failed");
@@ -348,7 +349,7 @@ describe("GET /api/tickets (API-06 to API-09, API-22, API-30, API-31)", () => {
     // 2. Unsupported limit (not 5, 8, 10, 20)
     const resLimit = await request(app)
       .get("/api/tickets?limit=15")
-      .set("X-Requester-Id", String(requesterA.id));
+      .set(await sessionHeaders(requesterA.id));
 
     expect(resLimit.status).toBe(400);
     expect(resLimit.body.error).toBe("Validation failed");
@@ -357,7 +358,7 @@ describe("GET /api/tickets (API-06 to API-09, API-22, API-30, API-31)", () => {
     // 3. Unsupported sortOrder
     const resSortOrder = await request(app)
       .get("/api/tickets?sortOrder=random")
-      .set("X-Requester-Id", String(requesterA.id));
+      .set(await sessionHeaders(requesterA.id));
 
     expect(resSortOrder.status).toBe(400);
     expect(resSortOrder.body.details).toHaveProperty("sortOrder");
@@ -365,15 +366,15 @@ describe("GET /api/tickets (API-06 to API-09, API-22, API-30, API-31)", () => {
     // 4. Invalid categoryId
     const resCatId = await request(app)
       .get("/api/tickets?categoryId=invalid")
-      .set("X-Requester-Id", String(requesterA.id));
+      .set(await sessionHeaders(requesterA.id));
 
     expect(resCatId.status).toBe(400);
     expect(resCatId.body.details).toHaveProperty("categoryId");
 
     // 5. Invalid requestedPriority, itPriority, and status
     const resEnums = await request(app)
-      .get("/api/tickets?requestedPriority=URGENT&itPriority=P1&status=OPEN")
-      .set("X-Requester-Id", String(requesterA.id));
+      .get("/api/tickets?requestedPriority=URGENT&itPriority=P1&status=INVALID_STATUS")
+      .set(await sessionHeaders(requesterA.id));
 
     expect(resEnums.status).toBe(400);
     expect(resEnums.body.details).toHaveProperty("requestedPriority");
@@ -383,7 +384,7 @@ describe("GET /api/tickets (API-06 to API-09, API-22, API-30, API-31)", () => {
     // 6. Invalid page (float or non-integer string -> 400 Bad Request)
     const resPageFloat = await request(app)
       .get("/api/tickets?page=1.1&limit=5")
-      .set("X-Requester-Id", String(requesterA.id));
+      .set(await sessionHeaders(requesterA.id));
 
     expect(resPageFloat.status).toBe(400);
     expect(resPageFloat.body.error).toBe("Validation failed");
@@ -391,7 +392,7 @@ describe("GET /api/tickets (API-06 to API-09, API-22, API-30, API-31)", () => {
 
     const resPageAlpha = await request(app)
       .get("/api/tickets?page=abc")
-      .set("X-Requester-Id", String(requesterA.id));
+      .set(await sessionHeaders(requesterA.id));
 
     expect(resPageAlpha.status).toBe(400);
     expect(resPageAlpha.body.details).toEqual({ page: "page must be an integer" });
@@ -402,7 +403,7 @@ describe("GET /api/tickets (API-06 to API-09, API-22, API-30, API-31)", () => {
     // 1. Filter by category: Hardware (catH)
     const resCat = await request(app)
       .get(`/api/tickets?categoryId=${categoryHardware.id}&limit=20`)
-      .set("X-Requester-Id", String(requesterA.id));
+      .set(await sessionHeaders(requesterA.id));
 
     expect(resCat.status).toBe(200);
     expect(resCat.body.data.length).toBeGreaterThan(0);
@@ -413,7 +414,7 @@ describe("GET /api/tickets (API-06 to API-09, API-22, API-30, API-31)", () => {
     // 2. Filter by requestedPriority: LOW (independent test)
     const resReqPriority = await request(app)
       .get("/api/tickets?requestedPriority=LOW&limit=20")
-      .set("X-Requester-Id", String(requesterA.id));
+      .set(await sessionHeaders(requesterA.id));
 
     expect(resReqPriority.status).toBe(200);
     expect(resReqPriority.body.data.length).toBeGreaterThan(0);
@@ -424,7 +425,7 @@ describe("GET /api/tickets (API-06 to API-09, API-22, API-30, API-31)", () => {
     // 3. Filter by itPriority: HIGH (independent test)
     const resItPriority = await request(app)
       .get("/api/tickets?itPriority=HIGH&limit=20")
-      .set("X-Requester-Id", String(requesterA.id));
+      .set(await sessionHeaders(requesterA.id));
 
     expect(resItPriority.status).toBe(200);
     expect(resItPriority.body.data.length).toBeGreaterThan(0);
@@ -435,7 +436,7 @@ describe("GET /api/tickets (API-06 to API-09, API-22, API-30, API-31)", () => {
     // 4. Filter by status: IN_PROGRESS (independent test)
     const resStatus = await request(app)
       .get("/api/tickets?status=IN_PROGRESS&limit=20")
-      .set("X-Requester-Id", String(requesterA.id));
+      .set(await sessionHeaders(requesterA.id));
 
     expect(resStatus.status).toBe(200);
     expect(resStatus.body.data.length).toBeGreaterThan(0);
@@ -448,7 +449,7 @@ describe("GET /api/tickets (API-06 to API-09, API-22, API-30, API-31)", () => {
       .get(
         `/api/tickets?categoryId=${categorySoftware.id}&requestedPriority=HIGH&itPriority=HIGH&status=IN_PROGRESS`
       )
-      .set("X-Requester-Id", String(requesterA.id));
+      .set(await sessionHeaders(requesterA.id));
 
     expect(resCombined.status).toBe(200);
     expect(resCombined.body.data.length).toBeGreaterThan(0);
@@ -462,7 +463,7 @@ describe("GET /api/tickets (API-06 to API-09, API-22, API-30, API-31)", () => {
     // 6. Ownership confirmation under filter: Requester B's HIGH priority tickets must not leak
     const resOwnerFilter = await request(app)
       .get("/api/tickets?requestedPriority=HIGH&limit=20")
-      .set("X-Requester-Id", String(requesterA.id));
+      .set(await sessionHeaders(requesterA.id));
 
     expect(resOwnerFilter.status).toBe(200);
     const nos = resOwnerFilter.body.data.map((t: any) => t.ticketNo);
@@ -471,7 +472,7 @@ describe("GET /api/tickets (API-06 to API-09, API-22, API-30, API-31)", () => {
     // 7. Filter combination yielding 0 results returns empty data array
     const resZero = await request(app)
       .get(`/api/tickets?categoryId=${categoryHardware.id}&status=RESOLVED&requestedPriority=LOW`)
-      .set("X-Requester-Id", String(requesterB.id)); // Requester B has no hardware resolved tickets
+      .set(await sessionHeaders(requesterB.id)); // Requester B has no hardware resolved tickets
 
     expect(resZero.status).toBe(200);
     expect(resZero.body.data).toEqual([]);
@@ -482,7 +483,7 @@ describe("GET /api/tickets (API-06 to API-09, API-22, API-30, API-31)", () => {
   it("API-31: returns default ordering (createdAt desc, id desc tie-breaker) and exact response shape", async () => {
     const resDefault = await request(app)
       .get("/api/tickets")
-      .set("X-Requester-Id", String(requesterA.id));
+      .set(await sessionHeaders(requesterA.id));
 
     expect(resDefault.status).toBe(200);
     expect(resDefault.body).toHaveProperty("data");
@@ -519,7 +520,7 @@ describe("GET /api/tickets (API-06 to API-09, API-22, API-30, API-31)", () => {
     // Fetch with limit=20 to have all 10 tickets on page 1
     const resAll = await request(app)
       .get("/api/tickets?limit=20")
-      .set("X-Requester-Id", String(requesterA.id));
+      .set(await sessionHeaders(requesterA.id));
 
     expect(resAll.status).toBe(200);
     const allIds = resAll.body.data.map((t: any) => t.id);
@@ -533,15 +534,15 @@ describe("GET /api/tickets (API-06 to API-09, API-22, API-30, API-31)", () => {
   });
 
   // Auth enforcement on GET /api/tickets (MW-03, MW-04, MW-05, MW-06)
-  it("returns 401 on missing header and 400 on malformed header", async () => {
+  it("returns 401 without a session regardless of legacy header syntax", async () => {
     const resMissing = await request(app).get("/api/tickets");
     expect(resMissing.status).toBe(401);
-    expect(resMissing.body).toEqual({ error: "Requester context is missing or invalid" });
+    expect(resMissing.body).toEqual({ error: "Authentication required" });
 
     const resMalformed = await request(app)
       .get("/api/tickets")
       .set("X-Requester-Id", "abc");
-    expect(resMalformed.status).toBe(400);
-    expect(resMalformed.body).toEqual({ error: "Bad Request: Malformed X-Requester-Id header" });
+    expect(resMalformed.status).toBe(401);
+    expect(resMalformed.body).toEqual({ error: "Authentication required" });
   });
 });

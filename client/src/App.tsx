@@ -1,24 +1,38 @@
 import React, { useCallback, useEffect, useState } from "react";
-import { RequesterProvider, useRequester } from "./context/RequesterContext.js";
+import { AuthProvider, useAuth } from "./context/AuthContext.js";
+import { RequesterProvider } from "./context/RequesterContext.js";
 import { AppShell } from "./components/AppShell.js";
-import { RequesterSelection } from "./pages/RequesterSelection.js";
+import { Login } from "./pages/Login.js";
+import { ChangePassword } from "./pages/ChangePassword.js";
 import { CreateTicket } from "./pages/CreateTicket.js";
 import { MyTickets } from "./pages/MyTickets.js";
 import { RequesterTicketDetail } from "./pages/RequesterTicketDetail.js";
-import { RouteGuard } from "./components/RouteGuard.js";
 
-type TabType = "my-tickets" | "create-ticket" | "select-requester" | "ticket-detail";
+type TabType =
+  | "login"
+  | "change-password"
+  | "my-tickets"
+  | "create-ticket"
+  | "ticket-detail"
+  | "staff-queue"
+  | "admin-users";
 
 const TAB_PATHS: Record<TabType, string> = {
+  login: "/login",
+  "change-password": "/change-password",
   "my-tickets": "/my-tickets",
   "create-ticket": "/create-ticket",
-  "select-requester": "/select-requester",
   "ticket-detail": "/tickets",
+  "staff-queue": "/staff/queue",
+  "admin-users": "/admin/users",
 };
 
 function getRouteFromPath(pathname = window.location.pathname): { tab: TabType; ticketId: number | null } {
-  if (pathname === TAB_PATHS["create-ticket"]) return { tab: "create-ticket", ticketId: null };
-  if (pathname === TAB_PATHS["select-requester"]) return { tab: "select-requester", ticketId: null };
+  if (pathname === "/login") return { tab: "login", ticketId: null };
+  if (pathname === "/change-password") return { tab: "change-password", ticketId: null };
+  if (pathname === "/create-ticket") return { tab: "create-ticket", ticketId: null };
+  if (pathname === "/staff/queue") return { tab: "staff-queue", ticketId: null };
+  if (pathname === "/admin/users") return { tab: "admin-users", ticketId: null };
   const match = pathname.match(/^\/tickets\/(\d+)$/);
   if (match) {
     return { tab: "ticket-detail", ticketId: parseInt(match[1], 10) };
@@ -27,11 +41,11 @@ function getRouteFromPath(pathname = window.location.pathname): { tab: TabType; 
 }
 
 function MainContent() {
-  const { currentRequester, isLoading } = useRequester();
+  const { user, isLoading: authLoading } = useAuth();
   const [{ tab: activeTab, ticketId: selectedTicketId }, setRoute] = useState(() => getRouteFromPath());
 
   const navigate = useCallback((tab: TabType, replace = false, ticketId: number | null = null) => {
-    let nextPath = TAB_PATHS[tab];
+    let nextPath = TAB_PATHS[tab] || "/";
     if (tab === "ticket-detail" && ticketId) {
       nextPath = `/tickets/${ticketId}`;
     }
@@ -47,52 +61,131 @@ function MainContent() {
     return () => window.removeEventListener("popstate", handlePopState);
   }, []);
 
-  useEffect(() => {
-    if (!isLoading && !currentRequester && activeTab !== "select-requester") {
-      navigate("select-requester", true);
-    }
-  }, [activeTab, currentRequester, isLoading, navigate]);
+  // AC-13: In Lab 3, authentication is strictly session-based.
+  // When user is unauthenticated or session is lost, effectiveUser is null.
+  const effectiveUser = user;
 
-  const currentView = !isLoading && !currentRequester ? "select-requester" : activeTab;
+  if (authLoading) {
+    return (
+      <div
+        className="min-vh-100 d-flex flex-column align-items-center justify-content-center"
+        style={{ backgroundColor: "var(--zg-canvas)" }}
+        data-testid="app-loading"
+      >
+        <div className="spinner-border text-success mb-3" role="status">
+          <span className="visually-hidden">Loading...</span>
+        </div>
+        <p className="text-muted small">Loading TokTickIT...</p>
+      </div>
+    );
+  }
+
+  // Not logged in -> Show Login
+  if (!effectiveUser) {
+    return (
+      <Login
+        onSuccess={(role, mustChange) => {
+          if (mustChange) {
+            navigate("change-password", true);
+          } else if (role === "REQUESTER") {
+            navigate("my-tickets", true);
+          } else if (role === "IT_STAFF") {
+            navigate("staff-queue", true);
+          } else if (role === "ADMINISTRATOR") {
+            navigate("admin-users", true);
+          } else {
+            navigate("my-tickets", true);
+          }
+        }}
+      />
+    );
+  }
+
+  // Mandatory password change guard
+  if (effectiveUser.mustChangePassword) {
+    return (
+      <ChangePassword
+        onSuccess={() => {
+          if (effectiveUser.role === "REQUESTER") {
+            navigate("my-tickets", true);
+          } else if (effectiveUser.role === "IT_STAFF") {
+            navigate("staff-queue", true);
+          } else if (effectiveUser.role === "ADMINISTRATOR") {
+            navigate("admin-users", true);
+          }
+        }}
+      />
+    );
+  }
+
+  // Voluntary change password view
+  if (activeTab === "change-password") {
+    return (
+      <AppShell currentTab="change-password" onTabChange={(t) => navigate(t as TabType)}>
+        <ChangePassword
+          onSuccess={() => {
+            if (effectiveUser.role === "REQUESTER") navigate("my-tickets");
+            else if (effectiveUser.role === "IT_STAFF") navigate("staff-queue");
+            else navigate("admin-users");
+          }}
+          onCancel={() => {
+            if (effectiveUser.role === "REQUESTER") navigate("my-tickets");
+            else if (effectiveUser.role === "IT_STAFF") navigate("staff-queue");
+            else navigate("admin-users");
+          }}
+        />
+      </AppShell>
+    );
+  }
 
   return (
-    <AppShell
-      currentTab={currentView === "ticket-detail" ? "my-tickets" : currentView}
-      onTabChange={(t) => navigate(t)}
-    >
-      {currentView === "select-requester" && (
-        <RequesterSelection onSuccess={() => navigate("my-tickets")} />
+    <AppShell currentTab={activeTab} onTabChange={(t) => navigate(t as TabType)}>
+      {/* Requester Views (AC-13: Authenticated Requester navigates directly without dev selector) */}
+      {effectiveUser.role === "REQUESTER" && (
+        <>
+          {activeTab === "my-tickets" && (
+            <MyTickets
+              onNavigateToCreate={() => navigate("create-ticket")}
+              onSelectTicket={(id) => navigate("ticket-detail", false, id)}
+            />
+          )}
+
+          {activeTab === "create-ticket" && (
+            <CreateTicket
+              onSuccess={() => navigate("my-tickets")}
+              onCancel={() => navigate("my-tickets")}
+            />
+          )}
+
+          {activeTab === "ticket-detail" && selectedTicketId && (
+            <RequesterTicketDetail
+              ticketId={selectedTicketId}
+              requesterId={effectiveUser.id}
+              requesterName={effectiveUser.name}
+              onBack={() => navigate("my-tickets")}
+            />
+          )}
+        </>
       )}
 
-      {currentView === "my-tickets" && (
-        <RouteGuard>
-          <MyTickets
-            onNavigateToCreate={() => navigate("create-ticket")}
-            onSelectTicket={(id) => navigate("ticket-detail", false, id)}
-          />
-        </RouteGuard>
+      {/* IT Staff Views (Queue in F3) */}
+      {effectiveUser.role === "IT_STAFF" && (
+        <div className="container py-4">
+          <div className="card shadow-sm p-4 text-center">
+            <h2 className="h4 fw-bold mb-2">IT Staff Portal</h2>
+            <p className="text-muted">Ticket Queue will be active in Phase F3.</p>
+          </div>
+        </div>
       )}
 
-      {currentView === "create-ticket" && (
-        <RouteGuard>
-          <CreateTicket
-            onSuccess={() => {
-              // Option to stay on success screen or navigate
-            }}
-            onCancel={() => navigate("my-tickets")}
-          />
-        </RouteGuard>
-      )}
-
-      {currentView === "ticket-detail" && selectedTicketId && currentRequester && (
-        <RouteGuard>
-          <RequesterTicketDetail
-            ticketId={selectedTicketId}
-            requesterId={currentRequester.id}
-            requesterName={currentRequester.name}
-            onBack={() => navigate("my-tickets")}
-          />
-        </RouteGuard>
+      {/* Administrator Views (User Management in F4) */}
+      {effectiveUser.role === "ADMINISTRATOR" && (
+        <div className="container py-4">
+          <div className="card shadow-sm p-4 text-center">
+            <h2 className="h4 fw-bold mb-2">Administrator Portal</h2>
+            <p className="text-muted">User Management will be active in Phase F4.</p>
+          </div>
+        </div>
       )}
     </AppShell>
   );
@@ -100,8 +193,10 @@ function MainContent() {
 
 export default function App() {
   return (
-    <RequesterProvider>
-      <MainContent />
-    </RequesterProvider>
+    <AuthProvider>
+      <RequesterProvider>
+        <MainContent />
+      </RequesterProvider>
+    </AuthProvider>
   );
 }

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useRequester } from "../context/RequesterContext.js";
+import { useAuth } from "../context/AuthContext.js";
 import { fetchCategories, fetchMyTickets, Category, TicketListItem, PaginationMetadata } from "../api.js";
 
 interface MyTicketsProps {
@@ -12,6 +13,15 @@ export const MyTickets: React.FC<MyTicketsProps> = ({
   onSelectTicket,
 }) => {
   const { currentRequester } = useRequester();
+  const { user } = useAuth();
+  const effectiveRequester = user
+    ? {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        department: user.department || "",
+      }
+    : currentRequester;
 
   // Reference data
   const [categories, setCategories] = useState<Category[]>([]);
@@ -40,18 +50,18 @@ export const MyTickets: React.FC<MyTicketsProps> = ({
   const [error, setError] = useState<string | null>(null);
 
   // Requester switch & race condition prevention (AC-13, UI-06)
-  const previousRequesterIdRef = useRef<number | null>(currentRequester?.id ?? null);
+  const previousRequesterIdRef = useRef<number | null>(effectiveRequester?.id ?? null);
   const activeRequestIdRef = useRef(0);
 
   // Immediately clear tickets when switching requester to prevent stale data flash
   useEffect(() => {
-    if (previousRequesterIdRef.current !== (currentRequester?.id ?? null)) {
-      previousRequesterIdRef.current = currentRequester?.id ?? null;
+    if (previousRequesterIdRef.current !== (effectiveRequester?.id ?? null)) {
+      previousRequesterIdRef.current = effectiveRequester?.id ?? null;
       setTickets([]);
       setError(null);
       setCurrentPage(1);
     }
-  }, [currentRequester?.id]);
+  }, [effectiveRequester?.id]);
 
   // Has active filter? (Used to distinguish Empty vs No-Results state per BR-13)
   const hasActiveFilter = Boolean(
@@ -79,7 +89,7 @@ export const MyTickets: React.FC<MyTicketsProps> = ({
 
   // Fetch Tickets
   const loadTickets = useCallback(async () => {
-    if (!currentRequester) return;
+    if (!effectiveRequester) return;
 
     const requestId = ++activeRequestIdRef.current;
     setIsLoading(true);
@@ -98,14 +108,14 @@ export const MyTickets: React.FC<MyTicketsProps> = ({
           page: currentPage,
           limit: pageSize,
         },
-        currentRequester.id
+        effectiveRequester.id
       );
 
       // Discard stale response if a newer request was dispatched
       if (requestId !== activeRequestIdRef.current) return;
 
-      setTickets(res.data);
-      setPagination(res.pagination);
+      setTickets(res?.data || []);
+      setPagination(res?.pagination || null);
     } catch (err: any) {
       if (requestId !== activeRequestIdRef.current) return;
       setTickets([]); // ensure no stale rows remain on failure
@@ -116,7 +126,7 @@ export const MyTickets: React.FC<MyTicketsProps> = ({
       }
     }
   }, [
-    currentRequester,
+    effectiveRequester?.id,
     searchTerm,
     selectedCategory,
     selectedReqPriority,
@@ -400,7 +410,7 @@ export const MyTickets: React.FC<MyTicketsProps> = ({
           </div>
           <div className="text-muted small">Loading your tickets...</div>
         </div>
-      ) : tickets.length === 0 ? (
+      ) : (tickets || []).length === 0 ? (
         // Empty State vs. No-Results State (BR-13, UI-05)
         hasActiveFilter ? (
           // No-Results State: 🔍 icon + "No tickets match your filters" + Clear Filters button
