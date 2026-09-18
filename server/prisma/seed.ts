@@ -548,20 +548,6 @@ export async function seed(prismaClient?: any) {
     }
   }
 
-  // AC-17: Provision initial credentials for ANY existing user in DB whose passwordHash is null
-  // (not just default accounts) while preserving passwords for accounts that already have hashes.
-  const usersWithoutHash = await prisma.user.findMany({
-    where: { passwordHash: null },
-  });
-  for (const user of usersWithoutHash) {
-    await prisma.user.update({
-      where: { id: user.id },
-      data: {
-        passwordHash: defaultHash,
-        mustChangePassword: true,
-      },
-    });
-  }
 
   // 4. Seed at least 24 realistic fictional tickets per AC-18 and MIG-06
   // Spans all 8 statuses, all 3 priorities, assigned and unassigned ownership, with sample comments and notes.

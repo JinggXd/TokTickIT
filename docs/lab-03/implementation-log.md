@@ -785,3 +785,37 @@ F2 / P03 is next after peer review and gate approval; no Lab 3 migration/auth co
 
 - **Major Phase F1 (P00–P02):** **Merged to lab3-staging** (PR #37 merged, Issue #36 closed).
 - **Major Phase F2 (P03–P06):** **In progress** (Migration history and forward migrations fully reconciled across dev and test databases without resets or history tampering. Builds clean on server and client; static checks clean. Test database confirmed disposable and ready for test suites).
+
+---
+
+## 2026-09-18 — F2 Peer Review Iteration 6: Unprovisioned Account Password Policy & Specification §7.2 Rule 6 Alignment
+
+- **Review Findings Addressed:**
+  1. `[P1] การแจก default password ให้บัญชีเก่าทุกบัญชีขัดกับ specification §7.2 ข้อ 6 (line 303)` — Resolved: In `server/prisma/seed.ts`, completely removed the blanket `usersWithoutHash` update loop that assigned a universal default password to unseeded DB users. Per Specification §7.2 Rule 6 and tests.md MIG-04, universal committed passwords must never be assigned to migrated real accounts; accounts without a hash must have login denied. Only explicit fictional seed accounts defined in `getDefaultSeedAccounts()` are provisioned with initial credentials (`mustChangePassword: true`), preserving existing credentials if already changed.
+  2. `[P1] MIG-04 test assertions & unprovisioned login denial proof` — Resolved: In `server/tests/lab-03/migration-regression.test.ts`, updated MIG-04 assertions to verify that legacy unprovisioned accounts (`legacyUser`, `legacyStaff`) retain `passwordHash = null` post-seeding without losing role/department. Documented seed accounts (`sarah.j@example.com`) verify provisioned Argon2id hash and `mustChangePassword: true`. In `server/tests/lab-03/auth.api.test.ts`, added an explicit test proving that unprovisioned accounts with `passwordHash: null` are denied login with uniform 401 (`Invalid email or password`).
+  3. `[P2] รหัสผ่านใหม่ 12–128 ตัวอักษร (BR-03, AC-06) & Role-based redirect (BR-04, AC-07)` — Clarified and aligned documentation: Passwords must be 12–128 Unicode characters (code points); code in `server/src/utils/password.ts` and `client/src/pages/ChangePassword.tsx` correctly enforces this boundary. Post-password change routing properly directs users according to role (`REQUESTER` -> `/my-tickets`, `IT_STAFF` -> `/staff/queue`, `ADMINISTRATOR` -> `/admin/users`).
+  4. `[P2] server/tests/helpers/session.ts` — Acknowledged origin: added by reviewer during this review round for regression test support.
+
+### Changes made
+
+| Path | Change |
+|---|---|
+| `server/prisma/seed.ts` | Removed blanket `usersWithoutHash` loop; seed credential initialization is strictly confined to explicit fictional accounts in `getDefaultSeedAccounts()` (Spec §7.2 Rule 6, AC-17). |
+| `server/tests/lab-03/migration-regression.test.ts` | Aligned MIG-04 assertions to prove unprovisioned accounts outside seed fixtures retain `passwordHash: null`, while documented seed fixtures receive credentials (MIG-04, AC-17). |
+| `server/tests/lab-03/auth.api.test.ts` | Added test verifying login attempt with unprovisioned account (`passwordHash: null`) is denied with uniform 401 `Invalid email or password` (Spec §7.2 Rule 6, MIG-04). |
+| `docs/lab-03/implementation-log.md` | Logged Iteration 6 changes, verification results, and gate status. |
+
+### Commands actually run
+
+| Command | Exit | Result |
+|---|---:|---|
+| `$env:DATABASE_URL_TEST=".../toktickit_test"; node scripts/run-tests.mjs tests/lab-03` | 0 | 5 test files passed, 67/67 tests passed (100% pass on disposable test DB). |
+| `npm --prefix client test` | 0 | 11 test files passed, 47/47 tests passed (0 skipped, 0 failed). |
+| `npm --prefix server run build` | 0 | Server TypeScript compilation (`tsc`) succeeded with 0 errors. |
+| `npm --prefix client run build` | 0 | Client production build (`tsc && vite build`) succeeded with 0 errors. |
+| `git diff --check` | 0 | 0 whitespace or formatting errors. |
+
+### Gate status
+
+- **Major Phase F1 (P00–P02):** **Merged to lab3-staging** (PR #37 merged, Issue #36 closed).
+- **Major Phase F2 (P03–P06):** **In progress** (Spec §7.2 Rule 6 and MIG-04 fully satisfied: no universal password for migrated accounts, login denied for unprovisioned users, 12-128 char password policy, role-based landing. Lab 3 Server tests: 67/67 passed, Client tests: 47/47 passed, Builds clean).

@@ -1,3 +1,4 @@
+import { PrismaClient } from "@prisma/client";
 import { describe, it, expect } from "vitest";
 import fs from "node:fs";
 import path from "node:path";
@@ -6,113 +7,6 @@ import { getWorkspaceRoot, getUploadDirectory } from "../../src/config/testEnvir
 import { getPrisma } from "../../src/prisma.js";
 import { seed, getDefaultSeedAccounts } from "../../prisma/seed.js";
 import { hashPassword, verifyPassword } from "../../src/utils/password.js";
-
-describe("Phase F2 / P03 Data Migration & Idempotent Seeding (AC-14–AC-18, AC-31, LCP-02)", () => {
-  const prisma = getPrisma();
-
-  describe("MIG-01 (AC-14, R05, R12): Database Schema & Model Preservation", () => {
-    it("verifies live PostgreSQL table columns for User (RequesterUser) and Ticket", async () => {
-      // Query actual database columns from PostgreSQL information_schema
-      const userColumns: Array<{ column_name: string; data_type: string }> = await prisma.$queryRaw`
-        SELECT column_name, data_type 
-        FROM information_schema.columns 
-        WHERE table_name = 'RequesterUser';
-      `;
-      const userColNames = userColumns.map((c) => c.column_name);
-
-      // Legacy fields preserved
-      expect(userColNames).toContain("id");
-      expect(userColNames).toContain("name");
-      expect(userColNames).toContain("email");
-      expect(userColNames).toContain("department");
-      expect(userColNames).toContain("isActive");
-      expect(userColNames).toContain("createdAt");
-      expect(userColNames).toContain("updatedAt");
-
-      // Lab 3 security fields added
-      expect(userColNames).toContain("role");
-      expect(userColNames).toContain("passwordHash");
-      expect(userColNames).toContain("mustChangePassword");
-      expect(userColNames).toContain("sessionVersion");
-
-      // Verify Ticket table columns
-      const ticketColumns: Array<{ column_name: string }> = await prisma.$queryRaw`
-        SELECT column_name 
-        FROM information_schema.columns 
-        WHERE table_name = 'Ticket';
-      `;
-      const ticketColNames = ticketColumns.map((c) => c.column_name);
-
-      // Legacy ticket fields preserved
-      expect(ticketColNames).toContain("id");
-      expect(ticketColNames).toContain("ticketNo");
-      expect(ticketColNames).toContain("summary");
-      expect(ticketColNames).toContain("description");
-      expect(ticketColNames).toContain("requestedPriority");
-      expect(ticketColNames).toContain("itPriority");
-      expect(ticketColNames).toContain("currentStatus");
-      expect(ticketColNames).toContain("requesterId");
-      expect(ticketColNames).toContain("categoryId");
-      expect(ticketColNames).toContain("relatedSystemId");
-      expect(ticketColNames).toContain("ticketOwnerId");
-
-      // Lab 3 operational fields added
-      expect(ticketColNames).toContain("version");
-      expect(ticketColNames).toContain("appearsResolvedAt");
-      expect(ticketColNames).toContain("appearsResolvedById");
-      expect(ticketColNames).toContain("seedKey");
-    });
-
-    it("verifies Session, PublicComment, and InternalNote tables exist in the database", async () => {
-      const tables: Array<{ table_name: string }> = await prisma.$queryRaw`
-        SELECT table_name 
-        FROM information_schema.tables 
-        WHERE table_schema = 'public' 
-          AND table_name IN ('Session', 'PublicComment', 'InternalNote');
-      `;
-      const tableNames = tables.map((t) => t.table_name);
-      expect(tableNames).toContain("Session");
-      expect(tableNames).toContain("PublicComment");
-      expect(tableNames).toContain("InternalNote");
-    });
-  });
-
-  describe("MIG-02 (AC-15, R12): 8 Statuses and 3 Roles Enums in PostgreSQL", () => {
-    it("verifies TicketStatus enum in DB contains all 8 required values", async () => {
-      const enumValues: Array<{ enumlabel: string }> = await prisma.$queryRaw`
-        SELECT e.enumlabel
-        FROM pg_type t
-        JOIN pg_enum e ON t.oid = e.enumtypid
-        WHERE t.typname = 'TicketStatus';
-      `;
-      const labels = enumValues.map((v) => v.enumlabel);
-      const expected = [
-        "NEW",
-        "OPEN",
-        "IN_PROGRESS",
-        "WAITING_FOR_REQUESTER",
-        "RESOLVED",
-        "CLOSED",
-        "REOPENED",
-        "CANCELLED",
-      ];
-      for (const st of expected) {
-        expect(labels).toContain(st);
-      }
-    });
-
-    it("verifies Role enum in DB contains REQUESTER, IT_STAFF, ADMINISTRATOR", async () => {
-      const enumValues: Array<{ enumlabel: string }> = await prisma.$queryRaw`
-        SELECT e.enumlabel
-        FROM pg_type t
-        JOIN pg_enum e ON t.oid = e.enumtypid
-        WHERE t.typname = 'Role';
-      `;
-      const labels = enumValues.map((v) => v.enumlabel);
-      expect(labels).toContain("REQUESTER");
-      expect(labels).toContain("IT_STAFF");
-      expect(labels).toContain("ADMINISTRATOR");
-    });
 
     function stripComments(sql: string): string {
       return sql
@@ -275,6 +169,114 @@ describe("Phase F2 / P03 Data Migration & Idempotent Seeding (AC-14–AC-18, AC-
       );
     }
 
+
+describe("Phase F2 / P03 Data Migration & Idempotent Seeding (AC-14–AC-18, AC-31, LCP-02)", () => {
+  const prisma = getPrisma();
+
+  describe("MIG-01 (AC-14, R05, R12): Database Schema & Model Preservation", () => {
+    it("verifies live PostgreSQL table columns for User (RequesterUser) and Ticket", async () => {
+      // Query actual database columns from PostgreSQL information_schema
+      const userColumns: Array<{ column_name: string; data_type: string }> = await prisma.$queryRaw`
+        SELECT column_name, data_type
+        FROM information_schema.columns
+        WHERE table_name = 'RequesterUser';
+      `;
+      const userColNames = userColumns.map((c) => c.column_name);
+
+      // Legacy fields preserved
+      expect(userColNames).toContain("id");
+      expect(userColNames).toContain("name");
+      expect(userColNames).toContain("email");
+      expect(userColNames).toContain("department");
+      expect(userColNames).toContain("isActive");
+      expect(userColNames).toContain("createdAt");
+      expect(userColNames).toContain("updatedAt");
+
+      // Lab 3 security fields added
+      expect(userColNames).toContain("role");
+      expect(userColNames).toContain("passwordHash");
+      expect(userColNames).toContain("mustChangePassword");
+      expect(userColNames).toContain("sessionVersion");
+
+      // Verify Ticket table columns
+      const ticketColumns: Array<{ column_name: string }> = await prisma.$queryRaw`
+        SELECT column_name
+        FROM information_schema.columns
+        WHERE table_name = 'Ticket';
+      `;
+      const ticketColNames = ticketColumns.map((c) => c.column_name);
+
+      // Legacy ticket fields preserved
+      expect(ticketColNames).toContain("id");
+      expect(ticketColNames).toContain("ticketNo");
+      expect(ticketColNames).toContain("summary");
+      expect(ticketColNames).toContain("description");
+      expect(ticketColNames).toContain("requestedPriority");
+      expect(ticketColNames).toContain("itPriority");
+      expect(ticketColNames).toContain("currentStatus");
+      expect(ticketColNames).toContain("requesterId");
+      expect(ticketColNames).toContain("categoryId");
+      expect(ticketColNames).toContain("relatedSystemId");
+      expect(ticketColNames).toContain("ticketOwnerId");
+
+      // Lab 3 operational fields added
+      expect(ticketColNames).toContain("version");
+      expect(ticketColNames).toContain("appearsResolvedAt");
+      expect(ticketColNames).toContain("appearsResolvedById");
+      expect(ticketColNames).toContain("seedKey");
+    });
+
+    it("verifies Session, PublicComment, and InternalNote tables exist in the database", async () => {
+      const tables: Array<{ table_name: string }> = await prisma.$queryRaw`
+        SELECT table_name
+        FROM information_schema.tables
+        WHERE table_schema = 'public'
+          AND table_name IN ('Session', 'PublicComment', 'InternalNote');
+      `;
+      const tableNames = tables.map((t) => t.table_name);
+      expect(tableNames).toContain("Session");
+      expect(tableNames).toContain("PublicComment");
+      expect(tableNames).toContain("InternalNote");
+    });
+  });
+
+  describe("MIG-02 (AC-15, R12): 8 Statuses and 3 Roles Enums in PostgreSQL", () => {
+    it("verifies TicketStatus enum in DB contains all 8 required values", async () => {
+      const enumValues: Array<{ enumlabel: string }> = await prisma.$queryRaw`
+        SELECT e.enumlabel
+        FROM pg_type t
+        JOIN pg_enum e ON t.oid = e.enumtypid
+        WHERE t.typname = 'TicketStatus';
+      `;
+      const labels = enumValues.map((v) => v.enumlabel);
+      const expected = [
+        "NEW",
+        "OPEN",
+        "IN_PROGRESS",
+        "WAITING_FOR_REQUESTER",
+        "RESOLVED",
+        "CLOSED",
+        "REOPENED",
+        "CANCELLED",
+      ];
+      for (const st of expected) {
+        expect(labels).toContain(st);
+      }
+    });
+
+    it("verifies Role enum in DB contains REQUESTER, IT_STAFF, ADMINISTRATOR", async () => {
+      const enumValues: Array<{ enumlabel: string }> = await prisma.$queryRaw`
+        SELECT e.enumlabel
+        FROM pg_type t
+        JOIN pg_enum e ON t.oid = e.enumtypid
+        WHERE t.typname = 'Role';
+      `;
+      const labels = enumValues.map((v) => v.enumlabel);
+      expect(labels).toContain("REQUESTER");
+      expect(labels).toContain("IT_STAFF");
+      expect(labels).toContain("ADMINISTRATOR");
+    });
+
     it("proves forward migration chain applies cleanly to an authentic Lab 2 schema with populated data (AC-14, AC-15, MIG-01, MIG-02)", async () => {
       const proofSchema = `lab2_migration_proof_${Date.now()}`;
       try {
@@ -418,6 +420,8 @@ describe("Phase F2 / P03 Data Migration & Idempotent Seeding (AC-14–AC-18, AC-
 
   describe("MIG-03 & MIG-04 (AC-16, AC-17, R13, R14): Populated DB Data Preservation, Sequence Continuity & Credential Provisioning", () => {
     it("proves populated DB data (users, tickets, attachments) is preserved across schema migration and seeding", async () => {
+      await seed(prisma);
+      const createdTicketIds: number[] = [];
       // 1. Create a legacy staff user to test assigned ownership preservation
       const legacyStaff = await prisma.user.create({
         data: {
@@ -478,6 +482,7 @@ describe("Phase F2 / P03 Data Migration & Idempotent Seeding (AC-14–AC-18, AC-
         },
       });
 
+      createdTicketIds.push(legacyTicket.id);
       // 4. Create physical file on disk and active attachment linked to the legacy ticket
       const uploadDir = getUploadDirectory();
       if (!fs.existsSync(uploadDir)) {
@@ -551,6 +556,7 @@ describe("Phase F2 / P03 Data Migration & Idempotent Seeding (AC-14–AC-18, AC-
             relatedSystemId: sys!.id,
           },
         });
+        createdTicketIds.push(nextTicket.id);
         expect(nextTicket.id).toBeGreaterThan(legacyTicket.id);
 
         const nextAttachment = await prisma.attachment.create({
@@ -576,24 +582,30 @@ describe("Phase F2 / P03 Data Migration & Idempotent Seeding (AC-14–AC-18, AC-
         const fileHashAfter = crypto.createHash("sha256").update(fileBytesAfter).digest("hex");
         expect(fileHashAfter).toBe(originalFileHash);
 
-        // Verify legacy user received temporary password and mustChangePassword = true (AC-17)
-        const provisionedLegacyUser = await prisma.user.findUnique({
+        // Verify legacy unprovisioned accounts outside documented seed accounts do NOT receive a universal password (Spec §7.2 Rule 6, MIG-04)
+        const unprovisionedLegacyUser = await prisma.user.findUnique({
           where: { id: legacyUser.id },
         });
-        expect(provisionedLegacyUser).toBeDefined();
-        expect(provisionedLegacyUser!.passwordHash).toContain("$argon2id$");
-        expect(provisionedLegacyUser!.mustChangePassword).toBe(true);
-        expect(provisionedLegacyUser!.role).toBe("REQUESTER");
-        expect(provisionedLegacyUser!.name).toBe("Legacy User");
-        expect(provisionedLegacyUser!.department).toBe("Operations");
+        expect(unprovisionedLegacyUser).toBeDefined();
+        expect(unprovisionedLegacyUser!.passwordHash).toBeNull();
+        expect(unprovisionedLegacyUser!.role).toBe("REQUESTER");
+        expect(unprovisionedLegacyUser!.name).toBe("Legacy User");
+        expect(unprovisionedLegacyUser!.department).toBe("Operations");
 
-        // Verify legacy staff received password without losing role
-        const provisionedStaff = await prisma.user.findUnique({
+        // Verify legacy staff also remains unprovisioned without losing role
+        const unprovisionedStaff = await prisma.user.findUnique({
           where: { id: legacyStaff.id },
         });
-        expect(provisionedStaff!.role).toBe("IT_STAFF");
-        expect(provisionedStaff!.passwordHash).toContain("$argon2id$");
-        expect(provisionedStaff!.mustChangePassword).toBe(true);
+        expect(unprovisionedStaff!.role).toBe("IT_STAFF");
+        expect(unprovisionedStaff!.passwordHash).toBeNull();
+
+        // Verify documented seed accounts DO receive initial credentials with mustChangePassword = true (AC-17, MIG-04)
+        const seedRequester = await prisma.user.findUnique({
+          where: { email: "sarah.j@example.com" },
+        });
+        expect(seedRequester).toBeDefined();
+        expect(seedRequester!.passwordHash).toContain("$argon2id$");
+        expect(seedRequester!.mustChangePassword).toBe(true);
 
         // Verify legacy ticket was NOT overwritten by seed and ownership was preserved
         const ticketAfterSeed = await prisma.ticket.findUnique({
@@ -632,10 +644,10 @@ describe("Phase F2 / P03 Data Migration & Idempotent Seeding (AC-14–AC-18, AC-
           fs.unlinkSync(activeFilePath);
         }
         await prisma.attachment.deleteMany({
-          where: { fileName: { in: ["legacy_document.pdf", "legacy_removed_screenshot.png", "sequential_attachment.txt"] } },
+          where: { ticketId: { in: createdTicketIds } },
         });
         await prisma.ticket.deleteMany({
-          where: { ticketNo: { in: [testTicketNo, `TKT-SEQ-${Date.now()}`] } },
+          where: { id: { in: createdTicketIds } },
         });
         await prisma.user.deleteMany({
           where: { id: { in: [legacyUser.id, legacyStaff.id] } },
@@ -644,69 +656,43 @@ describe("Phase F2 / P03 Data Migration & Idempotent Seeding (AC-14–AC-18, AC-
     });
 
     it("proves seed isolates identity and does not modify fields or add comments/notes to colliding tickets (e.g. TKT-2026-000008)", async () => {
-      const collisionTicketNo = "TKT-2026-000008";
-      const cat = await prisma.category.findFirst({ where: { isActive: true } });
-      const sys = await prisma.relatedSystem.findFirst({ where: { isActive: true } });
-      const existingUser = await prisma.user.findFirst({ where: { role: "REQUESTER", isActive: true } });
-      const staffUser = await prisma.user.findFirst({ where: { role: "IT_STAFF", isActive: true } });
-
-      // Clean up any existing collision ticket first
-      await prisma.ticket.deleteMany({ where: { ticketNo: collisionTicketNo } });
-
-      const realTicket = await prisma.ticket.create({
-        data: {
-          ticketNo: collisionTicketNo,
-          summary: "Pre-existing real user ticket from Lab 2",
-          description: "This ticket must not be modified or touched by seed",
-          requestedPriority: "LOW",
-          itPriority: "LOW",
-          currentStatus: "NEW",
-          requesterId: existingUser!.id,
-          ticketOwnerId: staffUser!.id,
-          categoryId: cat!.id,
-          relatedSystemId: sys!.id,
-          version: 1,
-        },
-      });
-
+      const schema = 'seed_collision_' + crypto.randomBytes(12).toString('hex');
+      const url = new URL(process.env.DATABASE_URL_TEST!);
+      url.searchParams.set('schema', schema);
+      const isolated = new PrismaClient({ datasources: { db: { url: url.toString() } } });
       try {
-        // Run seed
-        await seed(prisma);
-
-        // Verify real ticket remains strictly unmodified
-        const ticketCheck = await prisma.ticket.findUnique({
-          where: { id: realTicket.id },
-          include: { publicComments: true, internalNotes: true },
+        await prisma.$executeRawUnsafe(`CREATE SCHEMA "${schema}"`);
+        const root = path.resolve(getWorkspaceRoot(), 'server/prisma/migrations');
+        for (const dir of fs.readdirSync(root).sort()) {
+          const file = path.join(root, dir, 'migration.sql');
+          if (fs.existsSync(file)) await executeSqlScriptInSchema(prisma, schema, fs.readFileSync(file, 'utf8'));
+        }
+        const cat = await isolated.category.create({ data: { name: 'Collision category' } });
+        const sys = await isolated.relatedSystem.create({ data: { name: 'Collision system' } });
+        const user = await isolated.user.create({ data: { name: 'Existing requester', email: 'collision@example.com' } });
+        const realTicket = await isolated.ticket.create({ data: {
+          ticketNo: 'TKT-2026-000008', summary: 'Pre-existing real user ticket from Lab 2',
+          description: 'This ticket must not be modified or touched by seed',
+          requestedPriority: 'LOW', itPriority: 'HIGH', currentStatus: 'NEW',
+          requesterId: user.id, categoryId: cat.id, relatedSystemId: sys.id,
+        } });
+        await seed(isolated);
+        await seed(isolated);
+        expect(await isolated.ticket.findUnique({ where: { id: realTicket.id } })).toEqual(realTicket);
+        expect(await isolated.publicComment.count({ where: { ticketId: realTicket.id } })).toBe(0);
+        expect(await isolated.internalNote.count({ where: { ticketId: realTicket.id } })).toBe(0);
+        const fixture = await isolated.ticket.findUniqueOrThrow({
+          where: { seedKey: 'seed-ticket-000008' }, include: { publicComments: true, internalNotes: true },
         });
-
-        expect(ticketCheck).toBeDefined();
-        expect(ticketCheck!.summary).toBe("Pre-existing real user ticket from Lab 2");
-        expect(ticketCheck!.description).toBe("This ticket must not be modified or touched by seed");
-        expect(ticketCheck!.ticketOwnerId).toBe(staffUser!.id);
-        expect(ticketCheck!.currentStatus).toBe("NEW");
-
-        // Fixture comments/notes MUST NOT have been attached to this real ticket
-        expect(ticketCheck!.publicComments.length).toBe(0);
-        expect(ticketCheck!.internalNotes.length).toBe(0);
-
-        // Verify the seed fixture ("LEB2 submission upload timeout") was created with its own allocated ticket
-        const seedFixtureTicket = await prisma.ticket.findFirst({
-          where: { summary: "LEB2 submission upload timeout" },
-          include: { publicComments: true, internalNotes: true },
-        });
-        expect(seedFixtureTicket).toBeDefined();
-        expect(seedFixtureTicket!.id).not.toBe(realTicket.id);
-        expect(seedFixtureTicket!.ticketNo).not.toBe(collisionTicketNo);
-        // Comments and notes belong to the seed fixture ticket
-        expect(seedFixtureTicket!.publicComments.length).toBeGreaterThanOrEqual(1);
-        expect(seedFixtureTicket!.internalNotes.length).toBeGreaterThanOrEqual(1);
+        expect(fixture.id).not.toBe(realTicket.id);
+        expect(fixture.ticketNo).not.toBe(realTicket.ticketNo);
+        expect(fixture.publicComments.length).toBeGreaterThan(0);
+        expect(fixture.internalNotes.length).toBeGreaterThan(0);
+        expect(await isolated.ticket.count()).toBe(25);
       } finally {
-        await prisma.ticket.deleteMany({
-          where: { ticketNo: collisionTicketNo },
-        });
-        await prisma.ticket.deleteMany({
-          where: { summary: { in: ["Pre-existing real user ticket from Lab 2", "LEB2 submission upload timeout"] } },
-        });
+        await isolated.$disconnect();
+        // Only this test's random schema is removed, never public or a reused fixture.
+        await prisma.$executeRawUnsafe(`DROP SCHEMA IF EXISTS "${schema}" CASCADE`);
       }
     });
 

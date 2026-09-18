@@ -134,6 +134,31 @@ describe("Phase F2 / P04 Authentication API (AC-01, AC-02, AC-05, AC-06, AC-07, 
       expect(res.body).toEqual({ error: "Invalid email or password" });
     });
 
+    it("returns uniform 401 for unprovisioned account without passwordHash (Spec §7.2 Rule 6, MIG-04)", async () => {
+      const prisma = getPrisma();
+      const unprovisionedEmail = "unprovisioned.legacy@example.com";
+      await prisma.user.upsert({
+        where: { email: unprovisionedEmail },
+        update: { isActive: true, passwordHash: null },
+        create: {
+          email: unprovisionedEmail,
+          name: "Unprovisioned Legacy User",
+          department: "Operations",
+          role: "REQUESTER",
+          isActive: true,
+          passwordHash: null,
+        },
+      });
+
+      const res = await request(app)
+        .post("/api/auth/login")
+        .set("Origin", DEFAULT_ORIGIN)
+        .send({ email: unprovisionedEmail, password: "AnyAttemptedPassword123!" });
+
+      expect(res.status).toBe(401);
+      expect(res.body).toEqual({ error: "Invalid email or password" });
+    });
+
     it("returns 400 if email or password missing in request body", async () => {
       const res = await request(app)
         .post("/api/auth/login")
