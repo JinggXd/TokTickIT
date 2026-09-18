@@ -1027,5 +1027,70 @@ F2 / P03 is next after peer review and gate approval; no Lab 3 migration/auth co
 
 - **Major Phase F3 (P07–P10):** **100% Proven & Verified**. Hardened assertions executed and verified without conditional bypasses.
 - **GitHub Tracking:** Issue [#40](https://github.com/JinggXd/TokTickIT/issues/40) opened and explicitly linked in Development panel to Pull Request [#41](https://github.com/JinggXd/TokTickIT/pull/41) targeting `lab3-staging`.
-- **Next Step:** Awaiting peer review on PR #41 before reviewer merges to `lab3-staging`.
+
+---
+
+## 2026-09-18 — Major Phase F4 (P11–P12): Administrator User Management & Integrated Verification
+
+- **Branch / Work Unit:** `feature/f4-admin-and-verification`, addressing Work Packages **P11 (Administrator User Management)** and **P12 (Integrated Verification & Visual Evidence)** under Issue [#42](https://github.com/JinggXd/TokTickIT/issues/42).
+- **Scope & Contract Deliverables:**
+  - `docs/lab-03/specification.md` Section 3.1 & Section 4 (AC-20..27, AC-32..35, AC-49..56, BR-19, BR-20, BR-21).
+  - `docs/lab-03/api-spec.md` Section 7 (API-20..35: Admin User Directory, Provisioning, Editing, Password Reset).
+  - `docs/lab-03/ui-spec.md` Section 3.5 & Section 4 (Screen 5: Administrator User Management, Modals, Invariants, Badge Tokens).
+  - `docs/lab-03/tests.md` P11 and P12 Planned Rows (E2E-12 to E2E-16, API-20..35, UI-09..11, UI-15).
+
+### Implementation Summary
+
+1. **P11 — Administrative User API (`server/src/routes/adminUsers.ts`):**
+   - Mounted at `/api/admin/users` in `server/src/app.ts`, guarded by session authentication and `requireRole("ADMINISTRATOR")`.
+   - `GET /api/admin/users` (API-20..22): Search by partial name/email (case-insensitive), filter by role (`REQUESTER`, `IT_STAFF`, `ADMINISTRATOR`), deterministic sorting (name asc, id asc).
+   - `POST /api/admin/users` (API-23..27): User provisioning with Argon2id-hashed initial password (12–128 chars), forced change flag (`mustChangePassword: true`), and duplicate email detection (HTTP 409 `DUPLICATE_EMAIL`).
+   - `PATCH /api/admin/users/:id` (API-28..31):
+     - Safe partial updates of `name`, `department`, `role`, and `isActive`.
+     - **Self-Deactivation Guard (BR-19):** Blocks administrator from deactivating their own account with HTTP 400 `SELF_DEACTIVATION`.
+     - **Last Active Admin Guard (BR-20):** Prevents deactivating or demoting the last active administrator with HTTP 400 `LAST_ACTIVE_ADMIN`.
+     - **Owner Deactivation Cascade (BR-21):** When an IT Staff or Administrator is deactivated or demoted to REQUESTER, any OPEN/IN_PROGRESS/RESOLVED tickets assigned to them are unassigned (`ownerId: null`), ticket `version` is incremented, and `unassignedTicketsCount` is returned in the response payload.
+     - **Session Revocation (AC-53):** On role change, deactivation, or password reset, all active sessions for the target user are immediately purged.
+   - `POST /api/admin/users/:id/initial-password` (API-32..35): Administrator temporary password reset enforcing complexity, purging active sessions, and setting `mustChangePassword: true`.
+   - **Automated Tests:** `server/tests/lab-03/users-admin.api.test.ts` (**17/17 passed**).
+
+2. **P11 — Administrator User Management UI (`client/src/pages/UserManagement.tsx`):**
+   - Route `/admin/users` registered in `client/src/App.tsx`, replacing the placeholder view.
+   - Responsive user directory table with role badges (`--zg-badge-*` tokens), status pills, and action buttons (`Edit`, `Reset Password`).
+   - Debounced search input (300ms) with clear button and instant role dropdown filter.
+   - Distinct UI states: Loading spinner, Empty state, No-results search state, and Error alert.
+   - **Add User Modal:** Name, email, department, role selection, temporary password with validation, and busy submit state.
+   - **Edit User Modal:** Full field editing with disabled toggle and warning tooltip for self-deactivation and last-admin constraints.
+   - **Reset Password Modal:** New temporary password input with explicit session revocation warning and confirmation.
+   - **API Integration:** Added typed methods in `client/src/api.ts` (`fetchAdminUsers`, `createAdminUser`, `updateAdminUser`, `resetAdminUserPassword`).
+   - **Automated Tests:** `client/tests/lab-03/UserManagement.test.tsx` (**9/9 passed**).
+
+3. **P12 — Integrated E2E Verification & Multi-Viewport Evidence (`e2e/lab-03/`):**
+   - Implemented `e2e/lab-03/user-administration.spec.ts`:
+     - **E2E-16:** Admin user directory browsing, search, and role filtering.
+     - **E2E-12:** User provisioning flow and forced password change verification.
+     - **E2E-13:** Administrator password reset and session invalidation verification.
+     - **E2E-14:** Administrator self-deactivation guard and disabled controls verification.
+     - **E2E-16 (Edit):** User name, department, and role modifications.
+   - Ran all 4 Lab 3 E2E test suites against verified test database `toktickit_test` across 3 viewport configurations:
+     - **Desktop** (1280x800)
+     - **Tablet** (768x1024)
+     - **Mobile** (375x667)
+   - Visual screenshots captured to `artifacts/lab-03/screenshots/` for each viewport.
+
+### Commands Actually Run & Results
+
+| Command | Exit | Result |
+|---|---:|---|
+| `$env:DATABASE_URL_TEST=".../toktickit_test"; npx playwright test e2e/lab-03/` | 0 | **69/69 passed across Desktop, Tablet, and Mobile** in 1.6m (0 fail, 0 skip). |
+| `$env:DATABASE_URL_TEST=".../toktickit_test"; npm --prefix server test` | 0 | **25 test files, 246/246 passed** in 43.7s (0 fail, 0 skip). |
+| `npm --prefix client test` | 0 | **15 test files, 80/80 passed** in 19.5s (0 fail, 0 skip). |
+| `npm --prefix server run build` | 0 | Server TypeScript compilation (`tsc`) passed with 0 errors. |
+| `npm --prefix client run build` | 0 | Client production build (`tsc && vite build`) passed with 0 errors. |
+
+### Gate Status
+
+- **Major Phase F4 (P11–P12):** **100% Implemented, Proven & Verified**.
+- **GitHub Tracking:** Issue [#42](https://github.com/JinggXd/TokTickIT/issues/42) opened on `feature/f4-admin-and-verification`. Ready for Pull Request targeting `lab3-staging`.
+
 

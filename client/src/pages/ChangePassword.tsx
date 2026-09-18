@@ -115,6 +115,7 @@ export const ChangePassword: React.FC<ChangePasswordProps> = ({ onSuccess, onCan
     >
       <div
         className="card shadow-sm border p-4 w-100"
+        data-testid="change-password-card"
         style={{
           maxWidth: "520px",
           backgroundColor: "var(--zg-surface)",
