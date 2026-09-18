@@ -8,6 +8,7 @@ vi.mock("../../src/api.js", () => ({
   createAdminUser: vi.fn(),
   updateAdminUser: vi.fn(),
   resetAdminUserPassword: vi.fn(),
+  logout: vi.fn().mockResolvedValue(undefined),
 }));
 
 const mockCurrentUser = {
@@ -19,6 +20,7 @@ const mockCurrentUser = {
 };
 
 const mockLogout = vi.fn();
+const mockClearAuth = vi.fn();
 
 vi.mock("../../src/context/AuthContext.js", () => ({
   useAuth: () => ({
@@ -26,6 +28,7 @@ vi.mock("../../src/context/AuthContext.js", () => ({
     isAuthenticated: true,
     isLoading: false,
     logout: mockLogout,
+    clearAuth: mockClearAuth,
   }),
 }));
 
@@ -256,7 +259,8 @@ describe("UserManagement UI Tests (UI-09, UI-10, UI-11, UI-15)", () => {
 
       await waitFor(() => {
         expect(api.resetAdminUserPassword).toHaveBeenCalledWith(1, "NewValidPassword123!");
-        expect(mockLogout).toHaveBeenCalled();
+        expect(mockClearAuth).toHaveBeenCalled();
+        expect(api.logout).toHaveBeenCalled();
         expect(onNavigateToLogin).toHaveBeenCalled();
       });
     });
@@ -271,7 +275,6 @@ describe("UserManagement UI Tests (UI-09, UI-10, UI-11, UI-15)", () => {
         unassignedTicketsCount: 0,
       });
       const onNavigateToLogin = vi.fn();
-      mockLogout.mockResolvedValue(undefined);
 
       render(<UserManagement onNavigateToLogin={onNavigateToLogin} />);
       await waitFor(() => screen.getByTestId("edit-user-btn-1"));
@@ -283,7 +286,8 @@ describe("UserManagement UI Tests (UI-09, UI-10, UI-11, UI-15)", () => {
 
       await waitFor(() => {
         expect(api.updateAdminUser).toHaveBeenCalledWith(1, expect.objectContaining({ role: "IT_STAFF" }));
-        expect(mockLogout).toHaveBeenCalled();
+        expect(mockClearAuth).toHaveBeenCalled();
+        expect(api.logout).toHaveBeenCalled();
         expect(onNavigateToLogin).toHaveBeenCalled();
       });
     });

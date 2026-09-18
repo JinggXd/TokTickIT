@@ -213,12 +213,27 @@ authRouter.post(
 
     try {
       await prisma.$transaction(async (tx) => {
+        const freshUser = await tx.user.findUnique({
+          where: { id: user.id },
+        });
+
+        if (
+          !freshUser ||
+          !freshUser.isActive ||
+          !freshUser.passwordHash ||
+          freshUser.passwordHash !== user.passwordHash ||
+          freshUser.sessionVersion !== user.sessionVersion
+        ) {
+          throw new Error("CREDENTIALS_INVALIDATED");
+        }
+
+        const freshSessionVersion = freshUser.sessionVersion + 1;
         await tx.user.update({
           where: { id: user.id },
           data: {
             passwordHash: newHash,
             mustChangePassword: false,
-            sessionVersion: newSessionVersion,
+            sessionVersion: freshSessionVersion,
           },
         });
 
@@ -232,7 +247,7 @@ authRouter.post(
           data: {
             id: hashedId,
             userId: user.id,
-            sessionVersion: newSessionVersion,
+            sessionVersion: freshSessionVersion,
             csrfToken,
             expiresAt,
           },
@@ -251,7 +266,14 @@ authRouter.post(
           mustChangePassword: false,
         },
       });
-    } catch (err) {
+    } catch (err: any) {
+      if (err.message === "CREDENTIALS_INVALIDATED") {
+        res.status(400).json({
+          error: "Validation failed",
+          details: { currentPassword: "Incorrect current password" },
+        });
+        return;
+      }
       res.status(500).json({ error: "Unable to update password. Please try again." });
     }
   },
@@ -266,7 +288,13 @@ authRouter.post("/logout", async (req: Request, res: Response): Promise<void> =>
       await getPrisma().session.delete({
         where: { id: req.session.id },
       });
-    } catch {}
+    } catch (err: any) {
+      // P2025: Record to delete does not exist (already deleted / idempotent) -> safe to treat as 204
+      if (err?.code !== "P2025") {
+        res.status(500).json({ error: "Unable to complete logout. Please try again." });
+        return;
+      }
+    }
   }
 
   clearSessionCookie(res);

@@ -5,6 +5,7 @@ import {
   createAdminUser,
   updateAdminUser,
   resetAdminUserPassword,
+  logout as apiLogout,
   Role,
 } from "../api.js";
 import { useAuth } from "../context/AuthContext.js";
@@ -26,7 +27,7 @@ export interface UserManagementProps {
 }
 
 export const UserManagement: React.FC<UserManagementProps> = ({ onNavigateToLogin }) => {
-  const { user: currentUser, logout } = useAuth();
+  const { user: currentUser, clearAuth } = useAuth();
 
   // State: Data & Query
   const [users, setUsers] = useState<AdminUserItem[]>([]);
@@ -204,7 +205,8 @@ export const UserManagement: React.FC<UserManagementProps> = ({ onNavigateToLogi
       const res = await updateAdminUser(editingUser.id, editFormData);
       setEditingUser(null);
       if (isSelfDemotion) {
-        await logout().catch(() => {});
+        clearAuth();
+        apiLogout().catch(() => {});
         if (onNavigateToLogin) {
           onNavigateToLogin();
         } else {
@@ -274,7 +276,8 @@ export const UserManagement: React.FC<UserManagementProps> = ({ onNavigateToLogi
       await resetAdminUserPassword(resetUser.id, resetPasswordInput);
       setResetUser(null);
       if (isSelfReset) {
-        await logout().catch(() => {});
+        clearAuth();
+        apiLogout().catch(() => {});
         if (onNavigateToLogin) {
           onNavigateToLogin();
         } else {

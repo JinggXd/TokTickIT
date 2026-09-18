@@ -2,7 +2,7 @@ import request from "supertest";
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import { app } from "../../src/app.js";
 import { getPrisma } from "../../src/prisma.js";
-import { hashPassword } from "../../src/utils/password.js";
+import { hashPassword, verifyPassword } from "../../src/utils/password.js";
 
 describe("Phase F4 / P11 Administrator User Management API (API-20 to API-27, API-32 to API-35, SEC-09)", () => {
   const DEFAULT_ORIGIN = "http://localhost:5173";
@@ -885,6 +885,124 @@ describe("Phase F4 / P11 Administrator User Management API (API-20 to API-27, AP
         .send({ email: victimEmail, password: newTempPass });
       expect(newLoginRes.status).toBe(200);
       expect(newLoginRes.body.user.mustChangePassword).toBe(true);
+    });
+
+    it("API-27 / API-40: concurrent user change-password and admin reset-password never overwrite each other inconsistently", async () => {
+      const prisma = getPrisma();
+      const victimEmail = `race.pwd.${Date.now()}@example.com`;
+      const oldPassword = "OldPassword123!";
+      const victimHashed = await hashPassword(oldPassword);
+
+      const victim = await prisma.user.create({
+        data: {
+          name: "Race Victim",
+          email: victimEmail,
+          department: "Security",
+          role: "REQUESTER",
+          isActive: true,
+          mustChangePassword: true,
+          passwordHash: victimHashed,
+        },
+      });
+      createdUserIds.push(victim.id);
+
+      const loginRes = await request(app)
+        .post("/api/auth/login")
+        .set("Origin", DEFAULT_ORIGIN)
+        .send({ email: victimEmail, password: oldPassword });
+      const victimCookie = loginRes.headers["set-cookie"];
+      const victimCsrf = await request(app).get("/api/auth/csrf").set("Cookie", victimCookie);
+      const victimCsrfToken = victimCsrf.body.csrfToken;
+
+      const userNewPass = "UserChosenPass2026!";
+      const adminTempPass = "AdminTempPass2026!";
+
+      // Trigger concurrent change-password from user and reset-password from admin simultaneously
+      const [changeRes, resetRes] = await Promise.all([
+        request(app)
+          .post("/api/auth/change-password")
+          .set("Origin", DEFAULT_ORIGIN)
+          .set("Cookie", victimCookie)
+          .set("X-CSRF-Token", victimCsrfToken)
+          .send({
+            currentPassword: oldPassword,
+            newPassword: userNewPass,
+            confirmPassword: userNewPass,
+          }),
+        request(app)
+          .post(`/api/admin/users/${victim.id}/initial-password`)
+          .set("Origin", DEFAULT_ORIGIN)
+          .set("Cookie", adminCookie)
+          .set("X-CSRF-Token", adminCsrfToken)
+          .send({ initialPassword: adminTempPass }),
+      ]);
+
+      // Admin reset must always succeed (204)
+      expect(resetRes.status).toBe(204);
+
+      // User change-password can either succeed (200) if executed before admin reset,
+      // or fail with 400 (Validation failed - incorrect current password) if admin reset executed first.
+      expect([200, 400]).toContain(changeRes.status);
+
+      const finalUser = await prisma.user.findUnique({
+        where: { id: victim.id },
+      });
+
+      // In all execution orders, the final state MUST be the admin reset credential!
+      expect(finalUser?.mustChangePassword).toBe(true);
+
+      const isFinalAdminPass = await verifyPassword(adminTempPass, finalUser!.passwordHash!);
+      expect(isFinalAdminPass).toBe(true);
+    });
+
+    it("API-27 / API-02: concurrent login with old password and admin reset never leaves a valid session on old password", async () => {
+      const prisma = getPrisma();
+      const victimEmail = `race.login.${Date.now()}@example.com`;
+      const oldPassword = "OldPassword123!";
+      const victimHashed = await hashPassword(oldPassword);
+
+      const victim = await prisma.user.create({
+        data: {
+          name: "Race Login Victim",
+          email: victimEmail,
+          department: "Security",
+          role: "REQUESTER",
+          isActive: true,
+          mustChangePassword: false,
+          passwordHash: victimHashed,
+        },
+      });
+      createdUserIds.push(victim.id);
+
+      const adminTempPass = "AdminResetPass2026!";
+
+      // Concurrently fire login with old credentials and admin reset
+      const [loginRes, resetRes] = await Promise.all([
+        request(app)
+          .post("/api/auth/login")
+          .set("Origin", DEFAULT_ORIGIN)
+          .send({ email: victimEmail, password: oldPassword }),
+        request(app)
+          .post(`/api/admin/users/${victim.id}/initial-password`)
+          .set("Origin", DEFAULT_ORIGIN)
+          .set("Cookie", adminCookie)
+          .set("X-CSRF-Token", adminCsrfToken)
+          .send({ initialPassword: adminTempPass }),
+      ]);
+
+      expect(resetRes.status).toBe(204);
+      expect([200, 401]).toContain(loginRes.status);
+
+      // If login returned 200 (executed just before admin reset),
+      // verify the returned session cookie is ALREADY INVALIDATED because admin reset bumped sessionVersion & deleted sessions!
+      if (loginRes.status === 200) {
+        const victimCookie = loginRes.headers["set-cookie"];
+        const meRes = await request(app)
+          .get("/api/auth/me")
+          .set("Origin", DEFAULT_ORIGIN)
+          .set("Cookie", victimCookie);
+        expect(meRes.status).toBe(401);
+      }
     });
   });
 });
