@@ -819,12 +819,12 @@ F2 / P03 is next after peer review and gate approval; no Lab 3 migration/auth co
 
 | Path | Change |
 |---|---|
-| `server/src/utils/provisionUser.ts` | Implemented local provisioning helper `provisionUserCredentials` accepting per-user temporary secrets at runtime, hashing via Argon2id, setting `mustChangePassword: true`, and never printing/committing plaintext secrets (Spec §7.2 Rule 6, MIG-04). |
+| `server/src/utils/provisionUser.ts` | Implemented local provisioning helper `provisionUserCredentials` restricted strictly and atomically via Prisma transaction to accounts with `passwordHash: null`, rejecting already-provisioned accounts to prevent unintended password reset, and revoking existing sessions (Spec §7.2 Rule 6, MIG-04). |
 | `server/scripts/provision-user.mjs` | Created operator CLI script for provisioning user credentials via runtime arguments or environment variable without logging secrets. |
 | `server/prisma/seed.ts` | Removed blanket `usersWithoutHash` loop; seed credential initialization is strictly confined to explicit fictional accounts in `getDefaultSeedAccounts()` (Spec §7.2 Rule 6, AC-17). |
-| `server/tests/lab-03/migration-regression.test.ts` | Expanded MIG-04 to verify full lifecycle: unprovisioned login denial, runtime provisioning helper execution, post-provisioning login success with forced password change, and confirmation that unprovisioned accounts remain denied without universal password (MIG-04, AC-17). |
-| `server/tests/lab-03/auth.api.test.ts` | Dynamic user email and strict `try ... finally` ID-based deletion for unprovisioned login denial test; zero residual database records. |
-| `docs/lab-03/implementation-log.md` | Logged Iteration 6 changes, provisioning helper implementation, test cleanups, and test evidence reconciliation. |
+| `server/tests/lab-03/migration-regression.test.ts` | Expanded MIG-04 to verify full lifecycle: unprovisioned login denial, runtime provisioning helper execution, post-provisioning login success with forced password change, rejection when attempting to re-provision an already-provisioned account, and unprovisioned accounts denied without universal password (MIG-04, AC-17). |
+| `server/tests/lab-03/auth.api.test.ts` | Dynamic user email and strict ID-based deletion without error suppression (`.catch(() => {})`) for unprovisioned login denial test; cleanup failure immediately fails the test. |
+| `docs/lab-03/implementation-log.md` | Logged Iteration 6 changes, atomic provisioning helper restrictions, strict test cleanups, and test evidence reconciliation. |
 
 ### Commands actually run
 
@@ -841,4 +841,4 @@ F2 / P03 is next after peer review and gate approval; no Lab 3 migration/auth co
 ### Gate status
 
 - **Major Phase F1 (P00–P02):** **Merged to lab3-staging** (PR #37 merged, Issue #36 closed).
-- **Major Phase F2 (P03–P06):** **In progress** (Spec §7.2 Rule 6 and MIG-04 fully satisfied: local provisioning helper implemented and tested, no universal password for migrated accounts, login denied for unprovisioned users, clean test teardown verified, 12-128 char password policy, role-based landing. Server tests: 171/171 passed [Lab 3: 67/67], Client tests: 47/47 passed, Builds clean).
+- **Major Phase F2 (P03–P06):** **In progress** (Spec §7.2 Rule 6 and MIG-04 fully satisfied: atomic local provisioning helper strictly targeting unprovisioned accounts with session invalidation, no universal password for migrated accounts, login denied for unprovisioned users, strict test teardown without error suppression, 12-128 char password policy, role-based landing. Server tests: 171/171 passed [Lab 3: 67/67], Client tests: 47/47 passed, Builds clean).

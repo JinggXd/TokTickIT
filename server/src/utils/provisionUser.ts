@@ -23,6 +23,9 @@ export interface ProvisionedUserResult {
  *
  * Rules:
  * - Accepts per-user temporary secrets at runtime.
+ * - Restricted strictly and atomically to unprovisioned accounts where passwordHash is null.
+ *   Throws an error if the user already has a provisioned password to prevent accidental reset.
+ * - Invalidates all active sessions for the user atomically.
  * - Validates secret length (12-128 Unicode code points) or generates a secure random 16-character temporary secret.
  * - Computes Argon2id hash using standard OWASP profile.
  * - Updates user with passwordHash and sets mustChangePassword: true.
@@ -50,6 +53,12 @@ export async function provisionUserCredentials(
     throw new Error(`User not found for provisioning (${email ? `email: ${email}` : `id: ${userId}`}).`);
   }
 
+  if (user.passwordHash !== null) {
+    throw new Error(
+      `Cannot provision credentials: user ${user.email} already has a provisioned password hash. Provisioning helper is strictly restricted to accounts with passwordHash: null. To reset credentials, use the administrator credential reset workflow.`
+    );
+  }
+
   let secret = temporaryPassword;
   if (secret === undefined || secret === null) {
     // Generate a secure 16-character random temporary secret
@@ -63,25 +72,47 @@ export async function provisionUserCredentials(
 
   const passwordHash = await hashPassword(secret);
 
-  const updated = await prisma.user.update({
-    where: { id: user.id },
-    data: {
-      passwordHash,
-      mustChangePassword: true,
-    },
-    select: {
-      id: true,
-      email: true,
-      name: true,
-      role: true,
-      isActive: true,
-      mustChangePassword: true,
-    },
-  });
+  // Atomically update only if passwordHash is still null (prevents race-condition overwrites)
+  // and revoke existing sessions within a transaction
+  return await prisma.$transaction(async (tx: any) => {
+    const updateResult = await tx.user.updateMany({
+      where: {
+        id: user.id,
+        passwordHash: null,
+      },
+      data: {
+        passwordHash,
+        mustChangePassword: true,
+      },
+    });
 
-  // Never console.log or persist plaintext secret to disk
-  return {
-    ...updated,
-    temporaryPassword: secret,
-  };
+    if (updateResult.count === 0) {
+      throw new Error(
+        `Cannot provision credentials: user ${user.email} already has a provisioned password hash or was concurrently provisioned.`
+      );
+    }
+
+    // Invalidate any existing sessions for this user
+    await tx.session.deleteMany({
+      where: { userId: user.id },
+    });
+
+    const updated = await tx.user.findUniqueOrThrow({
+      where: { id: user.id },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        role: true,
+        isActive: true,
+        mustChangePassword: true,
+      },
+    });
+
+    // Never console.log or persist plaintext secret to disk
+    return {
+      ...updated,
+      temporaryPassword: secret,
+    };
+  });
 }

@@ -159,7 +159,7 @@ describe("Phase F2 / P04 Authentication API (AC-01, AC-02, AC-05, AC-06, AC-07, 
         expect(res.status).toBe(401);
         expect(res.body).toEqual({ error: "Invalid email or password" });
       } finally {
-        await prisma.user.delete({ where: { id: createdUser.id } }).catch(() => {});
+        await prisma.user.delete({ where: { id: createdUser.id } });
       }
     });
 

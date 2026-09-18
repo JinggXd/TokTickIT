@@ -657,6 +657,24 @@ describe("Phase F2 / P03 Data Migration & Idempotent Seeding (AC-14–AC-18, AC-
         expect(staffLoginRes.status).toBe(401);
         expect(staffLoginRes.body).toEqual({ error: "Invalid email or password" });
 
+        // 6. Prove provisioning helper strictly rejects accounts that already have passwordHash !== null (Spec §7.2 Rule 6)
+        // Attempting to re-provision an already-provisioned account must fail atomically and not overwrite password
+        await expect(
+          provisionUserCredentials(
+            {
+              email: legacyUser.email,
+              temporaryPassword: "AnotherNewPassword2026!",
+            },
+            prisma,
+          ),
+        ).rejects.toThrow(/already has a provisioned password hash/i);
+
+        // Verify password hash remains completely intact without overwrite
+        const userAfterRejectedProvision = await prisma.user.findUnique({
+          where: { id: legacyUser.id },
+        });
+        expect(userAfterRejectedProvision!.passwordHash).toBe(provisionedUserDb!.passwordHash);
+
         // Verify legacy ticket was NOT overwritten by seed and ownership was preserved
         const ticketAfterSeed = await prisma.ticket.findUnique({
           where: { id: legacyTicket.id },
