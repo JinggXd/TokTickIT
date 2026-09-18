@@ -12,6 +12,7 @@ describe("Phase F4 / P11 Administrator User Management API (API-20 to API-27, AP
   let adminId: number;
 
   let staffCookie: string;
+  let staffCsrfToken: string;
   let staffId: number;
 
   let requesterCookie: string;
@@ -69,6 +70,9 @@ describe("Phase F4 / P11 Administrator User Management API (API-20 to API-27, AP
       .set("Origin", DEFAULT_ORIGIN)
       .send({ email: "staff.p11@example.com", password: "AdminSecret123!" });
     staffCookie = staffLogin.headers["set-cookie"];
+
+    const staffCsrf = await request(app).get("/api/auth/csrf").set("Cookie", staffCookie);
+    staffCsrfToken = staffCsrf.body.csrfToken;
 
     // 3. Requester user
     const reqUser = await prisma.user.upsert({
@@ -447,6 +451,349 @@ describe("Phase F4 / P11 Administrator User Management API (API-20 to API-27, AP
         .send({ email: "reset.target@example.com", password: newSecret });
       expect(newLogin.status).toBe(200);
       expect(newLogin.body.user.mustChangePassword).toBe(true);
+    });
+  });
+
+  // ---------------------------------------------------------------------------
+  // 5. Unicode Password Validation (12-128 code points)
+  // ---------------------------------------------------------------------------
+  describe("Unicode Password Code Point Validation (API-24, API-32)", () => {
+    it("rejects 6 emojis (6 code points, 12 UTF-16 units) as too short (<12 code points)", async () => {
+      const shortEmoji = "😀😀😀😀😀😀";
+      const res = await request(app)
+        .post("/api/admin/users")
+        .set("Origin", DEFAULT_ORIGIN)
+        .set("Cookie", adminCookie)
+        .set("X-CSRF-Token", adminCsrfToken)
+        .send({
+          name: "Emoji Short",
+          email: "emoji.short@example.com",
+          role: "REQUESTER",
+          isActive: true,
+          initialPassword: shortEmoji,
+        });
+
+      expect(res.status).toBe(400);
+      expect(res.body.details?.initialPassword).toContain("12 and 128 characters");
+    });
+
+    it("accepts 12 emojis (12 code points) and 128 emojis (128 code points)", async () => {
+      const validEmoji12 = "😀".repeat(12);
+      const res12 = await request(app)
+        .post("/api/admin/users")
+        .set("Origin", DEFAULT_ORIGIN)
+        .set("Cookie", adminCookie)
+        .set("X-CSRF-Token", adminCsrfToken)
+        .send({
+          name: "Emoji 12",
+          email: "emoji.12@example.com",
+          role: "REQUESTER",
+          isActive: true,
+          initialPassword: validEmoji12,
+        });
+      expect(res12.status).toBe(201);
+      createdUserIds.push(res12.body.id);
+
+      const validEmoji128 = "😀".repeat(128);
+      const res128 = await request(app)
+        .post("/api/admin/users")
+        .set("Origin", DEFAULT_ORIGIN)
+        .set("Cookie", adminCookie)
+        .set("X-CSRF-Token", adminCsrfToken)
+        .send({
+          name: "Emoji 128",
+          email: "emoji.128@example.com",
+          role: "REQUESTER",
+          isActive: true,
+          initialPassword: validEmoji128,
+        });
+      expect(res128.status).toBe(201);
+      createdUserIds.push(res128.body.id);
+    });
+
+    it("rejects 129 emojis (129 code points) as too long (>128 code points)", async () => {
+      const longEmoji = "😀".repeat(129);
+      const res = await request(app)
+        .post("/api/admin/users")
+        .set("Origin", DEFAULT_ORIGIN)
+        .set("Cookie", adminCookie)
+        .set("X-CSRF-Token", adminCsrfToken)
+        .send({
+          name: "Emoji Long",
+          email: "emoji.long@example.com",
+          role: "REQUESTER",
+          isActive: true,
+          initialPassword: longEmoji,
+        });
+
+      expect(res.status).toBe(400);
+      expect(res.body.details?.initialPassword).toContain("12 and 128 characters");
+    });
+
+    it("validates Unicode code points in password reset (API-32)", async () => {
+      const prisma = getPrisma();
+      const testUser = await prisma.user.create({
+        data: {
+          name: "Reset Target Unicode",
+          email: "reset.unicode@example.com",
+          role: "REQUESTER",
+          isActive: true,
+          passwordHash: await hashPassword("ValidOldPass123!"),
+        },
+      });
+      createdUserIds.push(testUser.id);
+
+      // 6 emojis rejected
+      const rejectRes = await request(app)
+        .post(`/api/admin/users/${testUser.id}/initial-password`)
+        .set("Origin", DEFAULT_ORIGIN)
+        .set("Cookie", adminCookie)
+        .set("X-CSRF-Token", adminCsrfToken)
+        .send({ initialPassword: "😀😀😀😀😀😀" });
+      expect(rejectRes.status).toBe(400);
+
+      // 12 emojis accepted
+      const acceptRes = await request(app)
+        .post(`/api/admin/users/${testUser.id}/initial-password`)
+        .set("Origin", DEFAULT_ORIGIN)
+        .set("Cookie", adminCookie)
+        .set("X-CSRF-Token", adminCsrfToken)
+        .send({ initialPassword: "😀".repeat(12) });
+      expect(acceptRes.status).toBe(204);
+    });
+  });
+
+  // ---------------------------------------------------------------------------
+  // 6. Concurrency Races: Duplicate Email, Admin Demotion, Ticket Assignment
+  // ---------------------------------------------------------------------------
+  describe("Concurrency Races (API-23, API-28, API-34, API-35)", () => {
+    it("concurrent user creation with same email yields exactly one 201 and one 409 DUPLICATE_EMAIL", async () => {
+      const email = `race.user.${Date.now()}@example.com`;
+
+      const [resA, resB] = await Promise.all([
+        request(app)
+          .post("/api/admin/users")
+          .set("Origin", DEFAULT_ORIGIN)
+          .set("Cookie", adminCookie)
+          .set("X-CSRF-Token", adminCsrfToken)
+          .send({
+            name: "Race User A",
+            email,
+            role: "REQUESTER",
+            isActive: true,
+            initialPassword: "InitialPass1234!",
+          }),
+        request(app)
+          .post("/api/admin/users")
+          .set("Origin", DEFAULT_ORIGIN)
+          .set("Cookie", adminCookie)
+          .set("X-CSRF-Token", adminCsrfToken)
+          .send({
+            name: "Race User B",
+            email,
+            role: "REQUESTER",
+            isActive: true,
+            initialPassword: "InitialPass1234!",
+          }),
+      ]);
+
+      const statuses = [resA.status, resB.status].sort();
+      expect(statuses).toEqual([201, 409]);
+
+      const conflictRes = resA.status === 409 ? resA : resB;
+      expect(conflictRes.body.error).toBe("DUPLICATE_EMAIL");
+
+      const successRes = resA.status === 201 ? resA : resB;
+      createdUserIds.push(successRes.body.id);
+    });
+
+    it("concurrent PATCH email conflict yields exactly one 200 and one 409 DUPLICATE_EMAIL", async () => {
+      const prisma = getPrisma();
+      const pass = await hashPassword("UserPass12345!");
+      const user1 = await prisma.user.create({
+        data: { name: "Patch Race 1", email: `patch.race1.${Date.now()}@example.com`, role: "REQUESTER", isActive: true, passwordHash: pass },
+      });
+      const user2 = await prisma.user.create({
+        data: { name: "Patch Race 2", email: `patch.race2.${Date.now()}@example.com`, role: "REQUESTER", isActive: true, passwordHash: pass },
+      });
+      createdUserIds.push(user1.id, user2.id);
+
+      const targetConflictEmail = `target.race.${Date.now()}@example.com`;
+
+      const [res1, res2] = await Promise.all([
+        request(app)
+          .patch(`/api/admin/users/${user1.id}`)
+          .set("Origin", DEFAULT_ORIGIN)
+          .set("Cookie", adminCookie)
+          .set("X-CSRF-Token", adminCsrfToken)
+          .send({ email: targetConflictEmail }),
+        request(app)
+          .patch(`/api/admin/users/${user2.id}`)
+          .set("Origin", DEFAULT_ORIGIN)
+          .set("Cookie", adminCookie)
+          .set("X-CSRF-Token", adminCsrfToken)
+          .send({ email: targetConflictEmail }),
+      ]);
+
+      const statuses = [res1.status, res2.status].sort();
+      expect(statuses).toEqual([200, 409]);
+
+      const conflictRes = res1.status === 409 ? res1 : res2;
+      expect(conflictRes.body.error).toBe("DUPLICATE_EMAIL");
+    });
+
+    it("API-34: concurrent demotion/deactivation of two remaining admins leaves at least one active admin", async () => {
+      const prisma = getPrisma();
+      const pass = await hashPassword("AdminPass1234!");
+
+      // Create a second active admin
+      const secondAdmin = await prisma.user.create({
+        data: {
+          name: "Second Admin",
+          email: `second.admin.${Date.now()}@example.com`,
+          role: "ADMINISTRATOR",
+          isActive: true,
+          mustChangePassword: false,
+          passwordHash: pass,
+        },
+      });
+      createdUserIds.push(secondAdmin.id);
+
+      // Login as second admin
+      const secondLogin = await request(app)
+        .post("/api/auth/login")
+        .set("Origin", DEFAULT_ORIGIN)
+        .send({ email: secondAdmin.email, password: "AdminPass1234!" });
+      const secondCookie = secondLogin.headers["set-cookie"];
+      const secondCsrf = await request(app).get("/api/auth/csrf").set("Cookie", secondCookie);
+      const secondCsrfToken = secondCsrf.body.csrfToken;
+
+      // Deactivate all OTHER admins so only adminId and secondAdmin.id are active
+      const otherAdmins = await prisma.user.findMany({
+        where: { role: "ADMINISTRATOR", isActive: true, id: { notIn: [adminId, secondAdmin.id] } },
+      });
+      if (otherAdmins.length > 0) {
+        await prisma.user.updateMany({
+          where: { id: { in: otherAdmins.map((a) => a.id) } },
+          data: { isActive: false },
+        });
+      }
+
+      try {
+        // Concurrently attempt:
+        // adminId deactivates secondAdmin
+        // secondAdmin deactivates adminId
+        const [res1, res2] = await Promise.all([
+          request(app)
+            .patch(`/api/admin/users/${secondAdmin.id}`)
+            .set("Origin", DEFAULT_ORIGIN)
+            .set("Cookie", adminCookie)
+            .set("X-CSRF-Token", adminCsrfToken)
+            .send({ isActive: false }),
+          request(app)
+            .patch(`/api/admin/users/${adminId}`)
+            .set("Origin", DEFAULT_ORIGIN)
+            .set("Cookie", secondCookie)
+            .set("X-CSRF-Token", secondCsrfToken)
+            .send({ isActive: false }),
+        ]);
+
+        const statuses = [res1.status, res2.status].sort();
+        // Exactly one must succeed (200) and one must be rejected by LAST_ACTIVE_ADMIN (400)
+        expect(statuses).toEqual([200, 400]);
+
+        const rejected = res1.status === 400 ? res1 : res2;
+        expect(rejected.body.error).toBe("LAST_ACTIVE_ADMIN");
+
+        // Verify in DB that exactly 1 active admin remains
+        const activeCount = await prisma.user.count({
+          where: { role: "ADMINISTRATOR", isActive: true },
+        });
+        expect(activeCount).toBe(1);
+      } finally {
+        // Restore deactivated admins
+        if (otherAdmins.length > 0) {
+          await prisma.user.updateMany({
+            where: { id: { in: otherAdmins.map((a) => a.id) } },
+            data: { isActive: true },
+          });
+        }
+        // Ensure primary admin remains active for subsequent tests
+        await prisma.user.update({
+          where: { id: adminId },
+          data: { isActive: true },
+        });
+        // Re-authenticate admin because session might have been revoked when deactivated
+        const adminLogin = await request(app)
+          .post("/api/auth/login")
+          .set("Origin", DEFAULT_ORIGIN)
+          .send({ email: "admin.p11@example.com", password: "AdminSecret123!" });
+        adminCookie = adminLogin.headers["set-cookie"];
+        const adminCsrf = await request(app).get("/api/auth/csrf").set("Cookie", adminCookie);
+        adminCsrfToken = adminCsrf.body.csrfToken;
+      }
+    });
+
+    it("API-35: concurrent ticket reassignment and owner deactivation never leaves an inactive owner", async () => {
+      const prisma = getPrisma();
+      const pass = await hashPassword("StaffPass1234!");
+
+      const staffUser = await prisma.user.create({
+        data: { name: "Cascade Staff", email: `cascade.staff.${Date.now()}@example.com`, role: "IT_STAFF", isActive: true, passwordHash: pass },
+      });
+      createdUserIds.push(staffUser.id);
+
+      const ticket = await prisma.ticket.create({
+        data: {
+          ticketNo: `TKT-${Date.now()}-P35`,
+          summary: "Cascade Race Ticket",
+          description: "Testing concurrent assignment and deactivation",
+          categoryId: 1,
+          relatedSystemId: 1,
+          currentStatus: "NEW",
+          requestedPriority: "MEDIUM",
+          itPriority: "MEDIUM",
+          requesterId,
+          version: 1,
+        },
+      });
+      createdTicketIds.push(ticket.id);
+
+      // Concurrently:
+      // Request A: Reassign ticket to staffUser
+      // Request B: Deactivate staffUser
+      const [assignRes, deactivateRes] = await Promise.all([
+        request(app)
+          .patch(`/api/staff/tickets/${ticket.id}/owner`)
+          .set("Origin", DEFAULT_ORIGIN)
+          .set("Cookie", staffCookie)
+          .set("X-CSRF-Token", staffCsrfToken)
+          .send({ ownerId: staffUser.id, expectedVersion: 1 }),
+        request(app)
+          .patch(`/api/admin/users/${staffUser.id}`)
+          .set("Origin", DEFAULT_ORIGIN)
+          .set("Cookie", adminCookie)
+          .set("X-CSRF-Token", adminCsrfToken)
+          .send({ isActive: false }),
+      ]);
+
+      // Deactivation should always succeed
+      expect(deactivateRes.status).toBe(200);
+
+      // Inspect final ticket in DB
+      const finalTicket = await prisma.ticket.findUnique({
+        where: { id: ticket.id },
+        include: { ticketOwner: true },
+      });
+
+      // The key safety invariant: The ticket must NEVER end up assigned to an inactive user!
+      // If assignment succeeded first (200), cascade must have unassigned it (ticketOwnerId === null).
+      // If deactivation succeeded first, assignment must have been rejected (400 invalidOwner).
+      if (finalTicket?.ticketOwnerId !== null) {
+        expect(finalTicket?.ticketOwner?.isActive).toBe(true);
+      } else {
+        expect(finalTicket?.ticketOwnerId).toBeNull();
+      }
     });
   });
 });

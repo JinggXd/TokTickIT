@@ -1,7 +1,7 @@
 import { Router, Request, Response } from "express";
 import { getPrisma } from "../prisma.js";
 import { requireAuth, requirePasswordChanged, requireRole, csrfProtection } from "../middleware/sessionAuth.js";
-import { hashPassword } from "../utils/password.js";
+import { hashPassword, getCodePointLength } from "../utils/password.js";
 import { Role } from "@prisma/client";
 
 export const adminUsersRouter = Router();
@@ -111,11 +111,12 @@ adminUsersRouter.post("/", csrfProtection, async (req: Request, res: Response) =
     details.isActive = "isActive must be a boolean";
   }
 
+  const cpLen = typeof initialPassword === "string" ? getCodePointLength(initialPassword) : 0;
   if (
     !initialPassword ||
     typeof initialPassword !== "string" ||
-    initialPassword.length < 12 ||
-    initialPassword.length > 128
+    cpLen < 12 ||
+    cpLen > 128
   ) {
     details.initialPassword = "Initial password must be between 12 and 128 characters";
   }
@@ -142,27 +143,38 @@ adminUsersRouter.post("/", csrfProtection, async (req: Request, res: Response) =
 
   const passwordHash = await hashPassword(initialPassword);
 
-  const newUser = await prisma.user.create({
-    data: {
-      name: name.trim(),
-      email: trimmedEmail,
-      role: role as Role,
-      isActive,
-      passwordHash,
-      mustChangePassword: true,
-    },
-    select: {
-      id: true,
-      name: true,
-      email: true,
-      role: true,
-      isActive: true,
-      mustChangePassword: true,
-      createdAt: true,
-    },
-  });
+  try {
+    const newUser = await prisma.user.create({
+      data: {
+        name: name.trim(),
+        email: trimmedEmail,
+        role: role as Role,
+        isActive,
+        passwordHash,
+        mustChangePassword: true,
+      },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true,
+        isActive: true,
+        mustChangePassword: true,
+        createdAt: true,
+      },
+    });
 
-  res.status(201).json(newUser);
+    res.status(201).json(newUser);
+  } catch (err: any) {
+    if (err?.code === "P2002") {
+      res.status(409).json({
+        error: "DUPLICATE_EMAIL",
+        message: "An account with this email address already exists.",
+      });
+      return;
+    }
+    res.status(500).json({ error: "Unable to complete request. Please try again." });
+  }
 });
 
 // 3. PATCH /api/admin/users/:id (Edit user)
@@ -237,11 +249,42 @@ adminUsersRouter.patch("/:id", csrfProtection, async (req: Request, res: Respons
 
   const prisma = getPrisma();
 
-  try {
-    const result = await prisma.$transaction(async (tx) => {
-      const targetUser = await tx.user.findUnique({
-        where: { id: targetId },
-      });
+  const couldAffectAdmin =
+    (role !== undefined && role !== "ADMINISTRATOR") ||
+    (isActive !== undefined && isActive === false);
+
+  const executeUpdate = async () => {
+    return await prisma.$transaction(async (tx) => {
+      let activeAdmins: Array<{ id: number }> = [];
+
+      // If an update could demote or deactivate an administrator, lock all active administrators
+      // in strict ascending ID order first. This guarantees all concurrent transactions acquire
+      // row locks in the exact same order, preventing deadlocks (API-34, BR-20).
+      if (couldAffectAdmin) {
+        activeAdmins = await tx.$queryRaw<Array<{ id: number }>>`
+          SELECT id FROM "RequesterUser"
+          WHERE role = 'ADMINISTRATOR' AND "isActive" = true
+          ORDER BY id ASC
+          FOR UPDATE
+        `;
+      }
+
+      // Lock target user row FOR UPDATE to coordinate with concurrent ticket assignments (API-35)
+      // and duplicate checks, unless already locked above
+      const isTargetLocked = activeAdmins.some((a) => a.id === targetId);
+      let targetUser: { id: number; name: string; email: string; role: Role; isActive: boolean } | null = null;
+
+      if (isTargetLocked) {
+        targetUser = await tx.user.findUnique({
+          where: { id: targetId },
+          select: { id: true, name: true, email: true, role: true, isActive: true },
+        });
+      } else {
+        const targetUsers = await tx.$queryRaw<Array<{ id: number; name: string; email: string; role: Role; isActive: boolean }>>`
+          SELECT id, name, email, role, "isActive" FROM "RequesterUser" WHERE id = ${targetId} FOR UPDATE
+        `;
+        targetUser = targetUsers[0] ?? null;
+      }
 
       if (!targetUser) {
         return { notFound: true };
@@ -257,23 +300,19 @@ adminUsersRouter.patch("/:id", csrfProtection, async (req: Request, res: Respons
         }
       }
 
-      // Safety invariant 2: Last Active Admin Protection (BR-20)
+      // Safety invariant 2: Last Active Admin Protection (BR-20, API-34)
       const isTargetActiveAdmin = targetUser.role === "ADMINISTRATOR" && targetUser.isActive === true;
       const targetBecomesInactiveOrDemoted =
         (isActive !== undefined && isActive === false) ||
         (role !== undefined && role !== "ADMINISTRATOR");
 
       if (isTargetActiveAdmin && targetBecomesInactiveOrDemoted) {
-        const activeAdminCount = await tx.user.count({
-          where: { role: "ADMINISTRATOR", isActive: true },
-        });
-
-        if (activeAdminCount <= 1) {
+        if (activeAdmins.length <= 1) {
           return { lastActiveAdmin: true };
         }
       }
 
-      // Safety invariant 3: Owner Deactivation / Demotion Cascade (BR-21)
+      // Safety invariant 3: Owner Deactivation / Demotion Cascade (BR-21, API-35)
       let unassignedTicketsCount = 0;
       const wasEligibleOwner =
         (targetUser.role === "IT_STAFF" || targetUser.role === "ADMINISTRATOR") && targetUser.isActive;
@@ -326,6 +365,28 @@ adminUsersRouter.patch("/:id", csrfProtection, async (req: Request, res: Respons
         unassignedTicketsCount,
       };
     });
+  };
+
+  try {
+    let retries = 3;
+    let result: any;
+    while (retries > 0) {
+      try {
+        result = await executeUpdate();
+        break;
+      } catch (err: any) {
+        retries--;
+        const isTransient =
+          err?.code === "P2034" ||
+          err?.message?.includes("deadlock detected") ||
+          err?.message?.includes("could not serialize");
+        if (isTransient && retries > 0) {
+          await new Promise((resolve) => setTimeout(resolve, 20 + Math.random() * 30));
+          continue;
+        }
+        throw err;
+      }
+    }
 
     if ("notFound" in result) {
       res.status(404).json({ error: "User not found" });
@@ -353,6 +414,13 @@ adminUsersRouter.patch("/:id", csrfProtection, async (req: Request, res: Respons
       unassignedTicketsCount: result.unassignedTicketsCount,
     });
   } catch (err: any) {
+    if (err?.code === "P2002") {
+      res.status(409).json({
+        error: "DUPLICATE_EMAIL",
+        message: "An account with this email address already exists.",
+      });
+      return;
+    }
     res.status(500).json({
       error: "Unable to complete request. Please try again.",
     });
@@ -384,11 +452,12 @@ adminUsersRouter.post("/:id/initial-password", csrfProtection, async (req: Reque
   }
 
   const { initialPassword } = req.body;
+  const cpLen = typeof initialPassword === "string" ? getCodePointLength(initialPassword) : 0;
   if (
     !initialPassword ||
     typeof initialPassword !== "string" ||
-    initialPassword.length < 12 ||
-    initialPassword.length > 128
+    cpLen < 12 ||
+    cpLen > 128
   ) {
     res.status(400).json({
       error: "Validation failed",

@@ -62,8 +62,22 @@ export const UserManagement: React.FC = () => {
   const [isSubmittingReset, setIsSubmittingReset] = useState(false);
   const [resetModalError, setResetModalError] = useState<string | null>(null);
 
-  // Active admin count
-  const activeAdminCount = users.filter((u) => u.role === "ADMINISTRATOR" && u.isActive).length;
+  // System-wide active admin count (not affected by search filters)
+  const [systemActiveAdminCount, setSystemActiveAdminCount] = useState<number | null>(null);
+
+  const refreshSystemAdminCount = useCallback(async () => {
+    try {
+      const allAdmins = await fetchAdminUsers({ role: "ADMINISTRATOR" });
+      const count = allAdmins.filter((u) => u.isActive).length;
+      setSystemActiveAdminCount(count);
+    } catch {
+      // ignore
+    }
+  }, []);
+
+  useEffect(() => {
+    refreshSystemAdminCount();
+  }, [refreshSystemAdminCount]);
 
   // Load users from API
   const loadUsers = useCallback(async () => {
@@ -75,12 +89,13 @@ export const UserManagement: React.FC = () => {
         role: selectedRole,
       });
       setUsers(data);
+      refreshSystemAdminCount();
     } catch (err: any) {
       setError(err.message || "Unable to load users. Please try again.");
     } finally {
       setIsLoading(false);
     }
-  }, [searchInput, selectedRole]);
+  }, [searchInput, selectedRole, refreshSystemAdminCount]);
 
   useEffect(() => {
     const handler = setTimeout(() => {
@@ -112,10 +127,13 @@ export const UserManagement: React.FC = () => {
     const errors: Record<string, string> = {};
     if (!addFormData.name.trim()) errors.name = "Name is required";
     if (!addFormData.email.trim()) errors.email = "Email is required";
+    const codePointLen = Array.from(addFormData.initialPassword).length;
     if (!addFormData.initialPassword) {
       errors.initialPassword = "Initial password is required";
-    } else if (addFormData.initialPassword.length < 12) {
+    } else if (codePointLen < 12) {
       errors.initialPassword = "Password must be at least 12 characters";
+    } else if (codePointLen > 128) {
+      errors.initialPassword = "Password must not exceed 128 characters";
     }
 
     if (Object.keys(errors).length > 0) {
@@ -144,6 +162,7 @@ export const UserManagement: React.FC = () => {
 
   // Open Edit Modal
   const handleOpenEditModal = (u: AdminUserItem) => {
+    refreshSystemAdminCount();
     setEditingUser(u);
     setEditFormData({
       name: u.name,
@@ -215,12 +234,17 @@ export const UserManagement: React.FC = () => {
     setResetPasswordError(null);
     setResetModalError(null);
 
+    const codePointLen = Array.from(resetPasswordInput).length;
     if (!resetPasswordInput) {
       setResetPasswordError("Temporary password is required");
       return;
     }
-    if (resetPasswordInput.length < 12) {
+    if (codePointLen < 12) {
       setResetPasswordError("Password must be at least 12 characters");
+      return;
+    }
+    if (codePointLen > 128) {
+      setResetPasswordError("Password must not exceed 128 characters");
       return;
     }
 
@@ -240,7 +264,11 @@ export const UserManagement: React.FC = () => {
 
   const isEditingSelf = editingUser ? editingUser.id === currentUser?.id : false;
   const isSoleActiveAdmin =
-    editingUser ? editingUser.role === "ADMINISTRATOR" && editingUser.isActive && activeAdminCount <= 1 : false;
+    editingUser
+      ? editingUser.role === "ADMINISTRATOR" &&
+        editingUser.isActive &&
+        (systemActiveAdminCount !== null ? systemActiveAdminCount <= 1 : false)
+      : false;
 
   return (
     <div className="container py-4" data-testid="user-management-page">

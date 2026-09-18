@@ -1091,6 +1091,48 @@ F2 / P03 is next after peer review and gate approval; no Lab 3 migration/auth co
 ### Gate Status
 
 - **Major Phase F4 (P11–P12):** **100% Implemented, Proven & Verified**.
-- **GitHub Tracking:** Issue [#42](https://github.com/JinggXd/TokTickIT/issues/42) opened on `feature/f4-admin-and-verification`. Ready for Pull Request targeting `lab3-staging`.
+- **GitHub Tracking:** Issue [#42](https://github.com/JinggXd/TokTickIT/issues/42) opened on `feature/f4-admin-and-verification`. PR [#43](https://github.com/JinggXd/TokTickIT/pull/43) linked to Issue #42.
+
+---
+
+## 2026-09-18 — Phase F4 Peer Review Resolution (Commit a56da80 Feedback)
+
+Following peer review of commit `a56da80`, 5 critical issues (2 P1, 3 P2) were addressed and proven with automated regression tests:
+
+### Issues Resolved
+
+1. **[P1] Concurrent Admin Demotion/Deactivation Race (API-34, BR-20):**
+   - **Root Cause:** In `server/src/routes/adminUsers.ts`, active admins were counted without row locking, allowing concurrent demotions to demote all remaining admins down to 0.
+   - **Fix:** Whenever a user modification could affect active administrators (`role !== 'ADMINISTRATOR'` or `isActive === false`), all active administrators are locked in strict ascending ID order (`SELECT id FROM "RequesterUser" WHERE role = 'ADMINISTRATOR' AND "isActive" = true ORDER BY id ASC FOR UPDATE`). Deterministic ordering eliminates deadlocks between concurrent requests. If the count drops to $\le 1$, HTTP 400 `LAST_ACTIVE_ADMIN` is returned. A transient retry loop catches and retries serialization/deadlock errors.
+   - **Test Proof:** Added test `API-34: concurrent demotion/deactivation of two remaining admins leaves at least one active admin` in `server/tests/lab-03/users-admin.api.test.ts`.
+
+2. **[P1] Coordinated Locking Between Ticket Assignment & Owner Deactivation (API-35, BR-21):**
+   - **Root Cause:** Deactivation unassigned owned tickets, but lacked synchronization with ticket assignment in `staff.ts`, allowing an in-flight assignment to assign a ticket to an owner whose deactivation cascade just finished.
+   - **Fix:** In `server/src/routes/staff.ts` (`POST /claim` and `PATCH /owner`), added shared row locking (`SELECT id, "isActive", role FROM "RequesterUser" WHERE id = ${ownerId} FOR SHARE`) inside the transaction. In `adminUsers.ts`, deactivation takes an exclusive lock (`FOR UPDATE`) on the user being deactivated. This forces assignment to wait for deactivation (and fail due to `isActive: false`) or forces deactivation to wait for assignment (and cascade unassign the newly assigned ticket).
+   - **Test Proof:** Added test `API-35: concurrent ticket reassignment and owner deactivation never leaves an inactive owner` in `server/tests/lab-03/users-admin.api.test.ts`.
+
+3. **[P2] Duplicate Email Concurrency P2002 $\rightarrow$ HTTP 409 (API-23, API-28):**
+   - **Root Cause:** Pre-check for duplicate email suffered from race condition under concurrent submission; unique constraint violations produced HTTP 500 instead of HTTP 409 `DUPLICATE_EMAIL`.
+   - **Fix:** Wrapped user creation (`POST /api/admin/users`) and update (`PATCH /api/admin/users/:id`) in error handlers mapping Prisma unique constraint violation code `P2002` to HTTP 409 `DUPLICATE_EMAIL`.
+   - **Test Proof:** Added tests `API-23: concurrent creation with duplicate email returns 409 DUPLICATE_EMAIL` and `API-28: concurrent PATCH with duplicate email returns 409 DUPLICATE_EMAIL`.
+
+4. **[P2] UI Last-Admin False Lock on Search/Filter (`UserManagement.tsx`):**
+   - **Root Cause:** UI counted active administrators from the filtered table state (`users.filter(...)`). If the admin search filter matched only 1 admin, it falsely locked their role and status controls.
+   - **Fix:** Added `systemActiveAdminCount` and `refreshSystemAdminCount()` fetching `{ role: "ADMINISTRATOR" }` independently of user search filters, ensuring `isSoleActiveAdmin` reflects the system-wide active admin count.
+
+5. **[P2] Unicode Password Code Point Length (12–128 Code Points, AC-06, BR-03, API-24, API-32):**
+   - **Root Cause:** Validation used JavaScript UTF-16 `.length`, incorrectly counting surrogate pairs (e.g. emojis counted as 2 units).
+   - **Fix:** Implemented `getCodePointLength(str)` using `Array.from(str).length` across backend password validation and frontend UI forms.
+   - **Test Proof:** Added test suite `API-24, API-32: Password length validated by Unicode code points (12-128)` testing 6 emojis (fails 400), 12 emojis (passes 201), 128 emojis (passes 201), and 129 emojis (fails 400).
+
+### Verification Results
+
+| Suite | Tests | Result |
+|---|---|---|
+| Server Tests (`npm --prefix server test`) | 25 files, 254 tests | **254/254 Passed (0 failed)** |
+| Client Tests (`npm --prefix client test`) | 15 files, 80 tests | **80/80 Passed (0 failed)** |
+| Playwright E2E (`npx playwright test e2e/lab-03/`) | 69 tests | **69/69 Passed (0 failed)** |
+| TypeScript Build (`server` & `client`) | tsc / vite build | **0 Errors** |
+
 
 
