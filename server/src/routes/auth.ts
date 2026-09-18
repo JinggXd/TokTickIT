@@ -80,25 +80,52 @@ authRouter.post("/login", async (req: Request, res: Response): Promise<void> => 
     const csrfToken = generateCsrfToken();
     const expiresAt = new Date(Date.now() + 8 * 60 * 60 * 1000);
 
-    await prisma.session.create({
-      data: {
-        id: hashedId,
-        userId: user.id,
-        sessionVersion: user.sessionVersion,
-        csrfToken,
-        expiresAt,
-      },
-    });
+    let activeUser = user;
+    try {
+      await prisma.$transaction(async (tx) => {
+        const freshUser = await tx.user.findUnique({
+          where: { id: user.id },
+        });
+
+        if (
+          !freshUser ||
+          !freshUser.isActive ||
+          !freshUser.passwordHash ||
+          freshUser.passwordHash !== user.passwordHash ||
+          freshUser.sessionVersion !== user.sessionVersion
+        ) {
+          throw new Error("CREDENTIALS_INVALIDATED");
+        }
+
+        await tx.session.create({
+          data: {
+            id: hashedId,
+            userId: freshUser.id,
+            sessionVersion: freshUser.sessionVersion,
+            csrfToken,
+            expiresAt,
+          },
+        });
+        activeUser = freshUser;
+      });
+    } catch (err: any) {
+      if (err.message === "CREDENTIALS_INVALIDATED") {
+        recordFailedLogin(email, clientIp);
+        res.status(401).json({ error: "Invalid email or password" });
+        return;
+      }
+      throw err;
+    }
 
     setSessionCookie(res, rawToken);
 
     res.status(200).json({
       user: {
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
-        mustChangePassword: user.mustChangePassword,
+        id: activeUser.id,
+        name: activeUser.name,
+        email: activeUser.email,
+        role: activeUser.role,
+        mustChangePassword: activeUser.mustChangePassword,
       },
     });
   } catch (err) {

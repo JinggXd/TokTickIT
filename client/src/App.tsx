@@ -217,7 +217,7 @@ function MainContent() {
               readOnly={true}
             />
           ) : (
-            <UserManagement />
+            <UserManagement onNavigateToLogin={() => navigate("login", true)} />
           )}
         </>
       )}

@@ -158,9 +158,16 @@ export async function changePassword(payload: ChangePasswordPayload): Promise<{ 
 }
 
 export async function logout(): Promise<void> {
-  await apiFetch(`${API_URL}/api/auth/logout`, {
+  const response = await apiFetch(`${API_URL}/api/auth/logout`, {
     method: "POST",
   });
+  if (!response.ok) {
+    const data = await response.json().catch(() => ({}));
+    const err: any = new Error(data.message || data.error || "Unable to log out");
+    err.status = response.status;
+    err.details = data;
+    throw err;
+  }
 }
 
 // ---------------------------------------------------------------------------

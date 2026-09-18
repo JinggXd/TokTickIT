@@ -21,8 +21,12 @@ const ROLE_BADGE_CLASSES: Record<Role, string> = {
   ADMINISTRATOR: "bg-primary text-white",
 };
 
-export const UserManagement: React.FC = () => {
-  const { user: currentUser } = useAuth();
+export interface UserManagementProps {
+  onNavigateToLogin?: () => void;
+}
+
+export const UserManagement: React.FC<UserManagementProps> = ({ onNavigateToLogin }) => {
+  const { user: currentUser, logout } = useAuth();
 
   // State: Data & Query
   const [users, setUsers] = useState<AdminUserItem[]>([]);
@@ -190,10 +194,25 @@ export const UserManagement: React.FC = () => {
       return;
     }
 
+    const isSelfDemotion =
+      editingUser.id === currentUser?.id &&
+      editFormData.role !== currentUser?.role &&
+      editFormData.role !== "ADMINISTRATOR";
+
     setIsSubmittingEdit(true);
     try {
       const res = await updateAdminUser(editingUser.id, editFormData);
       setEditingUser(null);
+      if (isSelfDemotion) {
+        await logout().catch(() => {});
+        if (onNavigateToLogin) {
+          onNavigateToLogin();
+        } else {
+          window.history.replaceState({}, "", "/login");
+          window.dispatchEvent(new PopStateEvent("popstate"));
+        }
+        return;
+      }
       if (res.unassignedTicketsCount > 0) {
         setActionSuccessMessage(
           `User updated successfully! ${res.unassignedTicketsCount} ticket(s) previously owned by this user were unassigned.`
@@ -248,10 +267,22 @@ export const UserManagement: React.FC = () => {
       return;
     }
 
+    const isSelfReset = resetUser.id === currentUser?.id;
+
     setIsSubmittingReset(true);
     try {
       await resetAdminUserPassword(resetUser.id, resetPasswordInput);
       setResetUser(null);
+      if (isSelfReset) {
+        await logout().catch(() => {});
+        if (onNavigateToLogin) {
+          onNavigateToLogin();
+        } else {
+          window.history.replaceState({}, "", "/login");
+          window.dispatchEvent(new PopStateEvent("popstate"));
+        }
+        return;
+      }
       setActionSuccessMessage(
         `Initial password for ${resetUser.name} has been reset. All active sessions have been revoked.`
       );

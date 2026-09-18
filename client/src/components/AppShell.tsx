@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { useAuth } from "../context/AuthContext.js";
 import { useRequester } from "../context/RequesterContext.js";
 import type { Role } from "../types.js";
@@ -22,12 +22,18 @@ export const AppShell: React.FC<AppShellProps> = ({
 }) => {
   const { user, logout } = useAuth();
   const { currentRequester, clearRequester } = useRequester();
+  const [logoutError, setLogoutError] = useState<string | null>(null);
 
   const roleInfo = user ? ROLE_BADGES[user.role] || ROLE_BADGES.REQUESTER : null;
 
   const handleSignOut = async () => {
-    await logout();
-    onTabChange("login");
+    try {
+      setLogoutError(null);
+      await logout();
+      onTabChange("login");
+    } catch (err: any) {
+      setLogoutError(err?.message || "Logout failed. Server session could not be invalidated.");
+    }
   };
 
   const isRequesterNav = (user && user.role === "REQUESTER") || (!user && !!currentRequester);
@@ -220,6 +226,27 @@ export const AppShell: React.FC<AppShellProps> = ({
           </nav>
         )}
       </header>
+
+      {/* Logout Error Alert Banner */}
+      {logoutError && (
+        <div className="container mt-3" data-testid="logout-error-banner">
+          <div
+            className="alert alert-danger alert-dismissible fade show d-flex align-items-center justify-content-between mb-0"
+            role="alert"
+          >
+            <div>
+              <strong>Logout Failed: </strong>
+              <span>{logoutError}</span>
+            </div>
+            <button
+              type="button"
+              className="btn-close"
+              aria-label="Close"
+              onClick={() => setLogoutError(null)}
+            />
+          </div>
+        </div>
+      )}
 
       {/* Main Content Area */}
       <main className="flex-grow-1 py-4">{children}</main>

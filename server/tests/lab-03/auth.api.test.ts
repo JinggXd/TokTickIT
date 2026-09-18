@@ -609,4 +609,16 @@ describe("Phase F2 / P04 Authentication API (AC-01, AC-02, AC-05, AC-06, AC-07, 
       });
     });
   });
+
+  describe("Malformed cookie handling", () => {
+    it("handles malformed cookie values gracefully without crashing", async () => {
+      const res = await request(app)
+        .get("/api/auth/me")
+        .set("Cookie", "toktickit_session=%")
+        .set("Origin", DEFAULT_ORIGIN);
+
+      expect(res.status).toBe(401);
+      expect(res.body).toEqual({ error: "Authentication required" });
+    });
+  });
 });

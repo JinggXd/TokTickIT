@@ -35,7 +35,11 @@ export function parseCookie(cookieHeader: string | undefined, name: string): str
   for (const part of parts) {
     const [k, ...v] = part.trim().split("=");
     if (k === name) {
-      return decodeURIComponent(v.join("="));
+      try {
+        return decodeURIComponent(v.join("="));
+      } catch {
+        return null;
+      }
     }
   }
   return null;

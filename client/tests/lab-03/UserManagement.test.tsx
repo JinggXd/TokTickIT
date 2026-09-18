@@ -18,11 +18,14 @@ const mockCurrentUser = {
   mustChangePassword: false,
 };
 
+const mockLogout = vi.fn();
+
 vi.mock("../../src/context/AuthContext.js", () => ({
   useAuth: () => ({
     user: mockCurrentUser,
     isAuthenticated: true,
     isLoading: false,
+    logout: mockLogout,
   }),
 }));
 
@@ -232,6 +235,56 @@ describe("UserManagement UI Tests (UI-09, UI-10, UI-11, UI-15)", () => {
 
       await waitFor(() => {
         expect(api.resetAdminUserPassword).toHaveBeenCalledWith(2, "NewTempPassword123!");
+      });
+    });
+
+    it("triggers logout and onNavigateToLogin when administrator performs self-reset", async () => {
+      vi.mocked(api.resetAdminUserPassword).mockResolvedValue();
+      const onNavigateToLogin = vi.fn();
+      mockLogout.mockResolvedValue(undefined);
+
+      render(<UserManagement onNavigateToLogin={onNavigateToLogin} />);
+      // User ID 1 is mockCurrentUser (self)
+      await waitFor(() => screen.getByTestId("reset-password-btn-1"));
+
+      await userEvent.click(screen.getByTestId("reset-password-btn-1"));
+      const passInput = screen.getByTestId("reset-user-password");
+      const submitBtn = screen.getByTestId("submit-reset-password-btn");
+
+      await userEvent.type(passInput, "NewValidPassword123!");
+      await userEvent.click(submitBtn);
+
+      await waitFor(() => {
+        expect(api.resetAdminUserPassword).toHaveBeenCalledWith(1, "NewValidPassword123!");
+        expect(mockLogout).toHaveBeenCalled();
+        expect(onNavigateToLogin).toHaveBeenCalled();
+      });
+    });
+
+    it("triggers logout and onNavigateToLogin when administrator performs self-demotion", async () => {
+      vi.mocked(api.updateAdminUser).mockResolvedValue({
+        id: 1,
+        name: "Super Admin",
+        email: "admin@example.com",
+        role: "IT_STAFF",
+        isActive: true,
+        unassignedTicketsCount: 0,
+      });
+      const onNavigateToLogin = vi.fn();
+      mockLogout.mockResolvedValue(undefined);
+
+      render(<UserManagement onNavigateToLogin={onNavigateToLogin} />);
+      await waitFor(() => screen.getByTestId("edit-user-btn-1"));
+
+      await userEvent.click(screen.getByTestId("edit-user-btn-1"));
+      const roleSelect = screen.getByTestId("edit-user-role");
+      await userEvent.selectOptions(roleSelect, "IT_STAFF");
+      await userEvent.click(screen.getByTestId("submit-edit-user-btn"));
+
+      await waitFor(() => {
+        expect(api.updateAdminUser).toHaveBeenCalledWith(1, expect.objectContaining({ role: "IT_STAFF" }));
+        expect(mockLogout).toHaveBeenCalled();
+        expect(onNavigateToLogin).toHaveBeenCalled();
       });
     });
   });

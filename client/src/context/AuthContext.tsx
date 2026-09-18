@@ -108,7 +108,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const logout = useCallback(async (): Promise<void> => {
     try {
       await api.logout();
-    } finally {
       setUser(null);
       setSessionLost(true);
       setAuthError(null);
@@ -120,6 +119,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
       setCsrfToken(null);
       api.setGlobalCsrfToken(null);
+    } catch (err: any) {
+      const msg = err?.message || "Failed to log out. Please try again.";
+      setAuthError(msg);
+      throw err;
     }
   }, []);
 

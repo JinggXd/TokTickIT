@@ -522,22 +522,17 @@ export async function seed(prismaClient?: any) {
     });
 
     if (existing) {
-      const updateData: Record<string, any> = {
-        name: account.name,
-        department: account.department,
-        role: account.role,
-        isActive: account.isActive,
-      };
       // AC-17: If existing account has no passwordHash (e.g. from Lab 2), provision initial credentials
-      // while preserving existing passwords for accounts that have already changed them.
+      // while preserving existing passwords and administrator modifications (name, department, role, isActive).
       if (!existing.passwordHash) {
-        updateData.passwordHash = defaultHash;
-        updateData.mustChangePassword = account.mustChangePassword;
+        await prisma.user.update({
+          where: { id: existing.id },
+          data: {
+            passwordHash: defaultHash,
+            mustChangePassword: account.mustChangePassword,
+          },
+        });
       }
-      await prisma.user.update({
-        where: { id: existing.id },
-        data: updateData,
-      });
     } else {
       await prisma.user.create({
         data: {

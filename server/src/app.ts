@@ -615,14 +615,55 @@ app.post(
       }
 
       const now = new Date();
-      const updated = await prisma.ticket.update({
-        where: { id: ticketId },
+      const updateResult = await prisma.ticket.updateMany({
+        where: {
+          id: ticketId,
+          version: ticket.version,
+          currentStatus: { in: PERMITTED_APPEARS_RESOLVED_STATUSES as any },
+        },
         data: {
           appearsResolvedAt: now,
           appearsResolvedById: req.user!.id,
-          version: ticket.version + 1,
+          version: { increment: 1 },
+          updatedAt: now,
         },
       });
+
+      if (updateResult.count === 0) {
+        const freshTicket = await prisma.ticket.findUnique({
+          where: { id: ticketId },
+        });
+
+        if (freshTicket && freshTicket.appearsResolvedAt !== null) {
+          res.status(200).json({
+            id: freshTicket.id,
+            ticketNo: freshTicket.ticketNo,
+            currentStatus: freshTicket.currentStatus,
+            appearsResolvedAt: freshTicket.appearsResolvedAt.toISOString(),
+            appearsResolvedById: freshTicket.appearsResolvedById,
+            message: "Problem noted as appears resolved. IT Staff will verify and complete formal resolution.",
+          });
+          return;
+        }
+
+        if (freshTicket && !PERMITTED_APPEARS_RESOLVED_STATUSES.includes(freshTicket.currentStatus)) {
+          res.status(400).json({
+            error: "APPEARS_RESOLVED_NOT_ALLOWED",
+            message: "This ticket cannot be marked as appears resolved in its current status.",
+          });
+          return;
+        }
+
+        res.status(409).json({
+          error: "CONFLICT",
+          message: "Ticket was modified concurrently. Please reload and try again.",
+        });
+        return;
+      }
+
+      const updated = (await prisma.ticket.findUnique({
+        where: { id: ticketId },
+      }))!;
 
       res.status(200).json({
         id: updated.id,

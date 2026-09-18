@@ -810,5 +810,81 @@ describe("Phase F4 / P11 Administrator User Management API (API-20 to API-27, AP
         expect(finalTicket?.version).toBe(1);
       }
     });
+
+    it("API-27 / API-40: resetting password increments sessionVersion and revokes active sessions", async () => {
+      const prisma = getPrisma();
+      const victimEmail = `reset.session.victim.${Date.now()}@example.com`;
+      const victimPassword = "OldSecurePassword123!";
+      const victimHashed = await hashPassword(victimPassword);
+
+      const victim = await prisma.user.create({
+        data: {
+          name: "Session Victim",
+          email: victimEmail,
+          department: "Operations",
+          role: "REQUESTER",
+          isActive: true,
+          mustChangePassword: false,
+          passwordHash: victimHashed,
+        },
+      });
+      createdUserIds.push(victim.id);
+
+      // Victim logs in successfully
+      const loginRes = await request(app)
+        .post("/api/auth/login")
+        .set("Origin", DEFAULT_ORIGIN)
+        .send({ email: victimEmail, password: victimPassword });
+
+      expect(loginRes.status).toBe(200);
+      const victimCookie = loginRes.headers["set-cookie"];
+
+      // Verify session works before reset
+      const meBeforeRes = await request(app)
+        .get("/api/auth/me")
+        .set("Origin", DEFAULT_ORIGIN)
+        .set("Cookie", victimCookie);
+      expect(meBeforeRes.status).toBe(200);
+
+      // Admin resets victim's password
+      const newTempPass = "NewTempPassword123!";
+      const resetRes = await request(app)
+        .post(`/api/admin/users/${victim.id}/initial-password`)
+        .set("Origin", DEFAULT_ORIGIN)
+        .set("Cookie", adminCookie)
+        .set("X-CSRF-Token", adminCsrfToken)
+        .send({ initialPassword: newTempPass });
+
+      expect(resetRes.status).toBe(204);
+
+      // Verify user.sessionVersion was incremented in DB
+      const updatedUser = await prisma.user.findUnique({
+        where: { id: victim.id },
+      });
+      expect(updatedUser?.sessionVersion).toBe(victim.sessionVersion + 1);
+      expect(updatedUser?.mustChangePassword).toBe(true);
+
+      // Verify previous session is now rejected
+      const meAfterRes = await request(app)
+        .get("/api/auth/me")
+        .set("Origin", DEFAULT_ORIGIN)
+        .set("Cookie", victimCookie);
+      expect(meAfterRes.status).toBe(401);
+
+      // Verify old password cannot log in
+      const oldLoginRes = await request(app)
+        .post("/api/auth/login")
+        .set("Origin", DEFAULT_ORIGIN)
+        .send({ email: victimEmail, password: victimPassword });
+      expect(oldLoginRes.status).toBe(401);
+
+      // Verify new temp password logs in with mustChangePassword: true
+      const newLoginRes = await request(app)
+        .post("/api/auth/login")
+        .set("Origin", DEFAULT_ORIGIN)
+        .send({ email: victimEmail, password: newTempPass });
+      expect(newLoginRes.status).toBe(200);
+      expect(newLoginRes.body.user.mustChangePassword).toBe(true);
+    });
   });
 });

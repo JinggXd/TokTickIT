@@ -332,6 +332,12 @@ adminUsersRouter.patch("/:id", csrfProtection, async (req: Request, res: Respons
         unassignedTicketsCount = unassignResult.count;
       }
 
+      const updateData: any = {};
+      if (name !== undefined) updateData.name = name.trim();
+      if (trimmedEmail !== undefined) updateData.email = trimmedEmail;
+      if (role !== undefined) updateData.role = role as Role;
+      if (isActive !== undefined) updateData.isActive = isActive;
+
       // Session revocation: if role or isActive changes
       const roleChanged = role !== undefined && role !== targetUser.role;
       const activeChanged = isActive !== undefined && isActive !== targetUser.isActive;
@@ -340,13 +346,8 @@ adminUsersRouter.patch("/:id", csrfProtection, async (req: Request, res: Respons
         await tx.session.deleteMany({
           where: { userId: targetId },
         });
+        updateData.sessionVersion = { increment: 1 };
       }
-
-      const updateData: any = {};
-      if (name !== undefined) updateData.name = name.trim();
-      if (trimmedEmail !== undefined) updateData.email = trimmedEmail;
-      if (role !== undefined) updateData.role = role as Role;
-      if (isActive !== undefined) updateData.isActive = isActive;
 
       const updated = await tx.user.update({
         where: { id: targetId },
@@ -484,6 +485,7 @@ adminUsersRouter.post("/:id/initial-password", csrfProtection, async (req: Reque
       data: {
         passwordHash,
         mustChangePassword: true,
+        sessionVersion: { increment: 1 },
       },
     }),
     prisma.session.deleteMany({
