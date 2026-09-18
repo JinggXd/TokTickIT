@@ -1,5 +1,5 @@
-import type { RequesterUser, SafeUser, Category, RelatedSystem, Priority, TicketStatus, Ticket } from "./types.js";
-export type { RequesterUser, SafeUser, Category, RelatedSystem, Priority, TicketStatus, Ticket };
+import type { RequesterUser, SafeUser, Category, RelatedSystem, Priority, TicketStatus, Ticket, Role } from "./types.js";
+export type { RequesterUser, SafeUser, Category, RelatedSystem, Priority, TicketStatus, Ticket, Role };
 
 const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:3000";
 
@@ -434,3 +434,257 @@ export async function markAppearsResolved(ticketId: number): Promise<any> {
   }
   return data;
 }
+
+// ---------------------------------------------------------------------------
+// Phase F3: IT Staff Queue & Operations
+// ---------------------------------------------------------------------------
+
+export interface StaffTicketItem {
+  id: number;
+  ticketNo: string;
+  summary: string;
+  requester: { id: number; name: string; email: string };
+  category: { id: number; name: string };
+  relatedSystem: { id: number; name: string };
+  requestedPriority: Priority;
+  itPriority: Priority;
+  currentStatus: TicketStatus;
+  ticketOwner: { id: number; name: string; role: Role } | null;
+  version: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface StaffQueueParams {
+  search?: string;
+  categoryId?: number | string;
+  requestedPriority?: string;
+  itPriority?: string;
+  status?: string;
+  owner?: string;
+  sortBy?: string;
+  sortOrder?: "asc" | "desc";
+  page?: number;
+  pageSize?: number;
+}
+
+export interface StaffQueueResponse {
+  tickets: StaffTicketItem[];
+  unfilteredTotal: number;
+  pagination: {
+    page: number;
+    pageSize: number;
+    total: number;
+    totalPages: number;
+  };
+}
+
+export interface TicketOwner {
+  id: number;
+  name: string;
+  role: Role;
+}
+
+export async function fetchStaffTickets(params: StaffQueueParams = {}): Promise<StaffQueueResponse> {
+  const query = new URLSearchParams();
+  if (params.search) query.set("search", params.search.trim());
+  if (params.categoryId && params.categoryId !== "ALL") query.set("categoryId", String(params.categoryId));
+  if (params.requestedPriority && params.requestedPriority !== "ALL") query.set("requestedPriority", params.requestedPriority);
+  if (params.itPriority && params.itPriority !== "ALL") query.set("itPriority", params.itPriority);
+  if (params.status && params.status !== "ALL") query.set("status", params.status);
+  if (params.owner && params.owner !== "ALL") query.set("owner", params.owner);
+  if (params.sortBy) query.set("sortBy", params.sortBy);
+  if (params.sortOrder) query.set("sortOrder", params.sortOrder);
+  if (params.page !== undefined) query.set("page", String(params.page));
+  if (params.pageSize !== undefined) query.set("pageSize", String(params.pageSize));
+
+  const queryString = query.toString();
+  const url = `${API_URL}/api/staff/tickets${queryString ? `?${queryString}` : ""}`;
+  const response = await apiFetch(url);
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    const err: any = new Error(errorData.error || "Unable to load staff queue. Please try again.");
+    err.status = response.status;
+    err.details = errorData.details;
+    throw err;
+  }
+  return response.json();
+}
+
+export async function fetchTicketOwners(): Promise<TicketOwner[]> {
+  const response = await apiFetch(`${API_URL}/api/staff/ticket-owners`);
+  if (!response.ok) {
+    throw new Error("Unable to load ticket owners.");
+  }
+  return response.json();
+}
+
+export interface AttachmentItem {
+  id: number;
+  fileName: string;
+  fileSize: number;
+  mimeType: string;
+  createdAt: string;
+  removedAt: string | null;
+  removalReason: string | null;
+}
+
+export interface StaffTicketDetail {
+  id: number;
+  ticketNo: string;
+  summary: string;
+  description: string;
+  requester: { id: number; name: string; email: string; department?: string };
+  category: { id: number; name: string };
+  relatedSystem: { id: number; name: string };
+  requestedPriority: Priority;
+  itPriority: Priority;
+  currentStatus: TicketStatus;
+  ticketOwner: { id: number; name: string; role: Role } | null;
+  version: number;
+  appearsResolvedAt: string | null;
+  appearsResolvedById: number | null;
+  createdAt: string;
+  updatedAt: string;
+  attachments: AttachmentItem[];
+}
+
+export async function fetchStaffTicketDetail(ticketId: number): Promise<StaffTicketDetail> {
+  const response = await apiFetch(`${API_URL}/api/staff/tickets/${ticketId}`);
+  if (!response.ok) {
+    const data = await response.json().catch(() => ({}));
+    const err: any = new Error(data.error || "Unable to load ticket details.");
+    err.status = response.status;
+    throw err;
+  }
+  return response.json();
+}
+
+export async function claimTicket(ticketId: number, expectedVersion: number): Promise<any> {
+  const response = await apiFetch(`${API_URL}/api/staff/tickets/${ticketId}/claim`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ expectedVersion }),
+  });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    const err: any = new Error(data.message || data.error || "Unable to claim ticket.");
+    err.status = response.status;
+    err.error = data.error;
+    err.currentVersion = data.currentVersion;
+    throw err;
+  }
+  return data;
+}
+
+export async function reassignTicket(ticketId: number, ownerId: number, expectedVersion: number): Promise<any> {
+  const response = await apiFetch(`${API_URL}/api/staff/tickets/${ticketId}/owner`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ ownerId, expectedVersion }),
+  });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    const err: any = new Error(data.message || data.error || "Unable to reassign ticket.");
+    err.status = response.status;
+    err.error = data.error;
+    err.currentVersion = data.currentVersion;
+    throw err;
+  }
+  return data;
+}
+
+export async function updateItPriority(ticketId: number, itPriority: Priority, expectedVersion: number): Promise<any> {
+  const response = await apiFetch(`${API_URL}/api/staff/tickets/${ticketId}/it-priority`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ itPriority, expectedVersion }),
+  });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    const err: any = new Error(data.message || data.error || "Unable to update priority.");
+    err.status = response.status;
+    err.error = data.error;
+    err.currentVersion = data.currentVersion;
+    throw err;
+  }
+  return data;
+}
+
+export async function updateTicketStatus(ticketId: number, status: TicketStatus, expectedVersion: number): Promise<any> {
+  const response = await apiFetch(`${API_URL}/api/staff/tickets/${ticketId}/status`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ status, expectedVersion }),
+  });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    const err: any = new Error(data.message || data.error || "Unable to update status.");
+    err.status = response.status;
+    err.error = data.error;
+    err.currentVersion = data.currentVersion;
+    throw err;
+  }
+  return data;
+}
+
+// ---------------------------------------------------------------------------
+// Phase F3: Public Comments & Internal Notes
+// ---------------------------------------------------------------------------
+
+export interface CommentItem {
+  id: number;
+  author: { id: number; name: string; role: Role };
+  body: string;
+  createdAt: string;
+}
+
+export async function fetchPublicComments(ticketId: number): Promise<CommentItem[]> {
+  const response = await apiFetch(`${API_URL}/api/tickets/${ticketId}/public-comments`);
+  if (!response.ok) {
+    throw new Error("Unable to load comments.");
+  }
+  return response.json();
+}
+
+export async function postPublicComment(ticketId: number, body: string): Promise<CommentItem> {
+  const response = await apiFetch(`${API_URL}/api/tickets/${ticketId}/public-comments`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ body }),
+  });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    const err: any = new Error(data.error || "Unable to post comment.");
+    err.status = response.status;
+    err.details = data.details;
+    throw err;
+  }
+  return data;
+}
+
+export async function fetchInternalNotes(ticketId: number): Promise<CommentItem[]> {
+  const response = await apiFetch(`${API_URL}/api/tickets/${ticketId}/internal-notes`);
+  if (!response.ok) {
+    throw new Error("Unable to load internal notes.");
+  }
+  return response.json();
+}
+
+export async function postInternalNote(ticketId: number, body: string): Promise<CommentItem> {
+  const response = await apiFetch(`${API_URL}/api/tickets/${ticketId}/internal-notes`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ body }),
+  });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    const err: any = new Error(data.error || "Unable to post internal note.");
+    err.status = response.status;
+    err.details = data.details;
+    throw err;
+  }
+  return data;
+}
+

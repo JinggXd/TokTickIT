@@ -7,6 +7,8 @@ import { ChangePassword } from "./pages/ChangePassword.js";
 import { CreateTicket } from "./pages/CreateTicket.js";
 import { MyTickets } from "./pages/MyTickets.js";
 import { RequesterTicketDetail } from "./pages/RequesterTicketDetail.js";
+import { StaffTicketQueue } from "./pages/StaffTicketQueue.js";
+import { StaffTicketDetail } from "./pages/StaffTicketDetail.js";
 
 type TabType =
   | "login"
@@ -15,6 +17,7 @@ type TabType =
   | "create-ticket"
   | "ticket-detail"
   | "staff-queue"
+  | "staff-ticket-detail"
   | "admin-users";
 
 const TAB_PATHS: Record<TabType, string> = {
@@ -24,6 +27,7 @@ const TAB_PATHS: Record<TabType, string> = {
   "create-ticket": "/create-ticket",
   "ticket-detail": "/tickets",
   "staff-queue": "/staff/queue",
+  "staff-ticket-detail": "/staff/tickets",
   "admin-users": "/admin/users",
 };
 
@@ -33,6 +37,10 @@ function getRouteFromPath(pathname = window.location.pathname): { tab: TabType; 
   if (pathname === "/create-ticket") return { tab: "create-ticket", ticketId: null };
   if (pathname === "/staff/queue") return { tab: "staff-queue", ticketId: null };
   if (pathname === "/admin/users") return { tab: "admin-users", ticketId: null };
+  const staffMatch = pathname.match(/^\/staff\/tickets\/(\d+)$/);
+  if (staffMatch) {
+    return { tab: "staff-ticket-detail", ticketId: parseInt(staffMatch[1], 10) };
+  }
   const match = pathname.match(/^\/tickets\/(\d+)$/);
   if (match) {
     return { tab: "ticket-detail", ticketId: parseInt(match[1], 10) };
@@ -48,6 +56,9 @@ function MainContent() {
     let nextPath = TAB_PATHS[tab] || "/";
     if (tab === "ticket-detail" && ticketId) {
       nextPath = `/tickets/${ticketId}`;
+    }
+    if (tab === "staff-ticket-detail" && ticketId) {
+      nextPath = `/staff/tickets/${ticketId}`;
     }
     if (window.location.pathname !== nextPath) {
       window.history[replace ? "replaceState" : "pushState"]({}, "", nextPath);
@@ -168,14 +179,22 @@ function MainContent() {
         </>
       )}
 
-      {/* IT Staff Views (Queue in F3) */}
+      {/* IT Staff Views */}
       {effectiveUser.role === "IT_STAFF" && (
-        <div className="container py-4">
-          <div className="card shadow-sm p-4 text-center">
-            <h2 className="h4 fw-bold mb-2">IT Staff Portal</h2>
-            <p className="text-muted">Ticket Queue will be active in Phase F3.</p>
-          </div>
-        </div>
+        <>
+          {(activeTab === "staff-queue" || activeTab === "my-tickets") && (
+            <StaffTicketQueue
+              onSelectTicket={(id) => navigate("staff-ticket-detail", false, id)}
+            />
+          )}
+
+          {activeTab === "staff-ticket-detail" && selectedTicketId && (
+            <StaffTicketDetail
+              ticketId={selectedTicketId}
+              onBack={() => navigate("staff-queue")}
+            />
+          )}
+        </>
       )}
 
       {/* Administrator Views (User Management in F4) */}
