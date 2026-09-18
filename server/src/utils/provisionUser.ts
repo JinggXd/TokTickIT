@@ -26,7 +26,7 @@ export interface ProvisionedUserResult {
  * - Restricted strictly and atomically to unprovisioned accounts where passwordHash is null.
  *   Throws an error if the user already has a provisioned password to prevent accidental reset.
  * - Invalidates all active sessions for the user atomically.
- * - Validates secret length (12-128 Unicode code points) or generates a secure random 16-character temporary secret.
+ * - Validates secret length (12-128 Unicode code points) or generates a secure random 22-character temporary secret.
  * - Computes Argon2id hash using standard OWASP profile.
  * - Updates user with passwordHash and sets mustChangePassword: true.
  * - Never prints or commits plaintext secrets to console or disk.
@@ -61,7 +61,7 @@ export async function provisionUserCredentials(
 
   let secret = temporaryPassword;
   if (secret === undefined || secret === null) {
-    // Generate a secure 16-character random temporary secret
+    // Generate a secure 22-character random temporary secret (Temp- [5] + 16 hex + ! [1] = 22 characters)
     secret = `Temp-${crypto.randomBytes(8).toString("hex")}!`;
   }
 

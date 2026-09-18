@@ -793,7 +793,7 @@ F2 / P03 is next after peer review and gate approval; no Lab 3 migration/auth co
 - **Review Findings Addressed:**
   1. `[P1] ยังไม่มี provisioning helper สำหรับบัญชีเก่า ตาม specification §7.2 ข้อ 6 (line 303) และ MIG-04` — Resolved:
      - Implemented local provisioning helper in `server/src/utils/provisionUser.ts` exporting `provisionUserCredentials({ email, userId, temporaryPassword }, prisma)`.
-     - Validates temporary secret (12–128 Unicode code points) or generates secure 16-character secret, hashes with Argon2id, updates user with `passwordHash` and `mustChangePassword = true`.
+     - Validates temporary secret (12–128 Unicode code points) or generates secure 22-character secret (`Temp-` + 16 hex + `!`), hashes with Argon2id, updates user with `passwordHash` and `mustChangePassword = true`.
      - Strictly enforces Rule 6: never prints or commits plaintext secrets to console or disk.
      - Added operator CLI script `server/scripts/provision-user.mjs` supporting `--email`, `--userId`, `--password`, and `PROVISION_PASSWORD` environment variable.
      - In `server/tests/lab-03/migration-regression.test.ts` (MIG-04), verified the complete lifecycle:
@@ -809,7 +809,7 @@ F2 / P03 is next after peer review and gate approval; no Lab 3 migration/auth co
      - Password Complexity & Policy: **§5.1 (BR-03)** and **AC-06** (12–128 Unicode code points; new password must differ from current; confirmation must match).
      - Brute Force Rate Limiting: **§5.1 (BR-04)** and **AC-09** (max 5 failed attempts per 15 min -> 429).
      - User Identity: **§5.1 (AC-07)** (`/api/auth/me`).
-     - Role-based redirect post-password change: **§3.2 (AC-12)** and UI-13.
+     - Role-based redirect post-password change: **ui-spec.md §3.1 / §3.2** และ **specification.md §6.1** (AC-12, UI-13, E2E-01) — (หมายเหตุ: specification.md §3.2 คือ Explicitly Excluded).
   4. `[P2] ความชัดเจนของหลักฐานผลทดสอบ (171 tests vs 67 tests)` — Reconciled and clearly separated:
      - **Lab 3 Specific Suite:** `node scripts/run-tests.mjs tests/lab-03` $\rightarrow$ 5 files, 67/67 tests passed.
      - **Full Server Suite (Lab 1 + Lab 2 + Lab 3):** `node scripts/run-tests.mjs` $\rightarrow$ 19 files, 171/171 tests passed.
