@@ -53,6 +53,8 @@ export interface TransitionValidationResult {
   isValid: boolean;
   error?: "ILLEGAL_STATUS_TRANSITION" | "ELIGIBLE_OWNER_REQUIRED";
   message?: string;
+  /** True when the target status requires an active eligible owner (used for write-time re-check). */
+  ownerRequired?: boolean;
 }
 
 /**
@@ -75,13 +77,16 @@ export function validateStatusTransition(
     };
   }
 
-  if (requiresEligibleOwner(toStatus) && !options.hasEligibleOwner) {
+  const ownerRequired = requiresEligibleOwner(toStatus);
+
+  if (ownerRequired && !options.hasEligibleOwner) {
     return {
       isValid: false,
       error: "ELIGIBLE_OWNER_REQUIRED",
       message: "Assign an active IT Staff or Administrator before this transition.",
+      ownerRequired,
     };
   }
 
-  return { isValid: true };
+  return { isValid: true, ownerRequired };
 }

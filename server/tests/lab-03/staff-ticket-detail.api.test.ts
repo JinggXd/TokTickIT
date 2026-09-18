@@ -331,5 +331,52 @@ describe("IT Staff Ticket Detail & Operations (AC-28 to AC-33, BR-11, BR-14, BR-
       expect(updated.appearsResolvedAt).toBeNull();
       expect(updated.appearsResolvedById).toBeNull();
     });
+
+    it("returns 409 CONFLICT if expectedVersion does not match current version during status update", async () => {
+      const ticket = await createFixture({
+        currentStatus: "NEW",
+        ticketOwnerId: staffAlex.id,
+        version: 5,
+      });
+
+      const res = await request(app)
+        .patch(`/api/staff/tickets/${ticket.id}/status`)
+        .set(alexHeaders)
+        .send({ status: "OPEN", expectedVersion: 4 }); // Stale version
+
+      expect(res.status).toBe(409);
+      expect(res.body.error).toBe("CONFLICT");
+      expect(res.body.currentVersion).toBe(5);
+    });
+
+    it("rejects transition to IN_PROGRESS if assigned owner is deactivated at write time", async () => {
+      // Create a temporary inactive staff user
+      const inactiveStaff = await prisma.user.create({
+        data: {
+          name: "Inactive Staff",
+          email: `inactive-${Date.now()}@example.com`,
+          role: "IT_STAFF",
+          isActive: false,
+        },
+      });
+
+      const ticket = await createFixture({
+        currentStatus: "OPEN",
+        ticketOwnerId: inactiveStaff.id,
+        version: 1,
+      });
+
+      const res = await request(app)
+        .patch(`/api/staff/tickets/${ticket.id}/status`)
+        .set(alexHeaders)
+        .send({ status: "IN_PROGRESS", expectedVersion: 1 });
+
+      expect(res.status).toBe(400);
+      expect(res.body.error).toBe("ELIGIBLE_OWNER_REQUIRED");
+      expect(res.body.message).toContain("Ticket owner is no longer eligible");
+
+      // Cleanup
+      await prisma.user.delete({ where: { id: inactiveStaff.id } });
+    });
   });
 });

@@ -429,16 +429,33 @@ staffRouter.post(
         return;
       }
 
-      const updated = await prisma.ticket.update({
-        where: { id: ticketId },
-        data: {
-          ticketOwnerId: req.user!.id,
-          version: ticket.version + 1,
-        },
-        include: {
-          ticketOwner: { select: { id: true, name: true, role: true } },
-        },
-      });
+      // Atomic update: include version in WHERE clause to prevent TOCTOU race.
+      // If another request changed the ticket between findUnique and update,
+      // Prisma will throw P2025 (record not found) which we map to 409.
+      let updated;
+      try {
+        updated = await prisma.ticket.update({
+          where: { id: ticketId, version: versionVal.expectedVersion },
+          data: {
+            ticketOwnerId: req.user!.id,
+            version: ticket.version + 1,
+          },
+          include: {
+            ticketOwner: { select: { id: true, name: true, role: true } },
+          },
+        });
+      } catch (updateErr: any) {
+        if (updateErr?.code === "P2025") {
+          const fresh = await prisma.ticket.findUnique({ where: { id: ticketId } });
+          res.status(409).json({
+            error: "CONFLICT",
+            message: "The ticket was modified by another user. Please refresh and try again.",
+            currentVersion: fresh?.version ?? ticket.version + 1,
+          });
+          return;
+        }
+        throw updateErr;
+      }
 
       res.status(200).json({
         id: updated.id,
@@ -514,22 +531,36 @@ staffRouter.patch(
         return;
       }
 
-      const updated = await prisma.ticket.update({
-        where: { id: ticketId },
-        data: {
-          ticketOwnerId: targetUser.id,
-          version: ticket.version + 1,
-        },
-        include: {
-          ticketOwner: { select: { id: true, name: true, role: true } },
-        },
-      });
+      let updatedOwner;
+      try {
+        updatedOwner = await prisma.ticket.update({
+          where: { id: ticketId, version: versionVal.expectedVersion },
+          data: {
+            ticketOwnerId: targetUser.id,
+            version: ticket.version + 1,
+          },
+          include: {
+            ticketOwner: { select: { id: true, name: true, role: true } },
+          },
+        });
+      } catch (updateErr: any) {
+        if (updateErr?.code === "P2025") {
+          const fresh = await prisma.ticket.findUnique({ where: { id: ticketId } });
+          res.status(409).json({
+            error: "CONFLICT",
+            message: "The ticket was modified by another user. Please refresh and try again.",
+            currentVersion: fresh?.version ?? ticket.version + 1,
+          });
+          return;
+        }
+        throw updateErr;
+      }
 
       res.status(200).json({
-        id: updated.id,
-        ticketNo: updated.ticketNo,
-        ticketOwner: updated.ticketOwner,
-        version: updated.version,
+        id: updatedOwner.id,
+        ticketNo: updatedOwner.ticketNo,
+        ticketOwner: updatedOwner.ticketOwner,
+        version: updatedOwner.version,
       });
     } catch (err) {
       res.status(500).json({ error: "Unable to reassign ticket owner." });
@@ -587,20 +618,34 @@ staffRouter.patch(
         return;
       }
 
-      const updated = await prisma.ticket.update({
-        where: { id: ticketId },
-        data: {
-          itPriority,
-          version: ticket.version + 1,
-        },
-      });
+      let updatedPriority;
+      try {
+        updatedPriority = await prisma.ticket.update({
+          where: { id: ticketId, version: versionVal.expectedVersion },
+          data: {
+            itPriority,
+            version: ticket.version + 1,
+          },
+        });
+      } catch (updateErr: any) {
+        if (updateErr?.code === "P2025") {
+          const fresh = await prisma.ticket.findUnique({ where: { id: ticketId } });
+          res.status(409).json({
+            error: "CONFLICT",
+            message: "The ticket was modified by another user. Please refresh and try again.",
+            currentVersion: fresh?.version ?? ticket.version + 1,
+          });
+          return;
+        }
+        throw updateErr;
+      }
 
       res.status(200).json({
-        id: updated.id,
-        ticketNo: updated.ticketNo,
-        itPriority: updated.itPriority,
-        requestedPriority: updated.requestedPriority,
-        version: updated.version,
+        id: updatedPriority.id,
+        ticketNo: updatedPriority.ticketNo,
+        itPriority: updatedPriority.itPriority,
+        requestedPriority: updatedPriority.requestedPriority,
+        version: updatedPriority.version,
       });
     } catch (err) {
       res.status(500).json({ error: "Unable to update IT priority." });
@@ -689,16 +734,43 @@ staffRouter.patch(
         updateData.appearsResolvedById = null;
       }
 
-      const updated = await prisma.ticket.update({
-        where: { id: ticketId },
-        data: updateData,
-      });
+      // P2: Re-verify owner eligibility at write time (not just at read time)
+      // to prevent stale-role or deactivated-owner bypasses for owner-required transitions.
+      if (validation.ownerRequired && ticket.ticketOwnerId !== null) {
+        const currentOwner = await prisma.user.findUnique({ where: { id: ticket.ticketOwnerId } });
+        if (!currentOwner || !currentOwner.isActive || !["IT_STAFF", "ADMINISTRATOR"].includes(currentOwner.role)) {
+          res.status(400).json({
+            error: "ELIGIBLE_OWNER_REQUIRED",
+            message: "Ticket owner is no longer eligible (inactive or role changed). Reassign before progressing status.",
+          });
+          return;
+        }
+      }
+
+      let updatedStatus;
+      try {
+        updatedStatus = await prisma.ticket.update({
+          where: { id: ticketId, version: versionVal.expectedVersion },
+          data: updateData,
+        });
+      } catch (updateErr: any) {
+        if (updateErr?.code === "P2025") {
+          const fresh = await prisma.ticket.findUnique({ where: { id: ticketId } });
+          res.status(409).json({
+            error: "CONFLICT",
+            message: "The ticket was modified by another user. Please refresh and try again.",
+            currentVersion: fresh?.version ?? ticket.version + 1,
+          });
+          return;
+        }
+        throw updateErr;
+      }
 
       res.status(200).json({
-        id: updated.id,
-        ticketNo: updated.ticketNo,
-        currentStatus: updated.currentStatus,
-        version: updated.version,
+        id: updatedStatus.id,
+        ticketNo: updatedStatus.ticketNo,
+        currentStatus: updatedStatus.currentStatus,
+        version: updatedStatus.version,
       });
     } catch (err) {
       res.status(500).json({ error: "Unable to transition ticket status." });
