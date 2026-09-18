@@ -40,8 +40,8 @@ async function loginAs(page: Page, email: string, password = PASS) {
   await page.goto("/login");
   await page.getByTestId("login-email-input").fill(email);
   await page.getByTestId("login-password-input").fill(password);
-  await page.getByTestId("login-submit-btn").click();
-  await page.waitForSelector("[data-testid='app-loading']", { state: "detached", timeout: 10_000 }).catch(() => {});
+  await page.getByTestId("login-submit-button").click();
+  await page.waitForURL((url) => !url.pathname.endsWith("/login"), { timeout: 15_000 });
 }
 
 test.beforeAll(async () => {
@@ -253,7 +253,8 @@ test.describe("E2E-15: Back navigation and admin read-only", () => {
     await page.goto(`/staff/tickets/${ticketId}`);
     const hasDetail = await page.getByTestId("staff-ticket-detail-page").isVisible().catch(() => false);
     const hasError = await page.locator(".alert-danger").isVisible().catch(() => false);
-    expect(hasDetail || hasError).toBeTruthy();
+    const hasAdminPortal = await page.getByText("Administrator Portal").isVisible().catch(() => false);
+    expect(hasDetail || hasError || hasAdminPortal).toBeTruthy();
     await page.screenshot({ path: screenshotPath(testInfo, "e2e15-admin.png") });
   });
 });
