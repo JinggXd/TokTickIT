@@ -1,4 +1,4 @@
-﻿import path from "node:path";
+import path from "node:path";
 import fs from "node:fs";
 import { test, expect, type Page, type TestInfo } from "@playwright/test";
 import { PrismaClient } from "../../server/node_modules/@prisma/client/index.js";
@@ -73,6 +73,7 @@ test.beforeAll(async () => {
 
   const ticket = await prisma.ticket.create({
     data: {
+      ticketNo: `TKT-E2E-${Date.now()}-${Math.floor(Math.random() * 10000)}`,
       summary: `E2E Staff Flow Test ${runId}`,
       description: "Created by E2E staff-ticket-flow spec",
       requestedPriority: "MEDIUM",
@@ -89,10 +90,15 @@ test.beforeAll(async () => {
 });
 
 test.afterAll(async () => {
-  await prisma.communication.deleteMany({ where: { ticketId: { in: createdTicketIds } } });
-  await prisma.attachment.deleteMany({ where: { ticketId: { in: createdTicketIds } } });
-  await prisma.ticket.deleteMany({ where: { id: { in: createdTicketIds } } });
-  await prisma.user.deleteMany({ where: { id: { in: createdUserIds } } });
+  if (createdTicketIds.length > 0) {
+    await prisma.internalNote.deleteMany({ where: { ticketId: { in: createdTicketIds } } });
+    await prisma.publicComment.deleteMany({ where: { ticketId: { in: createdTicketIds } } });
+    await prisma.attachment.deleteMany({ where: { ticketId: { in: createdTicketIds } } });
+    await prisma.ticket.deleteMany({ where: { id: { in: createdTicketIds } } });
+  }
+  if (createdUserIds.length > 0) {
+    await prisma.user.deleteMany({ where: { id: { in: createdUserIds } } });
+  }
   await prisma.$disconnect();
 });
 
