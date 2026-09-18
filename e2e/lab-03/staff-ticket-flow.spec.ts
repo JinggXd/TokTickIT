@@ -112,7 +112,7 @@ test.describe("E2E-09: Staff Queue search and filter", () => {
 
     await page.getByTestId("queue-search-input").fill(`E2E Staff Flow Test ${runId}`);
     await page.waitForTimeout(600);
-    await page.waitForSelector("[data-testid='staff-queue-table'],[data-testid='staff-queue-no-results'],[data-testid='staff-queue-empty']", { timeout: 8_000 });
+    await expect(page.locator("[data-testid='staff-queue-table'], [data-testid='staff-queue-mobile-cards'], [data-testid='staff-queue-no-results'], [data-testid='staff-queue-empty']").filter({ visible: true }).first()).toBeVisible({ timeout: 8_000 });
     await page.screenshot({ path: screenshotPath(testInfo, "e2e09-queue-search.png") });
   });
 
@@ -121,7 +121,7 @@ test.describe("E2E-09: Staff Queue search and filter", () => {
     await expect(page).toHaveURL(/\/staff\/queue/);
     await page.getByTestId("queue-status-filter").selectOption("NEW");
     await page.waitForTimeout(500);
-    await page.waitForSelector("[data-testid='staff-queue-table'],[data-testid='staff-queue-no-results'],[data-testid='staff-queue-empty']", { timeout: 8_000 });
+    await expect(page.locator("[data-testid='staff-queue-table'], [data-testid='staff-queue-mobile-cards'], [data-testid='staff-queue-no-results'], [data-testid='staff-queue-empty']").filter({ visible: true }).first()).toBeVisible({ timeout: 8_000 });
     await page.screenshot({ path: screenshotPath(testInfo, "e2e09-status-filter.png") });
   });
 
@@ -130,7 +130,7 @@ test.describe("E2E-09: Staff Queue search and filter", () => {
     await expect(page).toHaveURL(/\/staff\/queue/);
     await page.getByTestId("queue-search-input").fill(`ZZZZ_NONE_${runId}`);
     await page.waitForTimeout(600);
-    await page.waitForSelector("[data-testid='staff-queue-no-results'],[data-testid='staff-queue-empty']", { timeout: 8_000 });
+    await expect(page.locator("[data-testid='staff-queue-no-results'], [data-testid='staff-queue-empty']").filter({ visible: true }).first()).toBeVisible({ timeout: 8_000 });
     await page.screenshot({ path: screenshotPath(testInfo, "e2e09-no-results.png") });
   });
 
