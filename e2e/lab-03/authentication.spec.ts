@@ -175,6 +175,12 @@ test.describe("Phase F2 / P06 E2E Authentication & Navigation (E2E-01 to E2E-05)
     expect(updatedUser.mustChangePassword).toBe(false);
 
     await page.screenshot({ path: getScreenshotPath(testInfo, "e2e-02-post-change-landing.png") });
+
+    // Complete flow: logout after accessing role landing page
+    await page.locator('[data-testid="sign-out-button"]').click();
+    await page.waitForURL("**/login");
+    await expect(page.locator('[data-testid="login-submit-button"]')).toBeVisible();
+    await expect(page.locator('[data-testid="user-profile-badge"]')).toHaveCount(0);
   });
 
   // -------------------------------------------------------------------------
