@@ -60,7 +60,12 @@ export const RequesterProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 export function useRequester(): RequesterContextType {
   const context = useContext(RequesterContext);
   if (!context) {
-    throw new Error("useRequester must be used within a RequesterProvider");
+    return {
+      currentRequester: null,
+      setRequester: () => {},
+      clearRequester: () => {},
+      isLoading: false,
+    };
   }
   return context;
 }

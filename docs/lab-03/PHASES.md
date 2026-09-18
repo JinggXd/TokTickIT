@@ -88,8 +88,8 @@
 
 | เฟสใหญ่ | สถานะ | หลักฐานและงานค้าง |
 |---|---|---|
-| F1 / P00–P02 | In progress — P02 review fixes applied | Baseline/contract/test plan ครบ; branch คือ `feature/f1-prep-and-test-harness`; แก้ไข P02 review fixes ครบถ้วน (ใช้ helper ชุดเดียวกัน `resolveApiBase`, `assertContained`, และ `cleanupAttachmentFiles` ทั้งใน E2E และ server tests, รันไทม์ Playwright CLI fail-closed rejection, รันไทม์ Playwright worker execution/env propagation โดยไม่พึ่งพา build artifacts, จำกัดการข้าม webServer ให้เฉพาะ probe ปฏิเสธ non-probe ทันที, run-specific screenshot dir, strict runSpecificDir containment cleanup, simulated physical unlink failure verification, validateApiEndpoint rejection ของ port 3000); HARNESS-01 unit/integration tests ผ่าน 24/24 tests; client tests ผ่าน 37/37; server/client build ผ่าน; รอยืนยัน disposable PostgreSQL service เพื่อรัน full DB/Playwright suites |
-| F2 / P03–P06 | Planned | งานถัดไป: Lab 3 migration, users/roles, auth API/session, authorization, และ auth UI |
+| F1 / P00–P02 | Merged to lab3-staging | Baseline/contract/test plan ครบ; PR #37 ได้รับการตรวจรับและ merge เข้า `lab3-staging` โดย reviewer เรียบร้อย (commit `97a8403`); ปิด Issue #36; HARNESS-01 (24/24) ผ่าน |
+| F2 / P03–P06 | In progress | Branch `feature/f2-database-and-auth`; ดำเนินการแก้ข้อตรวจพบของ peer review ครบทั้ง 4 work packages (P03: Seed 24 fixtures + unprovisioned password hash + fresh/populated DB tests, P04: Argon2id + rate limit IP, P05: Session RBAC + CSRF Origin, P06: Auth UI + Session identity ใน MyTickets/CreateTicket); Server tests ผ่าน 64/64, Client tests ผ่าน 47/47; รอการยืนยัน disposable DB และคำสั่งรัน full suites เพื่อปิด F2 |
 | F3 / P07–P10 | Planned | ยังไม่เริ่ม |
 | F4 / P11–P12 | Planned | ยังไม่เริ่ม |
 | F5 / P13–P14 | Planned | ยังไม่เริ่ม release/submission |
@@ -108,3 +108,7 @@
    - ตัดการเซ็ตและแพร่กระจายตัวแปร `PLAYWRIGHT_IS_PROBE` ลงใน `process.env` ออกทั้งหมด เพื่อป้องกัน state ตกค้างข้ามการรัน
    - หากมีการตั้งค่า `PLAYWRIGHT_SKIP_WEBSERVER=true` แต่ไม่ได้ระบุรันเฉพาะ probe (เช่น รันทั้ง suite หรือรัน `requester-ticket-flow.spec.ts` หรือไฟล์ non-probe ที่มีคำว่า probe) ระบบจะ Fail-closed โดยโยน Exception ปฏิเสธการรันทันที
    - เพิ่มการทดสอบใน `server/tests/lab-03/test-environment.test.ts` (รวมเป็น **24 tests**) พิสูจน์ว่าการพยายามข้าม webServer ใน non-probe (รวมถึงชื่อที่มี probe) หรือ all-tests run จะล้มเหลวอย่างชัดเจน ขณะที่การรัน probe ข้าม webServer สำเร็จ
+7. **[P1 แก้ไขแล้ว] แก้ไข Frontend Session Identity, Seed Fixtures และ Migration Data Preservation (2026-09-17):**
+   - **P06:** ปรับปรุง `MyTickets.tsx` และ `CreateTicket.tsx` ให้นำเข้าและใช้ `effectiveRequester` จาก `useAuth()` (session user) โดยคง fallback ไปยัง `currentRequester` สำหรับ legacy tests ส่งผลให้ผู้ใช้ที่เข้าสู่ระบบผ่านเบราว์เซอร์ใหม่สามารถโหลดและสร้าง ticket ได้อย่างสมบูรณ์
+   - **P03:** ปรับปรุง `seed.ts` ให้ hash password และตั้งค่า `mustChangePassword: true` ให้กับผู้ใช้ทุกรายในฐานข้อมูลที่มี `passwordHash == null` (ไม่จำกัดเฉพาะ default accounts) และเพิ่ม seed ticket fixtures จำนวน 24 รายการ ครอบคลุมทั้ง 8 สถานะ, 3 ระดับความสำคัญ, ทั้ง assigned และ unassigned ownership พร้อมตัวอย่าง `PublicComment` และ `InternalNote` โดยทำงานแบบ idempotent 100%
+   - **P03:** ขยาย `migration-regression.test.ts` เพื่อทดสอบ data preservation บน populated DB (เปรียบเทียบข้อมูลก่อน-หลัง, ความต่อเนื่องของ sequence ID) และยืนยัน AC-18 / MIG-06 fixtures ครบถ้วน
