@@ -243,7 +243,7 @@ export const MyTickets: React.FC<MyTicketsProps> = ({
   };
 
   return (
-    <div className="container py-4" style={{ maxWidth: 1100 }}>
+    <div className="container py-4" data-testid="my-tickets-page" style={{ maxWidth: 1100 }}>
       {/* Header */}
       <div className="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
         <div>

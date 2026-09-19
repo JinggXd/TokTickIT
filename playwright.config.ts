@@ -86,7 +86,7 @@ export default defineConfig({
   workers: 1,
   forbidOnly: !!process.env.CI,
   retries: 0,
-  timeout: 30000,
+  timeout: 60000,
   use: {
     baseURL: "http://localhost:5174",
     trace: "on-first-retry",

@@ -3,6 +3,9 @@ import fs from "node:fs";
 import { test, expect, type Page, type TestInfo } from "@playwright/test";
 import { PrismaClient } from "../../server/node_modules/@prisma/client/index.js";
 import { hashPassword } from "../../server/src/utils/password.js";
+import { resolveApiBase } from "../../server/src/config/testEnvironment.js";
+
+const API_BASE = resolveApiBase();
 
 const testDbUrl = process.env.DATABASE_URL_TEST || process.env.DATABASE_URL;
 if (!testDbUrl) {
@@ -35,6 +38,16 @@ let targetUserId: number;
 
 async function loginAs(page: Page, email: string, password = PASS) {
   await page.goto("/login");
+  const emailInput = page.getByTestId("login-email-input");
+  if (!(await emailInput.isVisible().catch(() => false))) {
+    const signOutBtn = page.getByTestId("sign-out-button");
+    if (await signOutBtn.isVisible().catch(() => false)) {
+      await signOutBtn.click();
+      await page.waitForURL((url) => url.pathname.endsWith("/login"), { timeout: 15_000 }).catch(() => {});
+    } else {
+      await page.goto("/login");
+    }
+  }
   await page.getByTestId("login-email-input").fill(email);
   await page.getByTestId("login-password-input").fill(password);
   await page.getByTestId("login-submit-button").click();
@@ -168,7 +181,22 @@ test.describe("Phase F4 / P11 & P12: User Administration E2E Verification", () =
     await signOut(page);
   });
 
-  test("E2E-13: Admin resets user password and verifies session invalidation", async ({ page }, testInfo) => {
+  test("E2E-13: Admin resets user password and verifies session invalidation", async ({ browser, page }, testInfo) => {
+    // 1. Establish an active browser session for target user BEFORE admin reset
+    const targetContext = await browser.newContext();
+    const targetPage = await targetContext.newPage();
+    await loginAs(targetPage, TARGET_EMAIL, PASS);
+    await expect(targetPage).toHaveURL(/\/my-tickets/);
+    await expect(targetPage.getByTestId("my-tickets-page")).toBeVisible();
+    await targetPage.screenshot({ path: screenshotPath(testInfo, "e2e13-target-session-active.png") });
+
+    // Directly query test API server (port 3001) to verify session is 200 before reset (AC-47)
+    const beforeResetRes = await targetPage.request.get(`${API_BASE}/api/auth/me`);
+    expect(beforeResetRes.status()).toBe(200);
+    const beforeResetJson = await beforeResetRes.json();
+    expect(beforeResetJson.user.email).toBe(TARGET_EMAIL);
+
+    // 2. Admin logs in on separate context and resets target user's password
     await loginAs(page, ADMIN_EMAIL);
     await page.goto("/admin/users");
     await expect(page.getByTestId("user-management-page")).toBeVisible();
@@ -189,7 +217,19 @@ test.describe("Phase F4 / P11 & P12: User Administration E2E Verification", () =
     await page.screenshot({ path: screenshotPath(testInfo, "e2e13-password-reset-success.png") });
     await signOut(page);
 
-    // Verify target user must login with new secret and is forced to change password
+    // 3. Prove that the SAME session opened before reset is now invalid (401 on test API port 3001, AC-47, AC-53)
+    const afterResetRes = await targetPage.request.get(`${API_BASE}/api/auth/me`);
+    expect(afterResetRes.status()).toBe(401);
+
+    // Reloading targetPage causes session check failure and renders login page
+    await targetPage.reload();
+    await targetPage.waitForURL("**/login", { timeout: 15_000 }).catch(() => {});
+    await expect(targetPage.getByTestId("login-email-input")).toBeVisible();
+    await expect(targetPage.getByTestId("my-tickets-page")).toHaveCount(0);
+    await targetPage.screenshot({ path: screenshotPath(testInfo, "e2e13-old-session-invalidated.png") });
+    await targetContext.close();
+
+    // 4. Verify target user must login with new secret and is forced to change password
     await page.goto("/login");
     await page.getByTestId("login-email-input").fill(TARGET_EMAIL);
     await page.getByTestId("login-password-input").fill(newResetSecret);

@@ -13,6 +13,7 @@ export const StatusBadge: React.FC<{ status: TicketStatus | string } & BadgeProp
     case "NEW":
       return (
         <span
+          data-testid="status-badge-NEW"
           className={`badge fw-medium px-2 py-1 ${className}`}
           style={{ backgroundColor: "#E0F2FE", color: "#0369A1" }}
         >
@@ -22,6 +23,7 @@ export const StatusBadge: React.FC<{ status: TicketStatus | string } & BadgeProp
     case "OPEN":
       return (
         <span
+          data-testid="status-badge-OPEN"
           className={`badge fw-medium px-2 py-1 ${className}`}
           style={{ backgroundColor: "#E0F2FE", color: "#0369A1" }}
         >
@@ -31,6 +33,7 @@ export const StatusBadge: React.FC<{ status: TicketStatus | string } & BadgeProp
     case "IN_PROGRESS":
       return (
         <span
+          data-testid="status-badge-IN_PROGRESS"
           className={`badge fw-medium px-2 py-1 ${className}`}
           style={{ backgroundColor: "#FEF3C7", color: "#92400E" }}
         >
@@ -40,6 +43,7 @@ export const StatusBadge: React.FC<{ status: TicketStatus | string } & BadgeProp
     case "WAITING_FOR_REQUESTER":
       return (
         <span
+          data-testid="status-badge-WAITING_FOR_REQUESTER"
           className={`badge fw-medium px-2 py-1 ${className}`}
           style={{ backgroundColor: "#FEF3C7", color: "#92400E" }}
         >
@@ -49,6 +53,7 @@ export const StatusBadge: React.FC<{ status: TicketStatus | string } & BadgeProp
     case "RESOLVED":
       return (
         <span
+          data-testid="status-badge-RESOLVED"
           className={`badge fw-medium px-2 py-1 ${className}`}
           style={{ backgroundColor: "#DCFCE7", color: "#15803D" }}
         >
@@ -58,6 +63,7 @@ export const StatusBadge: React.FC<{ status: TicketStatus | string } & BadgeProp
     case "CLOSED":
       return (
         <span
+          data-testid="status-badge-CLOSED"
           className={`badge fw-medium px-2 py-1 ${className}`}
           style={{ backgroundColor: "#F1F5F9", color: "#475569" }}
         >
@@ -67,6 +73,7 @@ export const StatusBadge: React.FC<{ status: TicketStatus | string } & BadgeProp
     case "REOPENED":
       return (
         <span
+          data-testid="status-badge-REOPENED"
           className={`badge fw-medium px-2 py-1 ${className}`}
           style={{ backgroundColor: "#FEE2E2", color: "#B91C1C" }}
         >
@@ -76,6 +83,7 @@ export const StatusBadge: React.FC<{ status: TicketStatus | string } & BadgeProp
     case "CANCELLED":
       return (
         <span
+          data-testid="status-badge-CANCELLED"
           className={`badge fw-medium px-2 py-1 ${className}`}
           style={{ backgroundColor: "#F1F5F9", color: "#475569" }}
         >
@@ -83,7 +91,7 @@ export const StatusBadge: React.FC<{ status: TicketStatus | string } & BadgeProp
         </span>
       );
     default:
-      return <span className={`badge bg-secondary px-2 py-1 ${className}`}>{status}</span>;
+      return <span data-testid={`status-badge-${status}`} className={`badge bg-secondary px-2 py-1 ${className}`}>{status}</span>;
   }
 };
 

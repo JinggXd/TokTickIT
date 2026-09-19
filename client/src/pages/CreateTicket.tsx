@@ -234,10 +234,6 @@ export function CreateTicket({ onSuccess, onCancel }: CreateTicketProps) {
         setIsUploadingAttachments(false);
         setUploadProgress(null);
       }
-
-      if (onSuccess) {
-        onSuccess(ticket);
-      }
     } catch (err: any) {
       // Retain entered values on failure (BR-11)
       setSubmitError(err.message || "Unable to create ticket. Please try again.");
@@ -400,12 +396,16 @@ export function CreateTicket({ onSuccess, onCancel }: CreateTicketProps) {
             >
               Create Another Ticket
             </button>
-            {onCancel && (
+            {(onSuccess || onCancel) && (
               <button
                 className="btn btn-primary-zen w-100 w-md-auto order-1 order-md-2"
                 onClick={() => {
                   if (!isUploadingAttachments) {
-                    onCancel();
+                    if (onSuccess) {
+                      onSuccess(createdTicket);
+                    } else if (onCancel) {
+                      onCancel();
+                    }
                   }
                 }}
                 disabled={isUploadingAttachments}

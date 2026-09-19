@@ -1134,5 +1134,52 @@ Following peer review of commit `a56da80`, 5 critical issues (2 P1, 3 P2) were a
 | Playwright E2E (`npx playwright test e2e/lab-03/`) | 69 tests | **69/69 Passed (0 failed)** |
 | TypeScript Build (`server` & `client`) | tsc / vite build | **0 Errors** |
 
+---
 
+## 2026-09-20 — Full Integrated Verification of Phases F3 & F4 on Isolated Test Database
 
+Following resolution of peer review feedback, queue strict-mode handling, direct test API session invalidation assertions, and test lifecycle fixes, a complete, authenticated run of all test suites was executed against the verified disposable Docker test environment.
+
+### 1. Pre-Execution Environment Verification
+
+- **PostgreSQL Container:** `toktickit-db` running on port `5433`.
+- **Target Database:** `toktickit_test` verified disposable, isolated from production/dev database on port `5432`.
+- **Upload Directory:** Run-isolated directory under scratch/test-uploads.
+- **Test Server:** Express server running on port `3001` with `validateApiEndpoint` preventing fallback to port `3000`.
+
+### 2. Full Test Suite Execution
+
+| Test Suite | Command | Duration | Exit | Passed | Failed | Skipped | Status |
+|---|---|---:|---:|---:|---:|---:|---|
+| **Server Tests** | `$env:DATABASE_URL_TEST="postgresql://toktickit:toktickit@localhost:5433/toktickit_test?schema=public"; npm run test:server` | 65.99s | 0 | **263 / 263** (25 files) | 0 | 0 | **VERIFIED** |
+| **Client Tests** | `npm run test:client` | 12.21s | 0 | **82 / 82** (15 files) | 0 | 0 | **VERIFIED** |
+| **Playwright E2E** | `$env:DATABASE_URL_TEST="postgresql://toktickit:toktickit@localhost:5433/toktickit_test?schema=public"; npm run test:e2e` | 2.8m | 0 | **108 / 108** (36 desktop, 36 tablet, 36 mobile) | 0 | 0 | **VERIFIED** |
+| **Server Build** | `npm --prefix server run build` | 2.1s | 0 | TypeScript compilation (`tsc`) | 0 | 0 | **VERIFIED** |
+| **Client Build** | `npm --prefix client run build` | 3.4s | 0 | TypeScript + Vite production build | 0 | 0 | **VERIFIED** |
+
+### 3. Key Behavioral & Security Assertions Verified
+
+1. **AC-47 & AC-53 (Session Revocation upon Password Reset):**
+   - In `e2e/lab-03/user-administration.spec.ts` (`E2E-13`), the target user's active session returned HTTP 200 before reset when queried directly against `http://localhost:3001/api/auth/me`.
+   - After admin reset, the exact same session cookie returned HTTP 401 on the test API, proving immediate server-side session revocation.
+   - Upon page reload, the browser redirected directly to `/login` with no residual access to `/my-tickets`.
+
+2. **Staff Queue Strict Assertions & Lifecycle Progressions (AC-24, AC-30, AC-32, AC-39):**
+   - In `e2e/lab-03/staff-ticket-flow.spec.ts`, verified strict-mode compliance for elements rendered simultaneously for desktop and mobile viewports using `row.or(card).filter({ visible: true })`.
+   - Verified end-to-end status lifecycle from `NEW` $\rightarrow$ `OPEN` $\rightarrow$ `IN_PROGRESS` $\rightarrow$ `RESOLVED` (modal confirmed) $\rightarrow$ `CLOSED` (modal confirmed).
+   - Perspective switching at each step confirmed Requester sees updated statuses, Public Comments, and that Internal Notes remain completely invisible (zero DOM presence, AC-36, BR-08).
+   - Confirmed Requester terminal state restrictions on `CLOSED` tickets (`appears-resolved-btn` is absent, BR-17).
+
+3. **Status Badge Consistency & Create Ticket Lifecycle:**
+   - Unified `data-testid="status-badge-${status}"` across `Badges.tsx` and `RequesterTicketDetail.tsx`.
+   - Fixed `CreateTicket.tsx` to retain the Success Screen until user clicks "View My Tickets", allowing Playwright to assert `success-ticket-no` without race condition.
+
+4. **Multi-Viewport Visual Verification:**
+   - Inspected responsive screenshots in `artifacts/lab-03/screenshots/playwright-1789845301652-30424/` across `desktop/`, `tablet/`, and `mobile/`.
+   - Verified that `e2e11-status-resolved.png` and `e2e13-old-session-invalidated.png` display correct typography, badge tokens (`--zg-badge-*`), alert banners, and zero horizontal clipping across all 3 viewports.
+
+### 4. Major Phase Status Update
+
+- **Phase F3 (P07–P10):** Transited from `Implemented — รอยืนยัน E2E ล่าสุด` to **`Verified`**.
+- **Phase F4 (P11–P12):** Transited from `Implemented — รอยืนยัน E2E ล่าสุด` to **`Verified`**.
+- **Phase F5 (P13–P14):** Ready for peer reviewer inspection, branch merge into `lab3-staging`, release PR to `main`, and final documentation packaging.

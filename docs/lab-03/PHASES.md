@@ -84,15 +84,16 @@
 - AGENTS.md แยก Lab 2/Lab 3 และ staging branch ตาม scope แล้ว
 - ใช้ AC-01–AC-56 จาก specification.md; tests.md เป็นแหล่งเดียวของ test traceability
 
-## สถานะปัจจุบัน — 2026-09-17
+## สถานะปัจจุบัน — 2026-09-20
 
 | เฟสใหญ่ | สถานะ | หลักฐานและงานค้าง |
 |---|---|---|
 | F1 / P00–P02 | Merged to lab3-staging | Baseline/contract/test plan ครบ; PR #37 ได้รับการตรวจรับและ merge เข้า `lab3-staging` โดย reviewer เรียบร้อย (commit `97a8403`); ปิด Issue #36; HARNESS-01 (24/24) ผ่าน |
-| F2 / P03–P06 | In progress | Branch `feature/f2-database-and-auth`; ดำเนินการแก้ข้อตรวจพบของ peer review ครบทั้ง 4 work packages (P03: Seed 24 fixtures + unprovisioned password hash + fresh/populated DB tests, P04: Argon2id + rate limit IP, P05: Session RBAC + CSRF Origin, P06: Auth UI + Session identity ใน MyTickets/CreateTicket); Server tests ผ่าน 64/64, Client tests ผ่าน 47/47; รอการยืนยัน disposable DB และคำสั่งรัน full suites เพื่อปิด F2 |
-| F3 / P07–P10 | Planned | ยังไม่เริ่ม |
-| F4 / P11–P12 | Planned | ยังไม่เริ่ม |
-| F5 / P13–P14 | Planned | ยังไม่เริ่ม release/submission |
+| F2 / P03–P06 | Merged to lab3-staging | Database migration, Seed 24 fixtures, Argon2id password hash, Session RBAC, Auth UI (Login, Change Password, Session ticket flow); PR #39 ได้รับการตรวจรับและ merge เข้า `lab3-staging` (commit `a4a921d`); ปิด Issue #38; Server 171/171 ผ่าน, Client 48/48 ผ่าน, E2E 15/15 ผ่าน |
+| F3 / P07–P10 | Verified | Branch `feature/f3-requester-and-staff`; Issue #40, PR #41 targeting `lab3-staging`; ครอบคลุม P07–P10; ทดสอบยืนยันบนฐานข้อมูลทดสอบแยก `toktickit_test` (Docker port 5433) และ upload directory แยกเฉพาะรอบ: Server 263/263 ผ่าน (25 files), Client 82/82 ผ่าน (15 files), Playwright E2E suites ผ่าน 108/108 tests ครบทั้ง 3 viewports (Desktop 36, Tablet 36, Mobile 36) ใน 2.8m (0 fail, 0 skip, runId `playwright-1789845301652-30424`); ตรวจสอบ flow ครบตั้งแต่ NEW → OPEN → IN_PROGRESS → RESOLVED (modal) → CLOSED (modal) พร้อมมุมมอง Requester และ confidentiality check; พร้อมให้ reviewer ตรวจรับและ merge |
+| F4 / P11–P12 | Verified | Branch `feature/f4-admin-and-verification`; Issue #42, PR #43 targeting `lab3-staging`; ครอบคลุม P11–P12; แก้ไขข้อตรวจพบ peer review ครบถ้วน (concurrency row lock, coordinated ticket assignment lock, P2002 duplicate email, Unicode password code point length); ทดสอบยืนยันบนฐานข้อมูลทดสอบแยก `toktickit_test` (Docker port 5433) และ test API port 3001: Server 263/263 ผ่าน, Client 82/82 ผ่าน, Playwright E2E suites ผ่าน 108/108 tests ครบทั้ง 3 viewports (Desktop 36, Tablet 36, Mobile 36) ใน 2.8m (0 fail, 0 skip, runId `playwright-1789845301652-30424`); E2E-13 ยิงตรง test API พอร์ต 3001 พิสูจน์ 200 ก่อน reset → 401 หลัง reset ด้วย session เดียวกันจริง (AC-47, AC-53); ตรวจสอบ visual screenshots ครบทุก viewport; พร้อมให้ reviewer ตรวจรับและ merge |
+| F5 / P13–P14 | Planned | รอการ merge ของ F3/F4 เข้า `lab3-staging` เพื่อเปิด Release PR `lab3-staging` → `main`, รัน final regression verification บน main SHA เดียวกัน และจัดทำเอกสารส่งงาน PDF Answer Part 1–9 |
+
 
 ### รายละเอียดการแก้ไขตามข้อตรวจพบ Peer Review (2026-09-17):
 1. **[P1/P2 แก้ไขแล้ว] ป้องกัน API override ชี้ไป dev server และคุ้มครองภาพ Lab 2:** เพิ่ม `validateApiEndpoint` และ `resolveApiBase` ใน `testEnvironment.ts` ปฏิเสธพอร์ต 3000 ทันที; `playwright.config.ts` ซิงค์ `TOKTICKIT_TEST_RUN_ID`, `SCREENSHOT_DIR`, `API_URL` (3001) และ `VITE_API_URL` (3001) ให้กับ worker; และ `requester-ticket-flow.spec.ts` กำหนด fallback ภาพไปยัง `artifacts/lab-03/screenshots/<runId>` เท่านั้น
