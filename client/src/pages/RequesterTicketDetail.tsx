@@ -115,54 +115,54 @@ export function RequesterTicketDetail({
     switch (status) {
       case "NEW":
         return (
-          <span className="badge fw-medium px-2 py-1" style={{ backgroundColor: "#E0F2FE", color: "#0369A1" }}>
+          <span data-testid="status-badge-NEW" className="badge fw-medium px-2 py-1" style={{ backgroundColor: "#E0F2FE", color: "#0369A1" }}>
             🔵 NEW
           </span>
         );
       case "OPEN":
         return (
-          <span className="badge fw-medium px-2 py-1" style={{ backgroundColor: "#FEF3C7", color: "#92400E" }}>
+          <span data-testid="status-badge-OPEN" className="badge fw-medium px-2 py-1" style={{ backgroundColor: "#FEF3C7", color: "#92400E" }}>
             🟡 OPEN
           </span>
         );
       case "IN_PROGRESS":
         return (
-          <span className="badge fw-medium px-2 py-1" style={{ backgroundColor: "#FEF3C7", color: "#92400E" }}>
+          <span data-testid="status-badge-IN_PROGRESS" className="badge fw-medium px-2 py-1" style={{ backgroundColor: "#FEF3C7", color: "#92400E" }}>
             🟡 IN_PROGRESS
           </span>
         );
       case "WAITING_FOR_REQUESTER":
         return (
-          <span className="badge fw-medium px-2 py-1" style={{ backgroundColor: "#FDE8D8", color: "#9A3412" }}>
+          <span data-testid="status-badge-WAITING_FOR_REQUESTER" className="badge fw-medium px-2 py-1" style={{ backgroundColor: "#FDE8D8", color: "#9A3412" }}>
             🟠 WAITING
           </span>
         );
       case "RESOLVED":
         return (
-          <span className="badge fw-medium px-2 py-1" style={{ backgroundColor: "#DCFCE7", color: "#15803D" }}>
+          <span data-testid="status-badge-RESOLVED" className="badge fw-medium px-2 py-1" style={{ backgroundColor: "#DCFCE7", color: "#15803D" }}>
             🟢 RESOLVED
           </span>
         );
       case "CLOSED":
         return (
-          <span className="badge fw-medium px-2 py-1" style={{ backgroundColor: "#F1F5F9", color: "#475569" }}>
+          <span data-testid="status-badge-CLOSED" className="badge fw-medium px-2 py-1" style={{ backgroundColor: "#F1F5F9", color: "#475569" }}>
             ⚫ CLOSED
           </span>
         );
       case "REOPENED":
         return (
-          <span className="badge fw-medium px-2 py-1" style={{ backgroundColor: "#EDE9FE", color: "#6D28D9" }}>
+          <span data-testid="status-badge-REOPENED" className="badge fw-medium px-2 py-1" style={{ backgroundColor: "#EDE9FE", color: "#6D28D9" }}>
             🔁 REOPENED
           </span>
         );
       case "CANCELLED":
         return (
-          <span className="badge fw-medium px-2 py-1" style={{ backgroundColor: "#FEE2E2", color: "#B91C1C" }}>
-            🚫 CANCELLED
+          <span data-testid="status-badge-CANCELLED" className="badge fw-medium px-2 py-1" style={{ backgroundColor: "#FEE2E2", color: "#B91C1C" }}>
+            ⚪ CANCELLED
           </span>
         );
       default:
-        return <span className="badge bg-secondary px-2 py-1">{status}</span>;
+        return <span data-testid={`status-badge-${status}`} className="badge bg-secondary px-2 py-1">{status}</span>;
     }
   };
 

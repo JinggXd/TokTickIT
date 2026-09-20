@@ -158,9 +158,16 @@ export async function changePassword(payload: ChangePasswordPayload): Promise<{ 
 }
 
 export async function logout(): Promise<void> {
-  await apiFetch(`${API_URL}/api/auth/logout`, {
+  const response = await apiFetch(`${API_URL}/api/auth/logout`, {
     method: "POST",
   });
+  if (!response.ok) {
+    const data = await response.json().catch(() => ({}));
+    const err: any = new Error(data.message || data.error || "Unable to log out");
+    err.status = response.status;
+    err.details = data;
+    throw err;
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -698,4 +705,117 @@ export async function postInternalNote(ticketId: number, body: string): Promise<
   }
   return data;
 }
+
+// ---------------------------------------------------------------------------
+// Administrator User Management APIs (Phase F4 / P11)
+// ---------------------------------------------------------------------------
+
+export interface AdminUserItem {
+  id: number;
+  name: string;
+  email: string;
+  role: Role;
+  isActive: boolean;
+  mustChangePassword: boolean;
+  createdAt: string;
+}
+
+export interface CreateAdminUserPayload {
+  name: string;
+  email: string;
+  role: Role;
+  isActive: boolean;
+  initialPassword: string;
+}
+
+export interface UpdateAdminUserPayload {
+  name?: string;
+  email?: string;
+  role?: Role;
+  isActive?: boolean;
+}
+
+export interface UpdateAdminUserResponse {
+  id: number;
+  name: string;
+  email: string;
+  role: Role;
+  isActive: boolean;
+  unassignedTicketsCount: number;
+}
+
+export async function fetchAdminUsers(params?: { search?: string; role?: string }): Promise<AdminUserItem[]> {
+  const query = new URLSearchParams();
+  if (params?.search && params.search.trim()) {
+    query.set("search", params.search.trim());
+  }
+  if (params?.role && params.role !== "ALL") {
+    query.set("role", params.role);
+  }
+  const qs = query.toString();
+  const url = `${API_URL}/api/admin/users${qs ? `?${qs}` : ""}`;
+  const response = await apiFetch(url);
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    const err: any = new Error(data.message || data.error || "Unable to load users.");
+    err.status = response.status;
+    err.details = data.details;
+    throw err;
+  }
+  return data.users || [];
+}
+
+export async function createAdminUser(payload: CreateAdminUserPayload): Promise<AdminUserItem> {
+  const response = await apiFetch(`${API_URL}/api/admin/users`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    const err: any = new Error(data.message || data.error || "Unable to create user.");
+    err.status = response.status;
+    err.error = data.error;
+    err.details = data.details;
+    throw err;
+  }
+  return data;
+}
+
+export async function updateAdminUser(
+  userId: number,
+  payload: UpdateAdminUserPayload
+): Promise<UpdateAdminUserResponse> {
+  const response = await apiFetch(`${API_URL}/api/admin/users/${userId}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    const err: any = new Error(data.message || data.error || "Unable to update user.");
+    err.status = response.status;
+    err.error = data.error;
+    err.details = data.details;
+    throw err;
+  }
+  return data;
+}
+
+export async function resetAdminUserPassword(userId: number, initialPassword: string): Promise<void> {
+  const response = await apiFetch(`${API_URL}/api/admin/users/${userId}/initial-password`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ initialPassword }),
+  });
+  if (!response.ok) {
+    const data = await response.json().catch(() => ({}));
+    const err: any = new Error(data.message || data.error || "Unable to reset password.");
+    err.status = response.status;
+    err.error = data.error;
+    err.details = data.details;
+    throw err;
+  }
+}
+
 

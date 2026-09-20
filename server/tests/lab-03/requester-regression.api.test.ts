@@ -175,6 +175,26 @@ describe("Requester Regression & Resolution Confirmation (AC-13, AC-20, AC-21, A
       expect(res.status).toBe(400);
       expect(res.body.error).toBe("Validation failed");
     });
+
+    it("atomically guards against concurrent ticket modifications or illegal status transitions", async () => {
+      const ticket = await createTestTicket(requesterA.id, "OPEN");
+
+      // Staff concurrently updates the ticket status to CLOSED
+      await prisma.ticket.update({
+        where: { id: ticket.id },
+        data: { currentStatus: "CLOSED", version: ticket.version + 1 },
+      });
+
+      const res = await request(app)
+        .post(`/api/tickets/${ticket.id}/appears-resolved`)
+        .set(headersA)
+        .send({});
+
+      expect([400, 409]).toContain(res.status);
+      if (res.status === 400) {
+        expect(res.body.error).toBe("APPEARS_RESOLVED_NOT_ALLOWED");
+      }
+    });
   });
 
   // -------------------------------------------------------------------------

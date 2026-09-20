@@ -1,6 +1,6 @@
 import crypto from "node:crypto";
 import request from "supertest";
-import { describe, it, expect, beforeEach, afterAll } from "vitest";
+import { describe, it, expect, beforeEach, afterAll, vi } from "vitest";
 import { app } from "../../src/app.js";
 import { getPrisma } from "../../src/prisma.js";
 import { hashPassword } from "../../src/utils/password.js";
@@ -499,6 +499,87 @@ describe("Phase F2 / P04 Authentication API (AC-01, AC-02, AC-05, AC-06, AC-07, 
       const subsequentRes = await request(app).get("/api/auth/me").set("Cookie", cookie);
       expect(subsequentRes.status).toBe(401);
     });
+
+    it("is idempotent and returns 204 when session was already deleted or expired", async () => {
+      const prisma = getPrisma();
+      const testEmail = "logout.idempotent@example.com";
+      const hashedPassword = await hashPassword("LogoutPass123!");
+      await prisma.user.upsert({
+        where: { email: testEmail },
+        update: { isActive: true, passwordHash: hashedPassword },
+        create: {
+          email: testEmail,
+          name: "Logout Idempotent User",
+          department: "Ops",
+          role: "REQUESTER",
+          isActive: true,
+          passwordHash: hashedPassword,
+        },
+      });
+
+      const loginRes = await request(app)
+        .post("/api/auth/login")
+        .set("Origin", DEFAULT_ORIGIN)
+        .send({ email: testEmail, password: "LogoutPass123!" });
+      const cookie = loginRes.headers["set-cookie"];
+
+      const csrfRes = await request(app).get("/api/auth/csrf").set("Cookie", cookie);
+      const csrfToken = csrfRes.body.csrfToken;
+
+      const logoutRes1 = await request(app)
+        .post("/api/auth/logout")
+        .set("Cookie", cookie)
+        .set("Origin", DEFAULT_ORIGIN)
+        .set("X-CSRF-Token", csrfToken);
+      expect(logoutRes1.status).toBe(204);
+
+      const logoutRes2 = await request(app)
+        .post("/api/auth/logout")
+        .set("Cookie", cookie)
+        .set("Origin", DEFAULT_ORIGIN)
+        .set("X-CSRF-Token", csrfToken);
+      expect(logoutRes2.status).toBe(204);
+    });
+
+    it("returns 500 when database fails during session deletion", async () => {
+      const prisma = getPrisma();
+      const testEmail = "logout.error@example.com";
+      const hashedPassword = await hashPassword("LogoutPass123!");
+      await prisma.user.upsert({
+        where: { email: testEmail },
+        update: { isActive: true, passwordHash: hashedPassword },
+        create: {
+          email: testEmail,
+          name: "Logout Error User",
+          department: "Ops",
+          role: "REQUESTER",
+          isActive: true,
+          passwordHash: hashedPassword,
+        },
+      });
+
+      const loginRes = await request(app)
+        .post("/api/auth/login")
+        .set("Origin", DEFAULT_ORIGIN)
+        .send({ email: testEmail, password: "LogoutPass123!" });
+      const cookie = loginRes.headers["set-cookie"];
+
+      const csrfRes = await request(app).get("/api/auth/csrf").set("Cookie", cookie);
+      const csrfToken = csrfRes.body.csrfToken;
+
+      const deleteSpy = vi.spyOn(prisma.session, "delete").mockRejectedValueOnce(new Error("Simulated DB error"));
+
+      const logoutRes = await request(app)
+        .post("/api/auth/logout")
+        .set("Cookie", cookie)
+        .set("Origin", DEFAULT_ORIGIN)
+        .set("X-CSRF-Token", csrfToken);
+
+      expect(logoutRes.status).toBe(500);
+      expect(logoutRes.body).toEqual({ error: "Unable to complete logout. Please try again." });
+
+      deleteSpy.mockRestore();
+    });
   });
 
   // -------------------------------------------------------------------------
@@ -607,6 +688,18 @@ describe("Phase F2 / P04 Authentication API (AC-01, AC-02, AC-05, AC-06, AC-07, 
         error: "CSRF_INVALID",
         message: "Refresh the page and try again.",
       });
+    });
+  });
+
+  describe("Malformed cookie handling", () => {
+    it("handles malformed cookie values gracefully without crashing", async () => {
+      const res = await request(app)
+        .get("/api/auth/me")
+        .set("Cookie", "toktickit_session=%")
+        .set("Origin", DEFAULT_ORIGIN);
+
+      expect(res.status).toBe(401);
+      expect(res.body).toEqual({ error: "Authentication required" });
     });
   });
 });

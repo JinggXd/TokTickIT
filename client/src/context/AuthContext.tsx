@@ -10,6 +10,7 @@ interface AuthContextType {
   csrfToken: string | null;
   login: (email: string, password: string) => Promise<SafeUser>;
   logout: () => Promise<void>;
+  clearAuth: () => void;
   changePassword: (currentPassword: string, newPassword: string, confirmPassword: string) => Promise<SafeUser>;
   refreshMe: () => Promise<SafeUser | null>;
   updateUser: (updatedUser: SafeUser) => void;
@@ -105,23 +106,30 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     [fetchCsrf],
   );
 
+  const clearAuth = useCallback((): void => {
+    setUser(null);
+    setSessionLost(true);
+    setAuthError(null);
+    try {
+      localStorage.removeItem("toktickit_current_requester");
+      localStorage.removeItem("toktickit_session");
+    } catch {
+      // Ignore localStorage errors
+    }
+    setCsrfToken(null);
+    api.setGlobalCsrfToken(null);
+  }, []);
+
   const logout = useCallback(async (): Promise<void> => {
     try {
       await api.logout();
-    } finally {
-      setUser(null);
-      setSessionLost(true);
-      setAuthError(null);
-      try {
-        localStorage.removeItem("toktickit_current_requester");
-        localStorage.removeItem("toktickit_session");
-      } catch {
-        // Ignore localStorage errors
-      }
-      setCsrfToken(null);
-      api.setGlobalCsrfToken(null);
+      clearAuth();
+    } catch (err: any) {
+      const msg = err?.message || "Failed to log out. Please try again.";
+      setAuthError(msg);
+      throw err;
     }
-  }, []);
+  }, [clearAuth]);
 
   const updateUser = useCallback((updatedUser: SafeUser) => {
     setUser(updatedUser);
@@ -146,6 +154,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         csrfToken,
         login,
         logout,
+        clearAuth,
         changePassword,
         refreshMe,
         updateUser,
@@ -168,6 +177,7 @@ export function useAuth(): AuthContextType {
         throw new Error("useAuth must be used within an AuthProvider");
       },
       logout: async () => {},
+      clearAuth: () => {},
       changePassword: async () => {
         throw new Error("useAuth must be used within an AuthProvider");
       },

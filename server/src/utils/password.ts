@@ -31,6 +31,13 @@ export async function verifyPassword(password: string, storedHash: string): Prom
 }
 
 /**
+ * Count the number of Unicode code points in a string (handling surrogate pairs properly).
+ */
+export function getCodePointLength(str: string): number {
+  return Array.from(str).length;
+}
+
+/**
  * Validate new password constraints (AC-06, BR-03, UNIT-01):
  * - Length: 12-128 Unicode code points (preserves whitespace and Unicode without trimming or normalizing)
  * - Confirmation must match

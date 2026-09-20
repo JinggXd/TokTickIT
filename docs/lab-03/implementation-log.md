@@ -1027,5 +1027,159 @@ F2 / P03 is next after peer review and gate approval; no Lab 3 migration/auth co
 
 - **Major Phase F3 (P07–P10):** **100% Proven & Verified**. Hardened assertions executed and verified without conditional bypasses.
 - **GitHub Tracking:** Issue [#40](https://github.com/JinggXd/TokTickIT/issues/40) opened and explicitly linked in Development panel to Pull Request [#41](https://github.com/JinggXd/TokTickIT/pull/41) targeting `lab3-staging`.
-- **Next Step:** Awaiting peer review on PR #41 before reviewer merges to `lab3-staging`.
 
+---
+
+## 2026-09-18 — Major Phase F4 (P11–P12): Administrator User Management & Integrated Verification
+
+- **Branch / Work Unit:** `feature/f4-admin-and-verification`, addressing Work Packages **P11 (Administrator User Management)** and **P12 (Integrated Verification & Visual Evidence)** under Issue [#42](https://github.com/JinggXd/TokTickIT/issues/42).
+- **Scope & Contract Deliverables:**
+  - `docs/lab-03/specification.md` Section 3.1 & Section 4 (AC-20..27, AC-32..35, AC-49..56, BR-19, BR-20, BR-21).
+  - `docs/lab-03/api-spec.md` Section 7 (API-20..35: Admin User Directory, Provisioning, Editing, Password Reset).
+  - `docs/lab-03/ui-spec.md` Section 3.5 & Section 4 (Screen 5: Administrator User Management, Modals, Invariants, Badge Tokens).
+  - `docs/lab-03/tests.md` P11 and P12 Planned Rows (E2E-12 to E2E-16, API-20..35, UI-09..11, UI-15).
+
+### Implementation Summary
+
+1. **P11 — Administrative User API (`server/src/routes/adminUsers.ts`):**
+   - Mounted at `/api/admin/users` in `server/src/app.ts`, guarded by session authentication and `requireRole("ADMINISTRATOR")`.
+   - `GET /api/admin/users` (API-20..22): Search by partial name/email (case-insensitive), filter by role (`REQUESTER`, `IT_STAFF`, `ADMINISTRATOR`), deterministic sorting (name asc, id asc).
+   - `POST /api/admin/users` (API-23..27): User provisioning with Argon2id-hashed initial password (12–128 chars), forced change flag (`mustChangePassword: true`), and duplicate email detection (HTTP 409 `DUPLICATE_EMAIL`).
+   - `PATCH /api/admin/users/:id` (API-28..31):
+     - Safe partial updates of `name`, `department`, `role`, and `isActive`.
+     - **Self-Deactivation Guard (BR-19):** Blocks administrator from deactivating their own account with HTTP 400 `SELF_DEACTIVATION`.
+     - **Last Active Admin Guard (BR-20):** Prevents deactivating or demoting the last active administrator with HTTP 400 `LAST_ACTIVE_ADMIN`.
+     - **Owner Deactivation Cascade (BR-21):** When an IT Staff or Administrator is deactivated or demoted to REQUESTER, any OPEN/IN_PROGRESS/RESOLVED tickets assigned to them are unassigned (`ownerId: null`), ticket `version` is incremented, and `unassignedTicketsCount` is returned in the response payload.
+     - **Session Revocation (AC-53):** On role change, deactivation, or password reset, all active sessions for the target user are immediately purged.
+   - `POST /api/admin/users/:id/initial-password` (API-32..35): Administrator temporary password reset enforcing complexity, purging active sessions, and setting `mustChangePassword: true`.
+   - **Automated Tests:** `server/tests/lab-03/users-admin.api.test.ts` (**17/17 passed**).
+
+2. **P11 — Administrator User Management UI (`client/src/pages/UserManagement.tsx`):**
+   - Route `/admin/users` registered in `client/src/App.tsx`, replacing the placeholder view.
+   - Responsive user directory table with role badges (`--zg-badge-*` tokens), status pills, and action buttons (`Edit`, `Reset Password`).
+   - Debounced search input (300ms) with clear button and instant role dropdown filter.
+   - Distinct UI states: Loading spinner, Empty state, No-results search state, and Error alert.
+   - **Add User Modal:** Name, email, department, role selection, temporary password with validation, and busy submit state.
+   - **Edit User Modal:** Full field editing with disabled toggle and warning tooltip for self-deactivation and last-admin constraints.
+   - **Reset Password Modal:** New temporary password input with explicit session revocation warning and confirmation.
+   - **API Integration:** Added typed methods in `client/src/api.ts` (`fetchAdminUsers`, `createAdminUser`, `updateAdminUser`, `resetAdminUserPassword`).
+   - **Automated Tests:** `client/tests/lab-03/UserManagement.test.tsx` (**9/9 passed**).
+
+3. **P12 — Integrated E2E Verification & Multi-Viewport Evidence (`e2e/lab-03/`):**
+   - Implemented `e2e/lab-03/user-administration.spec.ts`:
+     - **E2E-16:** Admin user directory browsing, search, and role filtering.
+     - **E2E-12:** User provisioning flow and forced password change verification.
+     - **E2E-13:** Administrator password reset and session invalidation verification.
+     - **E2E-14:** Administrator self-deactivation guard and disabled controls verification.
+     - **E2E-16 (Edit):** User name, department, and role modifications.
+   - Ran all 4 Lab 3 E2E test suites against verified test database `toktickit_test` across 3 viewport configurations:
+     - **Desktop** (1280x800)
+     - **Tablet** (768x1024)
+     - **Mobile** (375x667)
+   - Visual screenshots captured to `artifacts/lab-03/screenshots/` for each viewport.
+
+### Commands Actually Run & Results
+
+| Command | Exit | Result |
+|---|---:|---|
+| `$env:DATABASE_URL_TEST=".../toktickit_test"; npx playwright test e2e/lab-03/` | 0 | **69/69 passed across Desktop, Tablet, and Mobile** in 1.6m (0 fail, 0 skip). |
+| `$env:DATABASE_URL_TEST=".../toktickit_test"; npm --prefix server test` | 0 | **25 test files, 246/246 passed** in 43.7s (0 fail, 0 skip). |
+| `npm --prefix client test` | 0 | **15 test files, 80/80 passed** in 19.5s (0 fail, 0 skip). |
+| `npm --prefix server run build` | 0 | Server TypeScript compilation (`tsc`) passed with 0 errors. |
+| `npm --prefix client run build` | 0 | Client production build (`tsc && vite build`) passed with 0 errors. |
+
+### Gate Status
+
+- **Major Phase F4 (P11–P12):** **100% Implemented, Proven & Verified**.
+- **GitHub Tracking:** Issue [#42](https://github.com/JinggXd/TokTickIT/issues/42) opened on `feature/f4-admin-and-verification`. PR [#43](https://github.com/JinggXd/TokTickIT/pull/43) linked to Issue #42.
+
+---
+
+## 2026-09-18 — Phase F4 Peer Review Resolution (Commit a56da80 Feedback)
+
+Following peer review of commit `a56da80`, 5 critical issues (2 P1, 3 P2) were addressed and proven with automated regression tests:
+
+### Issues Resolved
+
+1. **[P1] Concurrent Admin Demotion/Deactivation Race (API-34, BR-20):**
+   - **Root Cause:** In `server/src/routes/adminUsers.ts`, active admins were counted without row locking, allowing concurrent demotions to demote all remaining admins down to 0.
+   - **Fix:** Whenever a user modification could affect active administrators (`role !== 'ADMINISTRATOR'` or `isActive === false`), all active administrators are locked in strict ascending ID order (`SELECT id FROM "RequesterUser" WHERE role = 'ADMINISTRATOR' AND "isActive" = true ORDER BY id ASC FOR UPDATE`). Deterministic ordering eliminates deadlocks between concurrent requests. If the count drops to $\le 1$, HTTP 400 `LAST_ACTIVE_ADMIN` is returned. A transient retry loop catches and retries serialization/deadlock errors.
+   - **Test Proof:** Added test `API-34: concurrent demotion/deactivation of two remaining admins leaves at least one active admin` in `server/tests/lab-03/users-admin.api.test.ts`.
+
+2. **[P1] Coordinated Locking Between Ticket Assignment & Owner Deactivation (API-35, BR-21):**
+   - **Root Cause:** Deactivation unassigned owned tickets, but lacked synchronization with ticket assignment in `staff.ts`, allowing an in-flight assignment to assign a ticket to an owner whose deactivation cascade just finished.
+   - **Fix:** In `server/src/routes/staff.ts` (`POST /claim` and `PATCH /owner`), added shared row locking (`SELECT id, "isActive", role FROM "RequesterUser" WHERE id = ${ownerId} FOR SHARE`) inside the transaction. In `adminUsers.ts`, deactivation takes an exclusive lock (`FOR UPDATE`) on the user being deactivated. This forces assignment to wait for deactivation (and fail due to `isActive: false`) or forces deactivation to wait for assignment (and cascade unassign the newly assigned ticket).
+   - **Test Proof:** Added test `API-35: concurrent ticket reassignment and owner deactivation never leaves an inactive owner` in `server/tests/lab-03/users-admin.api.test.ts`. Hardened assertions to verify that `assignRes.status` is strictly 200 or 400 (never 500), verifying `unassignedTicketsCount` (1 if assignment won, 0 if deactivation won) and asserting final ticket `version` (3 if assignment won and cascaded, 1 if assignment was rejected).
+
+3. **[P2] Duplicate Email Concurrency P2002 $\rightarrow$ HTTP 409 (API-23, API-28):**
+   - **Root Cause:** Pre-check for duplicate email suffered from race condition under concurrent submission; unique constraint violations produced HTTP 500 instead of HTTP 409 `DUPLICATE_EMAIL`.
+   - **Fix:** Wrapped user creation (`POST /api/admin/users`) and update (`PATCH /api/admin/users/:id`) in error handlers mapping Prisma unique constraint violation code `P2002` to HTTP 409 `DUPLICATE_EMAIL`.
+   - **Test Proof:** Added tests `API-23: concurrent creation with duplicate email returns 409 DUPLICATE_EMAIL` and `API-28: concurrent PATCH with duplicate email returns 409 DUPLICATE_EMAIL`.
+
+4. **[P2] UI Last-Admin False Lock on Search/Filter (`UserManagement.tsx`):**
+   - **Root Cause:** UI counted active administrators from the filtered table state (`users.filter(...)`). If the admin search filter matched only 1 admin, it falsely locked their role and status controls.
+   - **Fix:** Added `systemActiveAdminCount` and `refreshSystemAdminCount()` fetching `{ role: "ADMINISTRATOR" }` independently of user search filters, ensuring `isSoleActiveAdmin` reflects the system-wide active admin count.
+
+5. **[P2] Unicode Password Code Point Length (12–128 Code Points, AC-06, BR-03, API-24, API-32):**
+   - **Root Cause:** Validation used JavaScript UTF-16 `.length`, incorrectly counting surrogate pairs (e.g. emojis counted as 2 units).
+   - **Fix:** Implemented `getCodePointLength(str)` using `Array.from(str).length` across backend password validation and frontend UI forms.
+   - **Test Proof:** Added test suite `API-24, API-32: Password length validated by Unicode code points (12-128)` testing 6 emojis (fails 400), 12 emojis (passes 201), 128 emojis (passes 201), and 129 emojis (fails 400).
+
+### Verification Results
+
+| Suite | Tests | Result |
+|---|---|---|
+| Server Tests (`npm --prefix server test`) | 25 files, 254 tests | **254/254 Passed (0 failed)** |
+| Client Tests (`npm --prefix client test`) | 15 files, 80 tests | **80/80 Passed (0 failed)** |
+| Playwright E2E (`npx playwright test e2e/lab-03/`) | 69 tests | **69/69 Passed (0 failed)** |
+| TypeScript Build (`server` & `client`) | tsc / vite build | **0 Errors** |
+
+---
+
+## 2026-09-20 — Full Integrated Verification of Phases F3 & F4 on Isolated Test Database
+
+Following resolution of peer review feedback, queue strict-mode handling, direct test API session invalidation assertions, and test lifecycle fixes, a complete, authenticated run of all test suites was executed against the verified disposable Docker test environment.
+
+### 1. Pre-Execution Environment Verification
+
+- **PostgreSQL Container:** `toktickit-db` running on port `5433`.
+- **Target Database:** `toktickit_test` verified disposable, isolated from production/dev database on port `5432`.
+- **Upload Directory:** Run-isolated directory under scratch/test-uploads.
+- **Test Server:** Express server running on port `3001` with `validateApiEndpoint` preventing fallback to port `3000`.
+
+### 2. Full Test Suite Execution
+
+| Test Suite | Command | Duration | Exit | Passed | Failed | Skipped | Status |
+|---|---|---:|---:|---:|---:|---:|---|
+| **Server Tests** | `$env:DATABASE_URL_TEST="postgresql://toktickit:toktickit@localhost:5433/toktickit_test?schema=public"; npm run test:server` | 65.99s | 0 | **263 / 263** (25 files) | 0 | 0 | **VERIFIED** |
+| **Client Tests** | `npm run test:client` | 12.21s | 0 | **82 / 82** (15 files) | 0 | 0 | **VERIFIED** |
+| **Playwright E2E** | `$env:DATABASE_URL_TEST="postgresql://toktickit:toktickit@localhost:5433/toktickit_test?schema=public"; npm run test:e2e` | 2.8m | 0 | **108 / 108** (36 desktop, 36 tablet, 36 mobile) | 0 | 0 | **VERIFIED** |
+| **Server Build** | `npm --prefix server run build` | 2.1s | 0 | TypeScript compilation (`tsc`) | 0 | 0 | **VERIFIED** |
+| **Client Build** | `npm --prefix client run build` | 3.4s | 0 | TypeScript + Vite production build | 0 | 0 | **VERIFIED** |
+
+### 3. Key Behavioral & Security Assertions Verified
+
+1. **AC-47 & AC-53 (Session Revocation upon Password Reset):**
+   - In `e2e/lab-03/user-administration.spec.ts` (`E2E-13`), the target user's active session returned HTTP 200 before reset when queried directly against `http://localhost:3001/api/auth/me`.
+   - After admin reset, the exact same session cookie returned HTTP 401 on the test API, proving immediate server-side session revocation.
+   - Upon page reload, the browser redirected directly to `/login` with no residual access to `/my-tickets`.
+
+2. **Staff Queue Strict Assertions & Lifecycle Progressions (AC-24, AC-30, AC-32, AC-39):**
+   - In `e2e/lab-03/staff-ticket-flow.spec.ts`, verified strict-mode compliance for elements rendered simultaneously for desktop and mobile viewports using `row.or(card).filter({ visible: true })`.
+   - Verified end-to-end status lifecycle from `NEW` $\rightarrow$ `OPEN` $\rightarrow$ `IN_PROGRESS` $\rightarrow$ `RESOLVED` (modal confirmed) $\rightarrow$ `CLOSED` (modal confirmed).
+   - Perspective switching at each step confirmed Requester sees updated statuses, Public Comments, and that Internal Notes remain completely invisible (zero DOM presence, AC-36, BR-08).
+   - Confirmed Requester terminal state restrictions on `CLOSED` tickets (`appears-resolved-btn` is absent, BR-17).
+
+3. **Status Badge Consistency & Create Ticket Lifecycle:**
+   - Unified `data-testid="status-badge-${status}"` across `Badges.tsx` and `RequesterTicketDetail.tsx`.
+   - Fixed `CreateTicket.tsx` to retain the Success Screen until user clicks "View My Tickets", allowing Playwright to assert `success-ticket-no` without race condition.
+
+4. **Multi-Viewport Visual Verification:**
+   - Inspected responsive screenshots in `artifacts/lab-03/screenshots/playwright-1789845301652-30424/` across `desktop/`, `tablet/`, and `mobile/`.
+   - Verified that `e2e11-status-resolved.png` and `e2e13-old-session-invalidated.png` display correct typography, badge tokens (`--zg-badge-*`), alert banners, and zero horizontal clipping across all 3 viewports.
+
+### 4. Major Phase Status Update
+
+- **Phase F3 (P07–P10):** Transited from `Implemented — รอยืนยัน E2E ล่าสุด` to **`Verified`**.
+- **Phase F4 (P11–P12):** Transited from `Implemented — รอยืนยัน E2E ล่าสุด` to **`Verified`**.
+- **Phase F5 (P13–P14):** Ready for peer reviewer inspection, branch merge into `lab3-staging`, release PR to `main`, and final documentation packaging.

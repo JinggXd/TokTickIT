@@ -80,25 +80,52 @@ authRouter.post("/login", async (req: Request, res: Response): Promise<void> => 
     const csrfToken = generateCsrfToken();
     const expiresAt = new Date(Date.now() + 8 * 60 * 60 * 1000);
 
-    await prisma.session.create({
-      data: {
-        id: hashedId,
-        userId: user.id,
-        sessionVersion: user.sessionVersion,
-        csrfToken,
-        expiresAt,
-      },
-    });
+    let activeUser = user;
+    try {
+      await prisma.$transaction(async (tx) => {
+        const freshUser = await tx.user.findUnique({
+          where: { id: user.id },
+        });
+
+        if (
+          !freshUser ||
+          !freshUser.isActive ||
+          !freshUser.passwordHash ||
+          freshUser.passwordHash !== user.passwordHash ||
+          freshUser.sessionVersion !== user.sessionVersion
+        ) {
+          throw new Error("CREDENTIALS_INVALIDATED");
+        }
+
+        await tx.session.create({
+          data: {
+            id: hashedId,
+            userId: freshUser.id,
+            sessionVersion: freshUser.sessionVersion,
+            csrfToken,
+            expiresAt,
+          },
+        });
+        activeUser = freshUser;
+      });
+    } catch (err: any) {
+      if (err.message === "CREDENTIALS_INVALIDATED") {
+        recordFailedLogin(email, clientIp);
+        res.status(401).json({ error: "Invalid email or password" });
+        return;
+      }
+      throw err;
+    }
 
     setSessionCookie(res, rawToken);
 
     res.status(200).json({
       user: {
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
-        mustChangePassword: user.mustChangePassword,
+        id: activeUser.id,
+        name: activeUser.name,
+        email: activeUser.email,
+        role: activeUser.role,
+        mustChangePassword: activeUser.mustChangePassword,
       },
     });
   } catch (err) {
@@ -186,14 +213,46 @@ authRouter.post(
 
     try {
       await prisma.$transaction(async (tx) => {
-        await tx.user.update({
-          where: { id: user.id },
+        // 1. Lock user row FOR UPDATE in PostgreSQL
+        const freshUsers = await tx.$queryRaw<
+          Array<{ id: number; passwordHash: string | null; sessionVersion: number; isActive: boolean }>
+        >`
+          SELECT id, "passwordHash", "sessionVersion", "isActive"
+          FROM "RequesterUser"
+          WHERE id = ${user.id}
+          FOR UPDATE
+        `;
+        const freshUser = freshUsers[0] ?? null;
+
+        if (
+          !freshUser ||
+          !freshUser.isActive ||
+          !freshUser.passwordHash ||
+          freshUser.passwordHash !== user.passwordHash ||
+          freshUser.sessionVersion !== user.sessionVersion
+        ) {
+          throw new Error("CREDENTIALS_INVALIDATED");
+        }
+
+        // 2. Perform conditional atomic update matching exact original hash and version
+        const updateResult = await tx.user.updateMany({
+          where: {
+            id: user.id,
+            passwordHash: user.passwordHash,
+            sessionVersion: user.sessionVersion,
+          },
           data: {
             passwordHash: newHash,
             mustChangePassword: false,
-            sessionVersion: newSessionVersion,
+            sessionVersion: { increment: 1 },
           },
         });
+
+        if (updateResult.count === 0) {
+          throw new Error("CREDENTIALS_INVALIDATED");
+        }
+
+        const freshSessionVersion = freshUser.sessionVersion + 1;
 
         // Revoke all existing sessions for this user
         await tx.session.deleteMany({
@@ -205,7 +264,7 @@ authRouter.post(
           data: {
             id: hashedId,
             userId: user.id,
-            sessionVersion: newSessionVersion,
+            sessionVersion: freshSessionVersion,
             csrfToken,
             expiresAt,
           },
@@ -224,7 +283,14 @@ authRouter.post(
           mustChangePassword: false,
         },
       });
-    } catch (err) {
+    } catch (err: any) {
+      if (err.message === "CREDENTIALS_INVALIDATED") {
+        res.status(400).json({
+          error: "Validation failed",
+          details: { currentPassword: "Incorrect current password" },
+        });
+        return;
+      }
       res.status(500).json({ error: "Unable to update password. Please try again." });
     }
   },
@@ -239,7 +305,13 @@ authRouter.post("/logout", async (req: Request, res: Response): Promise<void> =>
       await getPrisma().session.delete({
         where: { id: req.session.id },
       });
-    } catch {}
+    } catch (err: any) {
+      // P2025: Record to delete does not exist (already deleted / idempotent) -> safe to treat as 204
+      if (err?.code !== "P2025") {
+        res.status(500).json({ error: "Unable to complete logout. Please try again." });
+        return;
+      }
+    }
   }
 
   clearSessionCookie(res);

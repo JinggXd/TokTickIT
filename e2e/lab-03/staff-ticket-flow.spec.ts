@@ -38,6 +38,16 @@ let ticketId: number;
 
 async function loginAs(page: Page, email: string, password = PASS) {
   await page.goto("/login");
+  const emailInput = page.getByTestId("login-email-input");
+  if (!(await emailInput.isVisible().catch(() => false))) {
+    const signOutBtn = page.getByTestId("sign-out-button");
+    if (await signOutBtn.isVisible().catch(() => false)) {
+      await signOutBtn.click();
+      await page.waitForURL((url) => url.pathname.endsWith("/login"), { timeout: 15_000 }).catch(() => {});
+    } else {
+      await page.goto("/login");
+    }
+  }
   await page.getByTestId("login-email-input").fill(email);
   await page.getByTestId("login-password-input").fill(password);
   await page.getByTestId("login-submit-button").click();
@@ -112,7 +122,14 @@ test.describe("E2E-09: Staff Queue search and filter", () => {
 
     await page.getByTestId("queue-search-input").fill(`E2E Staff Flow Test ${runId}`);
     await page.waitForTimeout(600);
-    await expect(page.locator("[data-testid='staff-queue-table'], [data-testid='staff-queue-mobile-cards'], [data-testid='staff-queue-no-results'], [data-testid='staff-queue-empty']").filter({ visible: true }).first()).toBeVisible({ timeout: 8_000 });
+    // Explicitly assert that the created ticket IS found in the queue search results (AC-24)
+    // Filter visible element to prevent Playwright strict mode violation between desktop table row and mobile card
+    const visibleItem = page
+      .getByTestId(`queue-row-${ticketId}`)
+      .or(page.getByTestId(`queue-mobile-card-${ticketId}`))
+      .filter({ visible: true });
+    await expect(visibleItem).toBeVisible({ timeout: 8_000 });
+    await expect(visibleItem).toContainText(`E2E Staff Flow Test ${runId}`);
     await page.screenshot({ path: screenshotPath(testInfo, "e2e09-queue-search.png") });
   });
 
@@ -121,7 +138,13 @@ test.describe("E2E-09: Staff Queue search and filter", () => {
     await expect(page).toHaveURL(/\/staff\/queue/);
     await page.getByTestId("queue-status-filter").selectOption("NEW");
     await page.waitForTimeout(500);
-    await expect(page.locator("[data-testid='staff-queue-table'], [data-testid='staff-queue-mobile-cards'], [data-testid='staff-queue-no-results'], [data-testid='staff-queue-empty']").filter({ visible: true }).first()).toBeVisible({ timeout: 8_000 });
+    // Explicitly assert that the newly created ticket in status NEW is present in the visible viewport
+    const visibleItem = page
+      .getByTestId(`queue-row-${ticketId}`)
+      .or(page.getByTestId(`queue-mobile-card-${ticketId}`))
+      .filter({ visible: true });
+    await expect(visibleItem).toBeVisible({ timeout: 8_000 });
+    await expect(visibleItem).toContainText(`E2E Staff Flow Test ${runId}`);
     await page.screenshot({ path: screenshotPath(testInfo, "e2e09-status-filter.png") });
   });
 
@@ -154,15 +177,14 @@ test.describe("E2E-11: Complete IT Staff triage workflow", () => {
     await page.getByTestId("queue-search-input").fill(`E2E Staff Flow Test ${runId}`);
     await page.waitForTimeout(600);
 
-    const row = page.getByTestId(`queue-row-${ticketId}`);
-    const card = page.getByTestId(`queue-mobile-card-${ticketId}`);
-    if (await row.isVisible().catch(() => false)) {
-      await row.click();
-    } else if (await card.isVisible().catch(() => false)) {
-      await card.click();
-    } else {
-      await page.goto(`/staff/tickets/${ticketId}`);
-    }
+    // Assert the ticket is visible in the search results and click directly from queue without bypass
+    const visibleItem = page
+      .getByTestId(`queue-row-${ticketId}`)
+      .or(page.getByTestId(`queue-mobile-card-${ticketId}`))
+      .filter({ visible: true });
+    await expect(visibleItem).toBeVisible({ timeout: 8_000 });
+    await expect(visibleItem).toContainText(`E2E Staff Flow Test ${runId}`);
+    await visibleItem.click();
 
     await expect(page).toHaveURL(new RegExp(`/staff/tickets/${ticketId}`));
     await expect(page.getByTestId("staff-ticket-detail-page")).toBeVisible();
@@ -230,6 +252,122 @@ test.describe("E2E-11: Complete IT Staff triage workflow", () => {
     await page.getByTestId("submit-internal-note-btn").click();
     await expect(page.getByTestId("internal-notes-panel")).toContainText("E2E internal note", { timeout: 6_000 });
     await page.screenshot({ path: screenshotPath(testInfo, "e2e11-note.png") });
+  });
+
+  test("Transition OPEN → IN_PROGRESS", async ({ page }, testInfo) => {
+    await loginAs(page, STAFF_EMAIL);
+    await page.goto(`/staff/tickets/${ticketId}`);
+    await expect(page.getByTestId("staff-ticket-detail-page")).toBeVisible();
+
+    const sel = page.getByTestId("staff-status-select");
+    await expect(sel.locator("option[value='IN_PROGRESS']")).toHaveCount(1);
+    await sel.selectOption("IN_PROGRESS");
+    const btn = page.getByTestId("staff-change-status-btn");
+    await expect(btn).toBeEnabled();
+    await btn.click();
+    await expect(page.locator(".alert-success, [role='alert']")).toBeVisible({ timeout: 6_000 });
+    await expect(page.locator("[data-testid='status-badge-IN_PROGRESS'], .badge:has-text('In Progress')").first()).toBeVisible();
+    await page.screenshot({ path: screenshotPath(testInfo, "e2e11-status-in-progress.png") });
+  });
+
+  test("Switch to Requester view: verify IN_PROGRESS, public comments visible, internal notes hidden, flag appears resolved", async ({ page }, testInfo) => {
+    await loginAs(page, REQUESTER_EMAIL);
+    await page.goto(`/tickets/${ticketId}`);
+    await expect(page.getByTestId("public-comments-panel")).toBeVisible({ timeout: 8_000 });
+
+    // Verify Requester sees status IN_PROGRESS
+    await expect(page.locator("[data-testid='status-badge-IN_PROGRESS'], .badge:has-text('In Progress')").first()).toBeVisible();
+
+    // Verify Public Comments panel contains the staff comment
+    await expect(page.getByTestId("public-comments-panel")).toContainText("E2E automated public comment");
+
+    // Verify Internal Notes panel is NOT visible to Requester (AC-30, BR-08)
+    await expect(page.getByTestId("internal-notes-panel")).toHaveCount(0);
+
+    // Verify Staff operations panel is NOT visible to Requester (BR-09)
+    await expect(page.getByTestId("staff-operations-panel")).toHaveCount(0);
+
+    // Requester flags "Problem Appears Resolved" (BR-17)
+    const arBtn = page.getByTestId("appears-resolved-btn");
+    await expect(arBtn).toBeVisible();
+    await arBtn.click();
+    await expect(page.getByTestId("appears-resolved-banner")).toBeVisible({ timeout: 6_000 });
+    await expect(page.getByTestId("appears-resolved-banner")).toContainText("You indicated this problem appears resolved");
+
+    await page.screenshot({ path: screenshotPath(testInfo, "e2e11-requester-in-progress.png") });
+  });
+
+  test("Transition IN_PROGRESS → RESOLVED via confirmation modal", async ({ page }, testInfo) => {
+    await loginAs(page, STAFF_EMAIL);
+    await page.goto(`/staff/tickets/${ticketId}`);
+    await expect(page.getByTestId("staff-ticket-detail-page")).toBeVisible();
+
+    const sel = page.getByTestId("staff-status-select");
+    await expect(sel.locator("option[value='RESOLVED']")).toHaveCount(1);
+    await sel.selectOption("RESOLVED");
+    const btn = page.getByTestId("staff-change-status-btn");
+    await expect(btn).toBeEnabled();
+    await btn.click();
+
+    // Confirm modal for RESOLVED transition (CONFIRMATION_STATUSES)
+    const confirmBtn = page.getByTestId("confirm-status-transition-btn");
+    await expect(confirmBtn).toBeVisible({ timeout: 6_000 });
+    await confirmBtn.click();
+
+    await expect(page.locator(".alert-success, [role='alert']")).toBeVisible({ timeout: 6_000 });
+    await expect(page.locator("[data-testid='status-badge-RESOLVED'], .badge:has-text('Resolved')").first()).toBeVisible();
+    await page.screenshot({ path: screenshotPath(testInfo, "e2e11-status-resolved.png") });
+  });
+
+  test("Switch to Requester view: verify RESOLVED status and confidentiality", async ({ page }, testInfo) => {
+    await loginAs(page, REQUESTER_EMAIL);
+    await page.goto(`/tickets/${ticketId}`);
+    await expect(page.getByTestId("public-comments-panel")).toBeVisible({ timeout: 8_000 });
+
+    // Verify Requester sees status RESOLVED
+    await expect(page.locator("[data-testid='status-badge-RESOLVED'], .badge:has-text('Resolved')").first()).toBeVisible();
+
+    // Verify Internal Notes remain hidden
+    await expect(page.getByTestId("internal-notes-panel")).toHaveCount(0);
+    await page.screenshot({ path: screenshotPath(testInfo, "e2e11-requester-resolved.png") });
+  });
+
+  test("Transition RESOLVED → CLOSED via confirmation modal", async ({ page }, testInfo) => {
+    await loginAs(page, STAFF_EMAIL);
+    await page.goto(`/staff/tickets/${ticketId}`);
+    await expect(page.getByTestId("staff-ticket-detail-page")).toBeVisible();
+
+    const sel = page.getByTestId("staff-status-select");
+    await expect(sel.locator("option[value='CLOSED']")).toHaveCount(1);
+    await sel.selectOption("CLOSED");
+    const btn = page.getByTestId("staff-change-status-btn");
+    await expect(btn).toBeEnabled();
+    await btn.click();
+
+    // Confirm modal for CLOSED transition (CONFIRMATION_STATUSES)
+    const confirmBtn = page.getByTestId("confirm-status-transition-btn");
+    await expect(confirmBtn).toBeVisible({ timeout: 6_000 });
+    await confirmBtn.click();
+
+    await expect(page.locator(".alert-success, [role='alert']")).toBeVisible({ timeout: 6_000 });
+    await expect(page.locator("[data-testid='status-badge-CLOSED'], .badge:has-text('Closed')").first()).toBeVisible();
+    await page.screenshot({ path: screenshotPath(testInfo, "e2e11-status-closed.png") });
+  });
+
+  test("Switch to Requester view: verify CLOSED status and terminal restrictions", async ({ page }, testInfo) => {
+    await loginAs(page, REQUESTER_EMAIL);
+    await page.goto(`/tickets/${ticketId}`);
+    await expect(page.getByTestId("public-comments-panel")).toBeVisible({ timeout: 8_000 });
+
+    // Verify Requester sees status CLOSED
+    await expect(page.locator("[data-testid='status-badge-CLOSED'], .badge:has-text('Closed')").first()).toBeVisible();
+
+    // Verify appears-resolved button is NOT available on CLOSED tickets (BR-17)
+    await expect(page.getByTestId("appears-resolved-btn")).toHaveCount(0);
+
+    // Verify Internal Notes remain hidden
+    await expect(page.getByTestId("internal-notes-panel")).toHaveCount(0);
+    await page.screenshot({ path: screenshotPath(testInfo, "e2e11-requester-closed.png") });
   });
 });
 

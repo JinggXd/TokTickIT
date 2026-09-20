@@ -922,5 +922,45 @@ describe("Phase F2 / P03 Data Migration & Idempotent Seeding (AC-14–AC-18, AC-
       expect(afterComments).toBe(beforeComments);
       expect(afterNotes).toBe(beforeNotes);
     });
+
+    it("re-running seed preserves administrator modifications (name, role, department, isActive) on existing fixture accounts", async () => {
+      await seed(prisma);
+
+      const staff1 = await prisma.user.findUnique({
+        where: { email: "staff1@example.com" },
+      });
+      expect(staff1).toBeDefined();
+
+      // Simulate Admin modifying staff1: deactivating, changing name and department
+      await prisma.user.update({
+        where: { id: staff1!.id },
+        data: {
+          isActive: false,
+          name: "Staff Modified",
+          department: "Security Operations",
+        },
+      });
+
+      // Re-run seed
+      await seed(prisma);
+
+      // Verify modifications are strictly preserved
+      const staff1After = await prisma.user.findUnique({
+        where: { id: staff1!.id },
+      });
+      expect(staff1After!.isActive).toBe(false);
+      expect(staff1After!.name).toBe("Staff Modified");
+      expect(staff1After!.department).toBe("Security Operations");
+
+      // Cleanup
+      await prisma.user.update({
+        where: { id: staff1!.id },
+        data: {
+          isActive: true,
+          name: "Staff Alice",
+          department: "IT Support",
+        },
+      });
+    });
   });
 });

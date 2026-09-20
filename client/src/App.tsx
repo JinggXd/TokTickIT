@@ -9,6 +9,7 @@ import { MyTickets } from "./pages/MyTickets.js";
 import { RequesterTicketDetail } from "./pages/RequesterTicketDetail.js";
 import { StaffTicketQueue } from "./pages/StaffTicketQueue.js";
 import { StaffTicketDetail } from "./pages/StaffTicketDetail.js";
+import { UserManagement } from "./pages/UserManagement.js";
 
 type TabType =
   | "login"
@@ -216,12 +217,7 @@ function MainContent() {
               readOnly={true}
             />
           ) : (
-            <div className="container py-4">
-              <div className="card shadow-sm p-4 text-center">
-                <h2 className="h4 fw-bold mb-2">Administrator Portal</h2>
-                <p className="text-muted">User Management will be active in Phase F4.</p>
-              </div>
-            </div>
+            <UserManagement onNavigateToLogin={() => navigate("login", true)} />
           )}
         </>
       )}
