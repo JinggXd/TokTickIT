@@ -11,7 +11,8 @@ datasource db {
 }
 
 // ---------------------------------------------------------------------------
-// Lab 2 — TokTickIT Requester Ticketing MVP Data Model
+// Lab 3 — TokTickIT Multi-Role Ticketing System Data Model (LCP-02)
+// Fully backwards-compatible with Lab 2; zero dropped tables/columns.
 // ---------------------------------------------------------------------------
 
 enum Priority {
@@ -22,21 +23,56 @@ enum Priority {
 
 enum TicketStatus {
   NEW
+  OPEN
   IN_PROGRESS
+  WAITING_FOR_REQUESTER
   RESOLVED
+  CLOSED
+  REOPENED
+  CANCELLED
 }
 
-model RequesterUser {
-  id         Int      @id @default(autoincrement())
-  name       String
-  email      String   @unique
-  department String
-  isActive   Boolean  @default(true)
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+enum Role {
+  REQUESTER
+  IT_STAFF
+  ADMINISTRATOR
+}
 
-  tickets            Ticket[]     @relation("TicketRequester")
-  uploadedAttachments Attachment[] @relation("AttachmentUploader")
+model User {
+  id                  Int          @id @default(autoincrement())
+  name                String
+  email               String       @unique
+  department          String       @default("")
+  role                Role         @default(REQUESTER)
+  isActive            Boolean      @default(true)
+  passwordHash        String?
+  mustChangePassword  Boolean      @default(true)
+  sessionVersion      Int          @default(1)
+  createdAt           DateTime     @default(now())
+  updatedAt           DateTime     @updatedAt
+
+  ticketsRequested       Ticket[]        @relation("TicketRequester")
+  ticketsOwned           Ticket[]        @relation("TicketOwner")
+  ticketsAppearsResolved Ticket[]        @relation("TicketAppearsResolvedBy")
+  uploadedAttachments    Attachment[]    @relation("AttachmentUploader")
+  publicComments         PublicComment[]
+  internalNotes          InternalNote[]
+  sessions               Session[]
+
+  @@map("RequesterUser")
+}
+
+model Session {
+  id             String   @id // SHA-256(raw session token), never raw cookie value
+  sessionVersion Int      @default(1)
+  csrfToken      String
+  userId         Int
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt      DateTime
+  createdAt      DateTime @default(now())
+
+  @@index([userId])
+  @@index([expiresAt])
 }
 
 model Category {
@@ -58,32 +94,42 @@ model RelatedSystem {
 }
 
 model Ticket {
-  id                Int          @id @default(autoincrement())
-  ticketNo          String       @unique
-  summary           String
-  description       String
-  requestedPriority Priority
-  itPriority        Priority
-  currentStatus     TicketStatus @default(NEW)
+  id                  Int          @id @default(autoincrement())
+  ticketNo            String       @unique
+  summary             String
+  description         String
+  requestedPriority   Priority
+  itPriority          Priority
+  currentStatus       TicketStatus @default(NEW)
+  seedKey             String?      @unique
 
-  requesterId       Int
-  requester         RequesterUser @relation("TicketRequester", fields: [requesterId], references: [id])
+  requesterId         Int
+  requester           User         @relation("TicketRequester", fields: [requesterId], references: [id])
 
-  categoryId        Int
-  category          Category      @relation(fields: [categoryId], references: [id])
+  categoryId          Int
+  category            Category     @relation(fields: [categoryId], references: [id])
 
-  relatedSystemId   Int
-  relatedSystem     RelatedSystem @relation(fields: [relatedSystemId], references: [id])
+  relatedSystemId     Int
+  relatedSystem       RelatedSystem @relation(fields: [relatedSystemId], references: [id])
 
-  // Reserved for Lab 3+. No IT Staff model exists yet, so no relation is declared.
-  ticketOwnerId     Int?
+  ticketOwnerId       Int?
+  ticketOwner         User?        @relation("TicketOwner", fields: [ticketOwnerId], references: [id])
 
-  attachments       Attachment[]
+  version             Int          @default(1)
+  appearsResolvedAt   DateTime?
+  appearsResolvedById Int?
+  appearsResolvedBy   User?        @relation("TicketAppearsResolvedBy", fields: [appearsResolvedById], references: [id])
 
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  attachments         Attachment[]
+  publicComments      PublicComment[]
+  internalNotes       InternalNote[]
+
+  createdAt           DateTime     @default(now())
+  updatedAt           DateTime     @updatedAt
 
   @@index([requesterId, createdAt])
+  @@index([ticketOwnerId])
+  @@index([currentStatus])
 }
 
 model Attachment {
@@ -92,17 +138,41 @@ model Attachment {
   ticket               Ticket    @relation(fields: [ticketId], references: [id])
 
   fileName             String    // original name shown to the user
-  storedFileName        String    // safe, generated name on disk (see api-spec.md Section 5)
+  storedFileName       String    // safe, generated name on disk (see api-spec.md Section 5)
   fileSize             Int       // bytes
   mimeType             String
 
   uploadedByRequesterId Int
-  uploadedBy            RequesterUser @relation("AttachmentUploader", fields: [uploadedByRequesterId], references: [id])
+  uploadedBy            User      @relation("AttachmentUploader", fields: [uploadedByRequesterId], references: [id])
 
   removedAt             DateTime?
   removalReason         String?
 
-  createdAt             DateTime @default(now())
+  createdAt             DateTime  @default(now())
 
   @@index([ticketId])
+}
+
+model PublicComment {
+  id        Int      @id @default(autoincrement())
+  ticketId  Int
+  ticket    Ticket   @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  authorId  Int
+  author    User     @relation(fields: [authorId], references: [id])
+  body      String
+  createdAt DateTime @default(now())
+
+  @@index([ticketId, createdAt])
+}
+
+model InternalNote {
+  id        Int      @id @default(autoincrement())
+  ticketId  Int
+  ticket    Ticket   @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  authorId  Int
+  author    User     @relation(fields: [authorId], references: [id])
+  body      String
+  createdAt DateTime @default(now())
+
+  @@index([ticketId, createdAt])
 }

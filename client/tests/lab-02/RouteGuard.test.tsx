@@ -79,25 +79,64 @@ describe("UI-10 (AC-02): RouteGuard Component", () => {
     expect(screen.getByText("Secret Protected Area")).toBeInTheDocument();
   });
 
-  it("UI-10: redirects a direct protected URL to Requester Selection when context is empty", async () => {
+  it("UI-10 (AC-13): intercepts a direct protected URL to Login screen when session is unauthenticated", async () => {
+    globalThis.fetch = vi.fn().mockImplementation((url: string | URL | Request) => {
+      const urlStr = typeof url === "string" ? url : url.toString();
+      if (urlStr.includes("/api/auth/me")) {
+        return Promise.resolve({
+          ok: false,
+          status: 401,
+          json: () => Promise.resolve({ error: "Authentication required", code: "AUTH_REQUIRED" }),
+        });
+      }
+      return Promise.resolve({
+        ok: true,
+        json: () => Promise.resolve([]),
+      });
+    });
+
     window.history.replaceState({}, "", "/create-ticket");
 
     render(<App />);
 
-    expect(await screen.findByText("Select Development Requester")).toBeInTheDocument();
-    expect(window.location.pathname).toBe("/select-requester");
+    expect(await screen.findByText("Sign in to your account")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Sign In" })).toBeInTheDocument();
   });
 
-  it("restores the requested protected URL when a Requester context exists", async () => {
-    localStorage.setItem(
-      "toktickit_current_requester",
-      JSON.stringify({
-        id: 1,
-        name: "Jennifer Anderson",
-        email: "jennifer.a@example.com",
-        department: "Marketing",
-      })
-    );
+  it("UI-10 (AC-13): restores the requested protected URL when an authenticated session exists", async () => {
+    globalThis.fetch = vi.fn().mockImplementation((url: string | URL | Request) => {
+      const urlStr = typeof url === "string" ? url : url.toString();
+      if (urlStr.includes("/api/auth/me")) {
+        return Promise.resolve({
+          ok: true,
+          status: 200,
+          json: () =>
+            Promise.resolve({
+              user: {
+                id: 1,
+                name: "Jennifer Anderson",
+                email: "jennifer.a@example.com",
+                role: "REQUESTER",
+                department: "Marketing",
+                mustChangePassword: false,
+              },
+            }),
+        });
+      }
+      if (urlStr.includes("/api/categories") || urlStr.includes("/api/related-systems")) {
+        return Promise.resolve({
+          ok: true,
+          status: 200,
+          json: () => Promise.resolve([]),
+        });
+      }
+      return Promise.resolve({
+        ok: true,
+        status: 200,
+        json: () => Promise.resolve({}),
+      });
+    });
+
     window.history.replaceState({}, "", "/create-ticket");
 
     render(<App />);

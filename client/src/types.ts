@@ -1,9 +1,22 @@
+export type Role = "REQUESTER" | "IT_STAFF" | "ADMINISTRATOR";
+
 export interface RequesterUser {
   id: number;
   name: string;
   email: string;
   department: string;
   isActive?: boolean;
+  role?: Role;
+  mustChangePassword?: boolean;
+}
+
+export interface SafeUser {
+  id: number;
+  name: string;
+  email: string;
+  role: Role;
+  department?: string;
+  mustChangePassword: boolean;
 }
 
 export interface Category {
@@ -19,7 +32,31 @@ export interface RelatedSystem {
 }
 
 export type Priority = "LOW" | "MEDIUM" | "HIGH";
-export type TicketStatus = "NEW" | "IN_PROGRESS" | "RESOLVED";
+
+export type TicketStatus =
+  | "NEW"
+  | "OPEN"
+  | "IN_PROGRESS"
+  | "WAITING_FOR_REQUESTER"
+  | "RESOLVED"
+  | "CLOSED"
+  | "REOPENED"
+  | "CANCELLED";
+
+/**
+ * Client-side mirror of server workflow.ts ALLOWED_TRANSITIONS.
+ * Used by StaffTicketDetail to populate the status transition select.
+ */
+export const ALLOWED_TRANSITIONS: Record<TicketStatus, TicketStatus[]> = {
+  NEW: ["OPEN", "CANCELLED"],
+  OPEN: ["IN_PROGRESS", "CANCELLED"],
+  IN_PROGRESS: ["WAITING_FOR_REQUESTER", "RESOLVED", "CANCELLED"],
+  WAITING_FOR_REQUESTER: ["IN_PROGRESS", "RESOLVED", "CANCELLED"],
+  RESOLVED: ["CLOSED", "REOPENED"],
+  CLOSED: [],
+  REOPENED: ["IN_PROGRESS", "CANCELLED"],
+  CANCELLED: [],
+};
 
 export interface Attachment {
   id: number;
@@ -48,5 +85,10 @@ export interface Ticket {
   category?: Category;
   relatedSystemId: number;
   relatedSystem?: RelatedSystem;
+  ticketOwnerId?: number | null;
+  ticketOwnerName?: string;
+  version?: number;
+  appearsResolvedAt?: string | null;
+  appearsResolvedById?: number | null;
   attachments?: Attachment[];
 }

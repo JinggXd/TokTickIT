@@ -1,3 +1,4 @@
+import { sessionHeaders } from "../helpers/session.js";
 import request from "supertest";
 import { describe, it, expect } from "vitest";
 import { app } from "../../src/app.js";
@@ -8,7 +9,7 @@ describe("Reference Data Endpoints (API-27)", () => {
 
   describe("GET /api/categories", () => {
     it("returns active categories in id ascending order (200 OK)", async () => {
-      const res = await request(app).get("/api/categories");
+      const res = await request(app).get("/api/categories").set(await sessionHeaders());
 
       expect(res.status).toBe(200);
       expect(Array.isArray(res.body)).toBe(true);
@@ -34,7 +35,7 @@ describe("Reference Data Endpoints (API-27)", () => {
         create: { name: "Inactive Ref Category", isActive: false },
       });
 
-      const res = await request(app).get("/api/categories");
+      const res = await request(app).get("/api/categories").set(await sessionHeaders());
       expect(res.status).toBe(200);
       const found = res.body.find((c: any) => c.id === inactive.id || c.name === "Inactive Ref Category");
       expect(found).toBeUndefined();
@@ -43,7 +44,7 @@ describe("Reference Data Endpoints (API-27)", () => {
 
   describe("GET /api/related-systems", () => {
     it("returns active related systems in id ascending order (200 OK)", async () => {
-      const res = await request(app).get("/api/related-systems");
+      const res = await request(app).get("/api/related-systems").set(await sessionHeaders());
 
       expect(res.status).toBe(200);
       expect(Array.isArray(res.body)).toBe(true);
@@ -69,7 +70,7 @@ describe("Reference Data Endpoints (API-27)", () => {
         create: { name: "Inactive Ref System", isActive: false },
       });
 
-      const res = await request(app).get("/api/related-systems");
+      const res = await request(app).get("/api/related-systems").set(await sessionHeaders());
       expect(res.status).toBe(200);
       const found = res.body.find((s: any) => s.id === inactive.id || s.name === "Inactive Ref System");
       expect(found).toBeUndefined();

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useRequester } from "../context/RequesterContext.js";
+import { useAuth } from "../context/AuthContext.js";
 import {
   fetchCategories,
   fetchRelatedSystems,
@@ -21,6 +22,15 @@ const MAX_FILES = 5;
 
 export function CreateTicket({ onSuccess, onCancel }: CreateTicketProps) {
   const { currentRequester } = useRequester();
+  const { user } = useAuth();
+  const effectiveRequester = user
+    ? {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        department: user.department || "",
+      }
+    : currentRequester;
 
   // Reference data states
   const [categories, setCategories] = useState<Category[]>([]);
@@ -173,7 +183,7 @@ export function CreateTicket({ onSuccess, onCancel }: CreateTicketProps) {
 
     setFieldErrors({});
 
-    if (!currentRequester) {
+    if (!effectiveRequester) {
       setSubmitError("No active Requester context found.");
       return;
     }
@@ -189,7 +199,7 @@ export function CreateTicket({ onSuccess, onCancel }: CreateTicketProps) {
           relatedSystemId: Number(relatedSystemId),
           requestedPriority,
         },
-        currentRequester.id
+        effectiveRequester.id
       );
 
       setCreatedTicket(ticket);
@@ -209,7 +219,7 @@ export function CreateTicket({ onSuccess, onCancel }: CreateTicketProps) {
           });
 
           try {
-            const att = await uploadAttachment(ticket.id, file, currentRequester.id);
+            const att = await uploadAttachment(ticket.id, file, effectiveRequester.id);
             uploaded.push({ fileName: att.fileName, id: att.id });
             setUploadedAttachments([...uploaded]);
           } catch (attErr: any) {
@@ -223,10 +233,6 @@ export function CreateTicket({ onSuccess, onCancel }: CreateTicketProps) {
 
         setIsUploadingAttachments(false);
         setUploadProgress(null);
-      }
-
-      if (onSuccess) {
-        onSuccess(ticket);
       }
     } catch (err: any) {
       // Retain entered values on failure (BR-11)
@@ -242,11 +248,11 @@ export function CreateTicket({ onSuccess, onCancel }: CreateTicketProps) {
   };
 
   const handleRetryUpload = async (failedFile: { file: File; error: string }) => {
-    if (!createdTicket || !currentRequester) return;
+    if (!createdTicket || !effectiveRequester) return;
     setIsRetryingUpload((prev) => ({ ...prev, [failedFile.file.name]: true }));
 
     try {
-      const att = await uploadAttachment(createdTicket.id, failedFile.file, currentRequester.id);
+      const att = await uploadAttachment(createdTicket.id, failedFile.file, effectiveRequester.id);
       setUploadedAttachments((prev) => [...prev, { fileName: att.fileName, id: att.id }]);
       setFailedUploads((prev) => prev.filter((f) => f.file.name !== failedFile.file.name));
     } catch (err: any) {
@@ -305,7 +311,7 @@ export function CreateTicket({ onSuccess, onCancel }: CreateTicketProps) {
             <div className="col-md-6">
               <label className="form-label small text-muted mb-1">Requester</label>
               <div className="fw-semibold text-dark" data-testid="success-requester">
-                {currentRequester?.name} ({currentRequester?.department})
+                {effectiveRequester?.name}{effectiveRequester?.department ? ` (${effectiveRequester.department})` : ""}
               </div>
             </div>
             <div className="col-md-6">
@@ -390,12 +396,16 @@ export function CreateTicket({ onSuccess, onCancel }: CreateTicketProps) {
             >
               Create Another Ticket
             </button>
-            {onCancel && (
+            {(onSuccess || onCancel) && (
               <button
                 className="btn btn-primary-zen w-100 w-md-auto order-1 order-md-2"
                 onClick={() => {
                   if (!isUploadingAttachments) {
-                    onCancel();
+                    if (onSuccess) {
+                      onSuccess(createdTicket);
+                    } else if (onCancel) {
+                      onCancel();
+                    }
                   }
                 }}
                 disabled={isUploadingAttachments}
@@ -463,8 +473,8 @@ export function CreateTicket({ onSuccess, onCancel }: CreateTicketProps) {
                   tabIndex={-1}
                   className="form-control form-control-sm form-control-zen"
                   value={
-                    currentRequester
-                      ? `${currentRequester.name} (${currentRequester.department})`
+                    effectiveRequester
+                      ? `${effectiveRequester.name}${effectiveRequester.department ? ` (${effectiveRequester.department})` : ""}`
                       : "Unknown Requester"
                   }
                 />

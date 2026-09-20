@@ -1,7 +1,18 @@
 import express, { Request, Response } from "express";
 import cors from "cors";
+import { TicketStatus } from "@prisma/client";
 import { getPrisma } from "./prisma.js";
-import { requireRequester, AuthenticatedRequesterRequest } from "./middleware/requireRequester.js";
+import {
+  sessionMiddleware,
+  requireAuth,
+  requirePasswordChanged,
+  requireRole,
+  csrfProtection,
+} from "./middleware/sessionAuth.js";
+import { authRouter } from "./routes/auth.js";
+import { staffRouter, getDetailedTicket } from "./routes/staff.js";
+import { communicationRouter } from "./routes/communication.js";
+import { adminUsersRouter } from "./routes/adminUsers.js";
 import { validateTicketInput } from "./utils/validation.js";
 import { generateTicketNumber, TicketNumberGenerationError } from "./utils/ticketNumber.js";
 import fs from "fs";
@@ -9,17 +20,28 @@ import path from "path";
 import multer from "multer";
 import { clampPagination, ALLOWED_PAGE_SIZES } from "./utils/pagination.js";
 import { sanitizeFileName, validateAttachmentType } from "./utils/safeFilename.js";
-// getPrisma() is your lazy database handle. Call it INSIDE a route when you
-// need the DB (Issue 4). It is intentionally unused until then.
-void getPrisma;
+import { getUploadDirectory } from "./config/testEnvironment.js";
 
-// The Express app is exported separately from app.listen() (see index.ts) so
-// Supertest can import `app` without opening a port. Do not merge these files.
 export const app = express();
 
-app.use(cors());          // already wired: lets the Vite dev server call this API
-app.use(express.json({ strict: false }));
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      callback(null, true);
+    },
+    credentials: true,
+  }),
+);
+
+// 16 KiB limit on JSON body (api-spec.md Section 2.6)
+app.use(express.json({ limit: "16kb", strict: false }));
+
+// JSON error handling: 413 for oversized body, 400 for malformed JSON
 app.use((err: any, _req: Request, res: Response, next: express.NextFunction) => {
+  if (err && (err.type === "entity.too.large" || err.status === 413)) {
+    res.status(413).json({ error: "Request body too large" });
+    return;
+  }
   if (err instanceof SyntaxError && "status" in err && err.status === 400) {
     res.status(400).json({
       error: "Validation failed",
@@ -30,85 +52,141 @@ app.use((err: any, _req: Request, res: Response, next: express.NextFunction) => 
   next(err);
 });
 
+// Session hydration and CSRF protection
+app.use(sessionMiddleware);
+app.use(csrfProtection);
+
 // ---------------------------------------------------------------------------
-// Issue 2 — API health check
-// Make the test in tests/lab-01/health.test.ts pass.
-// It must return HTTP 200 with JSON: { status: "ok", service: "TokTickIT API" }
+// Health check
 // ---------------------------------------------------------------------------
 app.get("/api/health", (_req: Request, res: Response) => {
   res.status(200).json({ status: "ok", service: "TokTickIT API" });
 });
 
 // ---------------------------------------------------------------------------
-// Issue 4 & Lab 2 Phase 3 — Category list (api-spec.md Section 6.2, API-27)
-// Returns active Categories ordered by id asc.
+// Authentication routes
 // ---------------------------------------------------------------------------
-app.get("/api/categories", async (_req: Request, res: Response) => {
-  try {
-    const categories = await getPrisma().category.findMany({
-      where: { isActive: true },
-      orderBy: { id: "asc" },
-      select: { id: true, name: true },
-    });
-    res.status(200).json(categories);
-  } catch (err) {
-    res.status(500).json({ error: "Unable to load categories" });
-  }
+app.use("/api/auth", authRouter);
+app.use("/api/staff", staffRouter);
+app.use("/api", communicationRouter);
+app.use("/api/admin/users", adminUsersRouter);
+
+// Administrator read-only ticket detail (api-spec §5.6)
+app.get(
+  "/api/admin/tickets/:id",
+  requireAuth,
+  requirePasswordChanged,
+  requireRole("ADMINISTRATOR"),
+  async (req: Request, res: Response): Promise<void> => {
+    const rawId = req.params.id;
+    if (!/^[1-9]\d*$/.test(rawId)) {
+      res.status(404).json({ error: "Ticket not found" });
+      return;
+    }
+    const ticketId = parseInt(rawId, 10);
+    try {
+      const ticket = await getDetailedTicket(ticketId);
+      if (!ticket) {
+        res.status(404).json({ error: "Ticket not found" });
+        return;
+      }
+      res.status(200).json({
+        id: ticket.id,
+        ticketNo: ticket.ticketNo,
+        summary: ticket.summary,
+        description: ticket.description,
+        requester: ticket.requester,
+        category: ticket.category,
+        relatedSystem: ticket.relatedSystem,
+        requestedPriority: ticket.requestedPriority,
+        itPriority: ticket.itPriority,
+        currentStatus: ticket.currentStatus,
+        ticketOwner: ticket.ticketOwner,
+        version: ticket.version,
+        appearsResolvedAt: ticket.appearsResolvedAt?.toISOString() ?? null,
+        appearsResolvedById: ticket.appearsResolvedById,
+        createdAt: ticket.createdAt.toISOString(),
+        updatedAt: ticket.updatedAt.toISOString(),
+        attachments: ticket.attachments.map((a) => ({
+          id: a.id,
+          fileName: a.fileName,
+          fileSize: a.fileSize,
+          mimeType: a.mimeType,
+          removedAt: a.removedAt?.toISOString() ?? null,
+          removalReason: a.removalReason,
+          createdAt: a.createdAt.toISOString(),
+        })),
+      });
+    } catch (err) {
+      res.status(500).json({ error: "Unable to retrieve ticket detail." });
+    }
+  },
+);
+
+// ---------------------------------------------------------------------------
+// Categories list — requires completed-password active session
+// ---------------------------------------------------------------------------
+app.get(
+  "/api/categories",
+  requireAuth,
+  requirePasswordChanged,
+  async (_req: Request, res: Response) => {
+    try {
+      const categories = await getPrisma().category.findMany({
+        where: { isActive: true },
+        orderBy: { id: "asc" },
+        select: { id: true, name: true },
+      });
+      res.status(200).json(categories);
+    } catch (err) {
+      res.status(500).json({ error: "Unable to load categories" });
+    }
+  },
+);
+
+// ---------------------------------------------------------------------------
+// Related Systems list — requires completed-password active session
+// ---------------------------------------------------------------------------
+app.get(
+  "/api/related-systems",
+  requireAuth,
+  requirePasswordChanged,
+  async (_req: Request, res: Response) => {
+    try {
+      const systems = await getPrisma().relatedSystem.findMany({
+        where: { isActive: true },
+        orderBy: { id: "asc" },
+        select: { id: true, name: true },
+      });
+      res.status(200).json(systems);
+    } catch (err) {
+      res.status(500).json({ error: "Unable to load related systems" });
+    }
+  },
+);
+
+// ---------------------------------------------------------------------------
+// Active Development Requesters — RETIRED in Lab 3 (api-spec.md §3)
+// ---------------------------------------------------------------------------
+app.get("/api/requesters/active", (_req: Request, res: Response) => {
+  res.status(404).json({ error: "Endpoint retired" });
 });
 
 // ---------------------------------------------------------------------------
-// Lab 2: Phase 3 — Related Systems list (api-spec.md Section 6.3, API-27)
-// Returns active Related Systems ordered by id asc.
-// ---------------------------------------------------------------------------
-app.get("/api/related-systems", async (_req: Request, res: Response) => {
-  try {
-    const systems = await getPrisma().relatedSystem.findMany({
-      where: { isActive: true },
-      orderBy: { id: "asc" },
-      select: { id: true, name: true },
-    });
-    res.status(200).json(systems);
-  } catch (err) {
-    res.status(500).json({ error: "Unable to load related systems" });
-  }
-});
-
-// ---------------------------------------------------------------------------
-// Lab 2: Phase 2 — Active Development Requesters (api-spec.md Section 6.1, BR-05)
-// ---------------------------------------------------------------------------
-app.get("/api/requesters/active", async (_req: Request, res: Response) => {
-  try {
-    const requesters = await getPrisma().requesterUser.findMany({
-      where: { isActive: true },
-      orderBy: { id: "asc" },
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        department: true,
-      },
-    });
-    res.status(200).json(requesters);
-  } catch (err) {
-    res.status(500).json({ error: "Unable to load Development Requesters. Please try again." });
-  }
-});
-
-// ---------------------------------------------------------------------------
-// Lab 2: Phase 3 — Create Ticket (api-spec.md Section 6.4, API-01 to API-05, API-21, API-28, API-29)
+// Create Ticket — requires REQUESTER role with completed password change
+// Scoped to authenticated session (X-Requester-Id is strictly ignored)
 // ---------------------------------------------------------------------------
 app.post(
   "/api/tickets",
-  requireRequester as express.RequestHandler,
-  async (req: AuthenticatedRequesterRequest, res: Response): Promise<void> => {
+  requireAuth,
+  requirePasswordChanged,
+  requireRole("REQUESTER"),
+  async (req: Request, res: Response): Promise<void> => {
     try {
-      // 1. Validate payload syntax and length (BR-09)
       const validation = validateTicketInput(req.body);
       const errors: Record<string, string> = { ...validation.errors };
-
       const prisma = getPrisma();
 
-      // 2. Reference checks: use candidate IDs so reference errors are collected alongside syntax errors
       if (validation.candidates?.categoryId) {
         const category = await prisma.category.findUnique({
           where: { id: validation.candidates.categoryId },
@@ -135,8 +213,7 @@ app.post(
         return;
       }
 
-      // 3. Create ticket with ticket number generation and collision retries
-      const requesterId = req.requester!.id;
+      const requesterId = req.user!.id;
       const { summary, description, categoryId, relatedSystemId, requestedPriority } = validation.data!;
 
       let createdTicket: {
@@ -146,7 +223,7 @@ app.post(
         description: string;
         requestedPriority: "LOW" | "MEDIUM" | "HIGH";
         itPriority: "LOW" | "MEDIUM" | "HIGH";
-        currentStatus: "NEW" | "IN_PROGRESS" | "RESOLVED";
+        currentStatus: TicketStatus;
         requesterId: number;
         createdAt: Date;
       } | null = null;
@@ -161,15 +238,15 @@ app.post(
               summary,
               description,
               requestedPriority,
-              itPriority: requestedPriority, // BR-16: itPriority = requestedPriority
-              currentStatus: "NEW",          // BR-02: always starts with NEW
+              itPriority: requestedPriority,
+              currentStatus: "NEW",
               requesterId,
               categoryId,
               relatedSystemId,
-              ticketOwnerId: null,          // BR-17: unassigned
+              ticketOwnerId: null,
             },
           });
-        }
+        },
       );
 
       if (!createdTicket) {
@@ -177,18 +254,7 @@ app.post(
         return;
       }
 
-      const ticket = createdTicket as {
-        id: number;
-        ticketNo: string;
-        summary: string;
-        description: string;
-        requestedPriority: string;
-        itPriority: string;
-        currentStatus: string;
-        requesterId: number;
-        createdAt: Date;
-      };
-
+      const ticket = createdTicket as any;
       res.status(201).json({
         id: ticket.id,
         ticketNo: ticket.ticketNo,
@@ -207,12 +273,12 @@ app.post(
       }
       res.status(500).json({ error: "Unable to create ticket. Please try again." });
     }
-  }
+  },
 );
 
 // ---------------------------------------------------------------------------
-// Lab 2: Phase 4 — List My Tickets (api-spec.md Section 6.5, BR-04, BR-12, FR-06)
-// Scoped strictly to the current Requester via X-Requester-Id.
+// List My Tickets — requires REQUESTER role with completed password change
+// Scoped strictly to authenticated session requesterId
 // ---------------------------------------------------------------------------
 const ALLOWED_SORT_FIELDS = [
   "createdAt",
@@ -223,15 +289,28 @@ const ALLOWED_SORT_FIELDS = [
   "currentStatus",
 ] as const;
 
+const ALLOWED_STATUS_QUERY = [
+  "NEW",
+  "OPEN",
+  "IN_PROGRESS",
+  "WAITING_FOR_REQUESTER",
+  "RESOLVED",
+  "CLOSED",
+  "REOPENED",
+  "CANCELLED",
+  "ALL",
+] as const;
+
 app.get(
   "/api/tickets",
-  requireRequester as express.RequestHandler,
-  async (req: AuthenticatedRequesterRequest, res: Response): Promise<void> => {
+  requireAuth,
+  requirePasswordChanged,
+  requireRole("REQUESTER"),
+  async (req: Request, res: Response): Promise<void> => {
     try {
-      const requesterId = req.requester!.id;
+      const requesterId = req.user!.id;
       const prisma = getPrisma();
 
-      // 1. Validate query parameters (sortBy and limit)
       const validationDetails: Record<string, string> = {};
 
       const sortByParam = req.query.sortBy as string | undefined;
@@ -287,11 +366,8 @@ app.get(
       }
 
       const statusParam = req.query.status as string | undefined;
-      if (
-        statusParam !== undefined &&
-        !["NEW", "IN_PROGRESS", "RESOLVED", "ALL"].includes(statusParam)
-      ) {
-        validationDetails.status = "status must be one of NEW, IN_PROGRESS, RESOLVED, ALL";
+      if (statusParam !== undefined && !ALLOWED_STATUS_QUERY.includes(statusParam as any)) {
+        validationDetails.status = `status must be one of ${ALLOWED_STATUS_QUERY.join(", ")}`;
       }
 
       if (Object.keys(validationDetails).length > 0) {
@@ -302,7 +378,6 @@ app.get(
         return;
       }
 
-      // 2. Build where filter (always scoped to requesterId)
       const where: any = { requesterId };
 
       if (req.query.search) {
@@ -331,25 +406,21 @@ app.get(
         where.currentStatus = statusParam;
       }
 
-      // 3. Count matching items for pagination
       const totalItems = await prisma.ticket.count({ where });
 
-      // 4. Calculate pagination clamping (BR-12)
       const paginationResult = clampPagination({
         page: req.query.page as string | undefined,
         limit: parsedLimit,
         totalItems,
       });
 
-      // 5. Build sort order (default: createdAt desc, id desc)
       const sortBy = sortByParam || "createdAt";
       const sortOrder = (req.query.sortOrder as string)?.toLowerCase() === "asc" ? "asc" : "desc";
       const orderBy: any[] = [{ [sortBy]: sortOrder }];
       if (sortBy !== "id") {
-        orderBy.push({ id: "desc" }); // tie breaker
+        orderBy.push({ id: "desc" });
       }
 
-      // 6. Query tickets with joined relations
       const tickets = await prisma.ticket.findMany({
         where,
         orderBy,
@@ -358,10 +429,10 @@ app.get(
         include: {
           category: { select: { name: true } },
           relatedSystem: { select: { name: true } },
+          ticketOwner: { select: { name: true } },
         },
       });
 
-      // 7. Format response data
       const data = tickets.map((t) => ({
         id: t.id,
         ticketNo: t.ticketNo,
@@ -371,7 +442,7 @@ app.get(
         requestedPriority: t.requestedPriority,
         itPriority: t.itPriority,
         currentStatus: t.currentStatus,
-        ticketOwnerName: "Unassigned", // No IT Staff model in Lab 2 (reserved for Lab 3)
+        ticketOwnerName: t.ticketOwner?.name || "Unassigned",
         createdAt: t.createdAt.toISOString(),
         updatedAt: t.updatedAt.toISOString(),
       }));
@@ -383,17 +454,18 @@ app.get(
     } catch (err) {
       res.status(500).json({ error: "Unable to load tickets. Please try again." });
     }
-  }
+  },
 );
 
 // ---------------------------------------------------------------------------
-// Lab 2: Phase 5 — Ticket Detail (api-spec.md Section 6.6, API-10, 11, 12)
-// Enforces ownership (403 if ticket does not belong to X-Requester-Id).
+// Ticket Detail — requires active session with completed password change
+// Foreign tickets return 403 for Requester
 // ---------------------------------------------------------------------------
 app.get(
   "/api/tickets/:id",
-  requireRequester,
-  async (req: AuthenticatedRequesterRequest, res: Response) => {
+  requireAuth,
+  requirePasswordChanged,
+  async (req: Request, res: Response): Promise<void> => {
     const rawId = req.params.id;
     if (!/^[1-9]\d*$/.test(rawId)) {
       res.status(400).json({ error: "Invalid ticket ID" });
@@ -408,6 +480,7 @@ app.get(
         include: {
           category: { select: { name: true } },
           relatedSystem: { select: { name: true } },
+          ticketOwner: { select: { name: true } },
           attachments: {
             orderBy: { createdAt: "asc" },
             select: {
@@ -428,7 +501,8 @@ app.get(
         return;
       }
 
-      if (ticket.requesterId !== req.requester!.id) {
+      // Requester role check: must own the ticket (AC-08, BR-04)
+      if (req.user!.role === "REQUESTER" && ticket.requesterId !== req.user!.id) {
         res.status(403).json({ error: "Access denied: You do not own this ticket" });
         return;
       }
@@ -443,10 +517,13 @@ app.get(
         requestedPriority: ticket.requestedPriority,
         itPriority: ticket.itPriority,
         currentStatus: ticket.currentStatus,
-        ticketOwnerName: "Unassigned",
+        ticketOwnerName: ticket.ticketOwner?.name || "Unassigned",
         requesterId: ticket.requesterId,
         createdAt: ticket.createdAt.toISOString(),
         updatedAt: ticket.updatedAt.toISOString(),
+        version: ticket.version,
+        appearsResolvedAt: ticket.appearsResolvedAt ? ticket.appearsResolvedAt.toISOString() : null,
+        appearsResolvedById: ticket.appearsResolvedById,
         attachments: ticket.attachments.map((a) => ({
           id: a.id,
           fileName: a.fileName,
@@ -460,24 +537,159 @@ app.get(
     } catch (err) {
       res.status(500).json({ error: "Unable to load ticket. Please try again." });
     }
-  }
+  },
 );
 
 // ---------------------------------------------------------------------------
-// Lab 2: Phase 5 — Attachment Endpoints (api-spec.md Section 6.7, 6.8, 6.9)
+// Appears Resolved — requires REQUESTER role owning the ticket
+// Permitted statuses: OPEN, IN_PROGRESS, WAITING_FOR_REQUESTER, REOPENED
 // ---------------------------------------------------------------------------
+const PERMITTED_APPEARS_RESOLVED_STATUSES = [
+  "OPEN",
+  "IN_PROGRESS",
+  "WAITING_FOR_REQUESTER",
+  "REOPENED",
+];
 
-const UPLOADS_DIR = fs.existsSync(path.resolve(process.cwd(), "server"))
-  ? path.resolve(process.cwd(), "server", "uploads")
-  : path.resolve(process.cwd(), "uploads");
+app.post(
+  "/api/tickets/:id/appears-resolved",
+  requireAuth,
+  requirePasswordChanged,
+  requireRole("REQUESTER"),
+  async (req: Request, res: Response): Promise<void> => {
+    const rawId = req.params.id;
+    if (!/^[1-9]\d*$/.test(rawId)) {
+      res.status(400).json({ error: "Invalid ticket ID" });
+      return;
+    }
+    const ticketId = parseInt(rawId, 10);
+    if (req.body && typeof req.body === "object") {
+      const disallowed = ["actor", "appearsResolvedAt", "appearsResolvedById", "status", "version", "requesterId"];
+      const errors: Record<string, string> = {};
+      for (const field of disallowed) {
+        if (field in req.body) {
+          errors[field] = `Field '${field}' is not permitted`;
+        }
+      }
+      if (Object.keys(errors).length > 0) {
+        res.status(400).json({ error: "Validation failed", details: errors });
+        return;
+      }
+    }
 
+    try {
+      const prisma = getPrisma();
+      const ticket = await prisma.ticket.findUnique({
+        where: { id: ticketId },
+      });
+
+      if (!ticket) {
+        res.status(404).json({ error: "Ticket not found" });
+        return;
+      }
+
+      if (ticket.requesterId !== req.user!.id) {
+        res.status(403).json({ error: "Access denied: You do not own this ticket" });
+        return;
+      }
+
+      if (!PERMITTED_APPEARS_RESOLVED_STATUSES.includes(ticket.currentStatus)) {
+        res.status(400).json({
+          error: "APPEARS_RESOLVED_NOT_ALLOWED",
+          message: "This ticket cannot be marked as appears resolved in its current status.",
+        });
+        return;
+      }
+
+      // Idempotent: if already marked, return existing without altering timestamp or status
+      if (ticket.appearsResolvedAt !== null) {
+        res.status(200).json({
+          id: ticket.id,
+          ticketNo: ticket.ticketNo,
+          currentStatus: ticket.currentStatus,
+          appearsResolvedAt: ticket.appearsResolvedAt.toISOString(),
+          appearsResolvedById: ticket.appearsResolvedById,
+          message: "Problem noted as appears resolved. IT Staff will verify and complete formal resolution.",
+        });
+        return;
+      }
+
+      const now = new Date();
+      const updateResult = await prisma.ticket.updateMany({
+        where: {
+          id: ticketId,
+          version: ticket.version,
+          currentStatus: { in: PERMITTED_APPEARS_RESOLVED_STATUSES as any },
+        },
+        data: {
+          appearsResolvedAt: now,
+          appearsResolvedById: req.user!.id,
+          version: { increment: 1 },
+          updatedAt: now,
+        },
+      });
+
+      if (updateResult.count === 0) {
+        const freshTicket = await prisma.ticket.findUnique({
+          where: { id: ticketId },
+        });
+
+        if (freshTicket && freshTicket.appearsResolvedAt !== null) {
+          res.status(200).json({
+            id: freshTicket.id,
+            ticketNo: freshTicket.ticketNo,
+            currentStatus: freshTicket.currentStatus,
+            appearsResolvedAt: freshTicket.appearsResolvedAt.toISOString(),
+            appearsResolvedById: freshTicket.appearsResolvedById,
+            message: "Problem noted as appears resolved. IT Staff will verify and complete formal resolution.",
+          });
+          return;
+        }
+
+        if (freshTicket && !PERMITTED_APPEARS_RESOLVED_STATUSES.includes(freshTicket.currentStatus)) {
+          res.status(400).json({
+            error: "APPEARS_RESOLVED_NOT_ALLOWED",
+            message: "This ticket cannot be marked as appears resolved in its current status.",
+          });
+          return;
+        }
+
+        res.status(409).json({
+          error: "CONFLICT",
+          message: "Ticket was modified concurrently. Please reload and try again.",
+        });
+        return;
+      }
+
+      const updated = (await prisma.ticket.findUnique({
+        where: { id: ticketId },
+      }))!;
+
+      res.status(200).json({
+        id: updated.id,
+        ticketNo: updated.ticketNo,
+        currentStatus: updated.currentStatus,
+        appearsResolvedAt: updated.appearsResolvedAt!.toISOString(),
+        appearsResolvedById: updated.appearsResolvedById,
+        message: "Problem noted as appears resolved. IT Staff will verify and complete formal resolution.",
+      });
+    } catch (err) {
+      res.status(500).json({ error: "Unable to mark ticket as appears resolved." });
+    }
+  },
+);
+
+// ---------------------------------------------------------------------------
+// Attachments
+// ---------------------------------------------------------------------------
+const UPLOADS_DIR = getUploadDirectory();
 if (!fs.existsSync(UPLOADS_DIR)) {
   fs.mkdirSync(UPLOADS_DIR, { recursive: true });
 }
 
 const upload = multer({
   storage: multer.memoryStorage(),
-  limits: { fileSize: 10 * 1024 * 1024 }, // Allow up to 10MB in memory so we can validate and return exact 5MB error
+  limits: { fileSize: 10 * 1024 * 1024 },
 });
 
 function handleFileUpload(req: Request, res: Response, next: express.NextFunction) {
@@ -500,12 +712,14 @@ function handleFileUpload(req: Request, res: Response, next: express.NextFunctio
   });
 }
 
-// 6.7 POST /api/tickets/:id/attachments — Upload Attachment
+// Upload Attachment — REQUESTER role on own ticket
 app.post(
   "/api/tickets/:id/attachments",
-  requireRequester,
+  requireAuth,
+  requirePasswordChanged,
+  requireRole("REQUESTER"),
   handleFileUpload,
-  async (req: AuthenticatedRequesterRequest, res: Response) => {
+  async (req: Request, res: Response): Promise<void> => {
     const rawId = req.params.id;
     if (!/^[1-9]\d*$/.test(rawId)) {
       res.status(400).json({ error: "Invalid ticket ID" });
@@ -523,7 +737,7 @@ app.post(
         return;
       }
 
-      if (ticket.requesterId !== req.requester!.id) {
+      if (ticket.requesterId !== req.user!.id) {
         res.status(403).json({ error: "Access denied: You do not own this ticket" });
         return;
       }
@@ -536,7 +750,6 @@ app.post(
         return;
       }
 
-      // Check size limit: 5 MB
       if (req.file.size > 5 * 1024 * 1024) {
         res.status(400).json({
           error: "Validation failed",
@@ -545,7 +758,6 @@ app.post(
         return;
       }
 
-      // Validate file extension and magic bytes
       const validation = validateAttachmentType(req.file.originalname, req.file.mimetype, req.file.buffer);
       if (!validation.isValid) {
         res.status(400).json({
@@ -555,7 +767,6 @@ app.post(
         return;
       }
 
-      // Generate safe disk filename and save to uploads directory
       const { diskFileName } = sanitizeFileName(req.file.originalname);
       const filePath = path.join(UPLOADS_DIR, diskFileName);
 
@@ -566,10 +777,8 @@ app.post(
         return;
       }
 
-      // Execute DB insert inside interactive transaction with row lock on Ticket to prevent concurrent upload races
       try {
         const attachment = await getPrisma().$transaction(async (tx) => {
-          // Lock ticket row to serialize concurrent uploads for this ticket
           await tx.$queryRaw`SELECT id FROM "Ticket" WHERE id = ${ticketId} FOR UPDATE`;
 
           const activeCount = await tx.attachment.count({
@@ -583,7 +792,7 @@ app.post(
           return await tx.attachment.create({
             data: {
               ticketId,
-              uploadedByRequesterId: req.requester!.id,
+              uploadedByRequesterId: req.user!.id,
               fileName: req.file!.originalname,
               storedFileName: diskFileName,
               fileSize: req.file!.size,
@@ -603,7 +812,6 @@ app.post(
           createdAt: attachment.createdAt.toISOString(),
         });
       } catch (dbErr: any) {
-        // Rollback disk file if DB write fails or limit was reached
         try {
           await fs.promises.unlink(filePath);
         } catch {}
@@ -621,14 +829,15 @@ app.post(
     } catch (err) {
       res.status(500).json({ error: "Unable to upload attachment. Please try again." });
     }
-  }
+  },
 );
 
-// 6.8 GET /api/attachments/:id/download — Download Attachment
+// Download Attachment — Shared download: REQUESTER (own) or IT_STAFF / ADMINISTRATOR (any)
 app.get(
   "/api/attachments/:id/download",
-  requireRequester,
-  async (req: AuthenticatedRequesterRequest, res: Response) => {
+  requireAuth,
+  requirePasswordChanged,
+  async (req: Request, res: Response): Promise<void> => {
     const rawId = req.params.id;
     if (!/^[1-9]\d*$/.test(rawId)) {
       res.status(400).json({ error: "Invalid attachment ID" });
@@ -647,7 +856,9 @@ app.get(
         return;
       }
 
-      if (attachment.ticket.requesterId !== req.requester!.id) {
+      // Shared download permissions (api-spec.md §3.5):
+      // REQUESTER may only download own files; IT_STAFF and ADMINISTRATOR may download any active files
+      if (req.user!.role === "REQUESTER" && attachment.ticket.requesterId !== req.user!.id) {
         res.status(403).json({ error: "Access denied: You do not own this attachment" });
         return;
       }
@@ -671,14 +882,16 @@ app.get(
     } catch (err) {
       res.status(500).json({ error: "Unable to download attachment. Please try again." });
     }
-  }
+  },
 );
 
-// 6.9 DELETE /api/attachments/:id — Soft-remove Attachment
+// Soft-remove Attachment — REQUESTER role on own ticket
 app.delete(
   "/api/attachments/:id",
-  requireRequester,
-  async (req: AuthenticatedRequesterRequest, res: Response) => {
+  requireAuth,
+  requirePasswordChanged,
+  requireRole("REQUESTER"),
+  async (req: Request, res: Response): Promise<void> => {
     const rawId = req.params.id;
     if (!/^[1-9]\d*$/.test(rawId)) {
       res.status(400).json({ error: "Invalid attachment ID" });
@@ -710,7 +923,7 @@ app.delete(
         return;
       }
 
-      if (attachment.ticket.requesterId !== req.requester!.id) {
+      if (attachment.ticket.requesterId !== req.user!.id) {
         res.status(403).json({ error: "Access denied: You do not own this attachment" });
         return;
       }
@@ -736,7 +949,7 @@ app.delete(
     } catch (err) {
       res.status(500).json({ error: "Unable to remove attachment. Please try again." });
     }
-  }
+  },
 );
 
 export default app;

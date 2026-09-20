@@ -1,3 +1,4 @@
+import { sessionHeaders } from "../helpers/session.js";
 import request from "supertest";
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import { app } from "../../src/app.js";
@@ -119,32 +120,32 @@ describe("Phase 6: Ownership Hardening Pass (API-35, BR-04, BR-06, AC-08, AC-18)
       {
         name: "GET /api/tickets",
         invoke: (headers: Record<string, string>) =>
-          request(app).get("/api/tickets").set(headers),
+          request(app).get("/api/tickets").set({ Origin: "http://localhost:5173", ...headers }),
       },
       {
         name: "GET /api/tickets/:id",
         invoke: (headers: Record<string, string>) =>
-          request(app).get(`/api/tickets/${ticketAId}`).set(headers),
+          request(app).get(`/api/tickets/${ticketAId}`).set({ Origin: "http://localhost:5173", ...headers }),
       },
       {
         name: "POST /api/tickets/:id/attachments",
         invoke: (headers: Record<string, string>) =>
           request(app)
             .post(`/api/tickets/${ticketAId}/attachments`)
-            .set(headers)
+            .set({ Origin: "http://localhost:5173", ...headers })
             .attach("file", validPdfBuffer, "sample.pdf"),
       },
       {
         name: "GET /api/attachments/:id/download",
         invoke: (headers: Record<string, string>) =>
-          request(app).get(`/api/attachments/${attachmentAId}/download`).set(headers),
+          request(app).get(`/api/attachments/${attachmentAId}/download`).set({ Origin: "http://localhost:5173", ...headers }),
       },
       {
         name: "DELETE /api/attachments/:id",
         invoke: (headers: Record<string, string>) =>
           request(app)
             .delete(`/api/attachments/${attachmentAId}`)
-            .set(headers)
+            .set({ Origin: "http://localhost:5173", ...headers })
             .send({ removalReason: "Testing middleware" }),
       },
     ];
@@ -153,42 +154,42 @@ describe("Phase 6: Ownership Hardening Pass (API-35, BR-04, BR-06, AC-08, AC-18)
       it(`${name}: rejects missing X-Requester-Id with 401 and generic message`, async () => {
         const res = await invoke({});
         expect(res.status).toBe(401);
-        expect(res.body).toEqual({ error: "Requester context is missing or invalid" });
+        expect(res.body).toEqual({ error: "Authentication required" });
         expect(res.body).not.toHaveProperty("details");
       });
 
-      it(`${name}: rejects empty X-Requester-Id ('') with 400 without details`, async () => {
+      it(`${name}: rejects empty X-Requester-Id ('') without a session with 401`, async () => {
         const res = await invoke({ "X-Requester-Id": "" });
-        expect(res.status).toBe(400);
-        expect(res.body).toEqual({ error: "Bad Request: Malformed X-Requester-Id header" });
+        expect(res.status).toBe(401);
+        expect(res.body).toEqual({ error: "Authentication required" });
         expect(res.body).not.toHaveProperty("details");
       });
 
-      it(`${name}: rejects malformed X-Requester-Id ('abc') with 400 without details`, async () => {
+      it(`${name}: rejects malformed X-Requester-Id ('abc') without a session with 401`, async () => {
         const res = await invoke({ "X-Requester-Id": "abc" });
-        expect(res.status).toBe(400);
-        expect(res.body).toEqual({ error: "Bad Request: Malformed X-Requester-Id header" });
+        expect(res.status).toBe(401);
+        expect(res.body).toEqual({ error: "Authentication required" });
         expect(res.body).not.toHaveProperty("details");
       });
 
       it(`${name}: rejects unknown X-Requester-Id ('99999999') with 401`, async () => {
         const res = await invoke({ "X-Requester-Id": "99999999" });
         expect(res.status).toBe(401);
-        expect(res.body).toEqual({ error: "Requester context is missing or invalid" });
+        expect(res.body).toEqual({ error: "Authentication required" });
         expect(res.body).not.toHaveProperty("details");
       });
 
       it(`${name}: rejects out-of-range integer X-Requester-Id ('2147483648') with 401 (not 500)`, async () => {
         const res = await invoke({ "X-Requester-Id": "2147483648" });
         expect(res.status).toBe(401);
-        expect(res.body).toEqual({ error: "Requester context is missing or invalid" });
+        expect(res.body).toEqual({ error: "Authentication required" });
         expect(res.body).not.toHaveProperty("details");
       });
 
       it(`${name}: rejects inactive X-Requester-Id with 401`, async () => {
         const res = await invoke({ "X-Requester-Id": String(requesterInactive.id) });
         expect(res.status).toBe(401);
-        expect(res.body).toEqual({ error: "Requester context is missing or invalid" });
+        expect(res.body).toEqual({ error: "Authentication required" });
         expect(res.body).not.toHaveProperty("details");
       });
     }
@@ -198,11 +199,11 @@ describe("Phase 6: Ownership Hardening Pass (API-35, BR-04, BR-06, AC-08, AC-18)
   // Section 2: Cross-Requester Ownership Boundary Enforcement (BR-04, AC-08)
   // =========================================================================
   describe("Cross-Requester Ownership Protection (BR-04, AC-08)", () => {
-    it("POST /api/tickets: body requesterId spoofing is ignored; ticket is strictly bound to X-Requester-Id", async () => {
+    it("POST /api/tickets: body requesterId spoofing is ignored; ticket is strictly bound to session identity", async () => {
       // Requester A attempts to spoof ownership to Requester B by passing requesterId in body
       const res = await request(app)
         .post("/api/tickets")
-        .set("X-Requester-Id", String(requesterA.id))
+        .set(await sessionHeaders(requesterA.id))
         .send({
           summary: "Spoof attempt ticket",
           description: "Attempting to create a ticket on behalf of another requester via body payload.",
@@ -224,7 +225,7 @@ describe("Phase 6: Ownership Hardening Pass (API-35, BR-04, BR-06, AC-08, AC-18)
       // Requester B lists tickets
       const res = await request(app)
         .get("/api/tickets")
-        .set("X-Requester-Id", String(requesterB.id));
+        .set(await sessionHeaders(requesterB.id));
 
       expect(res.status).toBe(200);
       const ticketIds = res.body.data.map((t: any) => t.id);
@@ -235,7 +236,7 @@ describe("Phase 6: Ownership Hardening Pass (API-35, BR-04, BR-06, AC-08, AC-18)
       // Requester B attempts to view ticket owned by Requester A
       const res = await request(app)
         .get(`/api/tickets/${ticketAId}`)
-        .set("X-Requester-Id", String(requesterB.id));
+        .set(await sessionHeaders(requesterB.id));
 
       expect(res.status).toBe(403);
       expect(res.body).toEqual({ error: "Access denied: You do not own this ticket" });
@@ -250,7 +251,7 @@ describe("Phase 6: Ownership Hardening Pass (API-35, BR-04, BR-06, AC-08, AC-18)
 
       const res = await request(app)
         .post(`/api/tickets/${ticketAId}/attachments`)
-        .set("X-Requester-Id", String(requesterB.id))
+        .set(await sessionHeaders(requesterB.id))
         .attach("file", validPdfBuffer, "malicious_upload.pdf");
 
       expect(res.status).toBe(403);
@@ -263,7 +264,7 @@ describe("Phase 6: Ownership Hardening Pass (API-35, BR-04, BR-06, AC-08, AC-18)
     it("GET /api/attachments/:id/download: cross-requester download returns 403 Forbidden with no bytes streamed", async () => {
       const res = await request(app)
         .get(`/api/attachments/${attachmentAId}/download`)
-        .set("X-Requester-Id", String(requesterB.id));
+        .set(await sessionHeaders(requesterB.id));
 
       expect(res.status).toBe(403);
       expect(res.body).toEqual({ error: "Access denied: You do not own this attachment" });
@@ -272,7 +273,7 @@ describe("Phase 6: Ownership Hardening Pass (API-35, BR-04, BR-06, AC-08, AC-18)
     it("DELETE /api/attachments/:id: cross-requester soft-remove returns 403 Forbidden and preserves attachment", async () => {
       const res = await request(app)
         .delete(`/api/attachments/${attachmentAId}`)
-        .set("X-Requester-Id", String(requesterB.id))
+        .set(await sessionHeaders(requesterB.id))
         .send({ removalReason: "Malicious attempt to remove" });
 
       expect(res.status).toBe(403);
@@ -327,21 +328,21 @@ describe("Phase 6: Ownership Hardening Pass (API-35, BR-04, BR-06, AC-08, AC-18)
       // 1. Seeded Requester 2 tries to view Requester 1's ticket -> 403 Forbidden
       const resView = await request(app)
         .get(`/api/tickets/${seededTicket.id}`)
-        .set("X-Requester-Id", String(req2!.id));
+        .set(await sessionHeaders(req2!.id));
       expect(resView.status).toBe(403);
       expect(resView.body).toEqual({ error: "Access denied: You do not own this ticket" });
 
       // 2. Seeded Requester 2 tries to download Requester 1's attachment -> 403 Forbidden
       const resDownload = await request(app)
         .get(`/api/attachments/${seededAttachment.id}/download`)
-        .set("X-Requester-Id", String(req2!.id));
+        .set(await sessionHeaders(req2!.id));
       expect(resDownload.status).toBe(403);
       expect(resDownload.body).toEqual({ error: "Access denied: You do not own this attachment" });
 
       // 3. Seeded Requester 2 tries to remove Requester 1's attachment -> 403 Forbidden
       const resRemove = await request(app)
         .delete(`/api/attachments/${seededAttachment.id}`)
-        .set("X-Requester-Id", String(req2!.id))
+        .set(await sessionHeaders(req2!.id))
         .send({ removalReason: "Cross-requester deletion attempt" });
       expect(resRemove.status).toBe(403);
       expect(resRemove.body).toEqual({ error: "Access denied: You do not own this attachment" });
