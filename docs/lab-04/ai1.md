@@ -1,0 +1,6 @@
+# AI Use and Reflection — Major Phase F1: Setup, Contracts, Decisions & Test Traceability (ai1.md)
+
+> [!NOTE]
+> เอกสารฉบับนี้เป็นเนื้อหาเดียวกับ [`ai_used1.md`](ai_used1.md) จัดทำขึ้นเพื่อรองรับการอ้างอิงชื่อไฟล์ทั้งสองรูปแบบ (`ai1.md`, `aiused1.md`, และ `ai_used1.md`)
+
+กรุณาดูเนื้อหาฉบับเต็มได้ที่ [ai_used1.md](ai_used1.md)
