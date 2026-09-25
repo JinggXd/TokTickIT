@@ -13,6 +13,7 @@ import { authRouter } from "./routes/auth.js";
 import { staffRouter, getDetailedTicket } from "./routes/staff.js";
 import { communicationRouter } from "./routes/communication.js";
 import { adminUsersRouter } from "./routes/adminUsers.js";
+import { actionsRouter } from "./routes/actions.js";
 import { validateTicketInput } from "./utils/validation.js";
 import { generateTicketNumber, TicketNumberGenerationError } from "./utils/ticketNumber.js";
 import fs from "fs";
@@ -69,6 +70,7 @@ app.get("/api/health", (_req: Request, res: Response) => {
 app.use("/api/auth", authRouter);
 app.use("/api/staff", staffRouter);
 app.use("/api", communicationRouter);
+app.use("/api", actionsRouter);
 app.use("/api/admin/users", adminUsersRouter);
 
 // Administrator read-only ticket detail (api-spec §5.6)

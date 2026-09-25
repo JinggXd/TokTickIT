@@ -15,9 +15,11 @@ import {
   TicketOwner,
   CommentItem,
   downloadAttachment,
+  fetchActionsTaken,
 } from "../api.js";
 import { StatusBadge, PriorityBadge } from "../components/Badges.js";
-import { ALLOWED_TRANSITIONS, TicketStatus, Priority } from "../types.js";
+import { ALLOWED_TRANSITIONS, TicketStatus, Priority, ActionTaken } from "../types.js";
+import { ActionsTakenSection } from "../components/ActionsTakenSection.js";
 
 interface StaffTicketDetailProps {
   ticketId: number;
@@ -32,6 +34,7 @@ export const StaffTicketDetail: React.FC<StaffTicketDetailProps> = ({ ticketId, 
   const [ticketOwners, setTicketOwners] = useState<TicketOwner[]>([]);
   const [comments, setComments] = useState<CommentItem[]>([]);
   const [notes, setNotes] = useState<CommentItem[]>([]);
+  const [actions, setActions] = useState<ActionTaken[]>([]);
 
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -66,17 +69,19 @@ export const StaffTicketDetail: React.FC<StaffTicketDetailProps> = ({ ticketId, 
         ? Promise.resolve([] as TicketOwner[])
         : fetchTicketOwners().catch(() => [] as TicketOwner[]);
 
-      const [ticketData, ownersData, commentsData, notesData] = await Promise.all([
+      const [ticketData, ownersData, commentsData, notesData, actionsData] = await Promise.all([
         fetchDetailFn(ticketId),
         ownersPromise,
         fetchPublicComments(ticketId).catch(() => [] as CommentItem[]),
         fetchInternalNotes(ticketId).catch(() => [] as CommentItem[]),
+        fetchActionsTaken(ticketId).catch(() => ({ ticketId, actions: [] })),
       ]);
 
       setTicket(ticketData);
       setTicketOwners(ownersData);
       setComments(commentsData);
       setNotes(notesData);
+      setActions(actionsData.actions || []);
 
       setSelectedOwnerId(ticketData.ticketOwner?.id ?? "");
       setSelectedItPriority(ticketData.itPriority);
@@ -182,6 +187,8 @@ export const StaffTicketDetail: React.FC<StaffTicketDetailProps> = ({ ticketId, 
     } catch (err: any) {
       if (err.status === 409 || err.error === "CONFLICT") {
         setConflictError(err.message || "This ticket was modified by another user. Please refresh.");
+      } else if (err.status === 422 || err.error === "RESOLUTION_GATE_FAILED") {
+        setError(err.message || "Ticket resolution requires at least one completed Action Taken and no pending actions.");
       } else {
         setError(err.message || "Failed to update status.");
       }
@@ -494,6 +501,16 @@ export const StaffTicketDetail: React.FC<StaffTicketDetailProps> = ({ ticketId, 
           </div>
         </div>
       )}
+
+      {/* Actions Taken Section */}
+      <ActionsTakenSection
+        ticketId={ticket.id}
+        ticketStatus={ticket.currentStatus}
+        actions={actions}
+        readOnly={readOnly}
+        onActionSaved={loadData}
+        assignableStaff={ticketOwners.map((o) => ({ id: o.id, name: o.name }))}
+      />
 
       {/* Attachments Section */}
       <div className="card shadow-sm border-0 mb-4">

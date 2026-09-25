@@ -6,8 +6,11 @@ import {
   postPublicComment,
   markAppearsResolved,
   CommentItem,
+  fetchActionsTaken,
 } from "../api.js";
 import AttachmentSection from "../components/AttachmentSection.js";
+import { ActionTaken } from "../types.js";
+import { ActionsTakenSection } from "../components/ActionsTakenSection.js";
 
 // Statuses where Requester may flag "Problem Appears Resolved" (api-spec §3.7)
 const APPEARS_RESOLVED_ALLOWED_STATUSES = new Set([
@@ -47,6 +50,9 @@ export function RequesterTicketDetail({
   const [arError, setArError] = useState<string | null>(null);
   const [arSuccess, setArSuccess] = useState(false);
 
+  // Actions Taken
+  const [actions, setActions] = useState<ActionTaken[]>([]);
+
   const loadTicket = useCallback(async () => {
     setLoading(true);
     setErrorStatus(null);
@@ -75,10 +81,20 @@ export function RequesterTicketDetail({
     }
   }, [ticketId]);
 
+  const loadActions = useCallback(async () => {
+    try {
+      const data = await fetchActionsTaken(ticketId);
+      setActions(data.actions || []);
+    } catch {
+      // non-fatal
+    }
+  }, [ticketId]);
+
   useEffect(() => {
     loadTicket();
     loadComments();
-  }, [loadTicket, loadComments]);
+    loadActions();
+  }, [loadTicket, loadComments, loadActions]);
 
   const handlePostComment = async () => {
     const body = commentDraft.trim();
@@ -337,6 +353,15 @@ export function RequesterTicketDetail({
               </div>
             </div>
           </div>
+
+          {/* Actions Taken Section (Read-Only) */}
+          <ActionsTakenSection
+            ticketId={ticketId}
+            ticketStatus={ticket.currentStatus}
+            actions={actions}
+            readOnly={true}
+            onActionSaved={loadActions}
+          />
 
           {/* ── P10: Problem Appears Resolved Banner + Button ─────────────────── */}
           {alreadyFlagged && (
