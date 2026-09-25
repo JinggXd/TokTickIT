@@ -221,3 +221,21 @@ Addressed all remaining items documented in `docs/lab-04/F1-REVIEW-ROUND2.md`:
    - Description includes Phase F1 overview, acceptance criteria, validation evidence, and reference `Resolves #46`.
    - Status: Open. Ready for peer review and Development panel issue linking.
 
+---
+
+## 10. Phase F1 Contract Revisions (Peer Review Round 2 & Decisions D11–D13)
+
+**Date:** 2026-09-26T02:10:00+07:00  
+
+### Addressed Findings:
+1. **Form Datetime Local Timezone Alignment (D11):**
+   - **Root Cause:** Using `new Date().toISOString().slice(0, 16)` as `value` or `max` for `<input type="datetime-local">` produced UTC timestamps, introducing a 7-hour timezone skew in Thailand (UTC+7) that falsely blocked users from logging actions at the current local time.
+   - **Resolution:** Updated `ui-spec.md` §3.4.A, `specification.md` FR-01/BR-08, and `ActionsTakenSection.tsx` with `formatLocalDatetime(date: Date)` (`YYYY-MM-DDTHH:mm` using local getters). Tested via `UI-L4-13` in `ActionsTaken.test.tsx`.
+2. **Eligible Assignees Authorization Expansion for Administrator (D12):**
+   - **Root Cause:** Baseline `GET /api/staff/ticket-owners` was restricted to `IT_STAFF` only (`requireRole("IT_STAFF")`), blocking Administrators from fetching eligible assignees or delegating action tasks.
+   - **Resolution:** Expanded route authorization in `api-spec.md` §1.4, `specification.md` FR-03, and `server/src/routes/staff.ts` to `requireRole("IT_STAFF", "ADMINISTRATOR")`. Tested via `API-L4-30b` in `actions-taken.api.test.ts`.
+3. **Normalized Action Mutation Contracts: Edit, Complete, Cancel (D13):**
+   - **Root Cause:** Contracts lacked explicit request body schemas, validation rules, permitted mutable fields per status, and exact response bodies for `PATCH /api/tickets/:id/actions/:actionId`, `POST .../complete`, and `POST .../cancel`.
+   - **Resolution:** Updated `api-spec.md` §§2.3, 2.4, 2.5 with complete request schemas, permissions matrix, validation rules, 200 OK responses, and comprehensive error status codes. Tested across 28 tests in `actions-taken.api.test.ts`.
+
+
