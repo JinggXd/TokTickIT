@@ -18,6 +18,21 @@ export interface ActionsTakenSectionProps {
   assignableStaff?: Array<{ id: number; name: string }>;
 }
 
+/**
+ * Formats a Date instance as YYYY-MM-DDTHH:mm in the local browser timezone.
+ * Suitable for HTML5 <input type="datetime-local">.
+ * Prevents UTC timezone skew (e.g. 7 hours in UTC+7 Bangkok).
+ */
+export function formatLocalDatetime(date: Date): string {
+  const pad = (n: number) => String(n).padStart(2, "0");
+  const year = date.getFullYear();
+  const month = pad(date.getMonth() + 1);
+  const day = pad(date.getDate());
+  const hours = pad(date.getHours());
+  const minutes = pad(date.getMinutes());
+  return `${year}-${month}-${day}T${hours}:${minutes}`;
+}
+
 export const ActionsTakenSection: React.FC<ActionsTakenSectionProps> = ({
   ticketId,
   ticketStatus,
@@ -61,10 +76,10 @@ export const ActionsTakenSection: React.FC<ActionsTakenSectionProps> = ({
   }, [activeModal]);
 
   const openLogModal = () => {
-    const nowIso = new Date().toISOString().slice(0, 16);
+    const nowLocal = formatLocalDatetime(new Date());
     const newUuid = typeof crypto.randomUUID === "function" ? crypto.randomUUID() : "uuid-" + Date.now();
     setClientRequestId(newUuid);
-    setActionDateTime(nowIso);
+    setActionDateTime(nowLocal);
     setStatusMode("COMPLETED");
     setDescription("");
     setResult("");
@@ -110,7 +125,7 @@ export const ActionsTakenSection: React.FC<ActionsTakenSectionProps> = ({
     setIsSubmitting(false);
   };
 
-  const maxDatetime = new Date(Date.now() + 5 * 60 * 1000).toISOString().slice(0, 16);
+  const maxDatetime = formatLocalDatetime(new Date(Date.now() + 5 * 60 * 1000));
 
   const handleLogSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

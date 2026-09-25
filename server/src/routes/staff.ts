@@ -268,7 +268,7 @@ staffRouter.get(
   "/ticket-owners",
   requireAuth,
   requirePasswordChanged,
-  requireRole("IT_STAFF"),
+  requireRole("IT_STAFF", "ADMINISTRATOR"),
   async (_req: Request, res: Response): Promise<void> => {
     try {
       const prisma = getPrisma();

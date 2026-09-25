@@ -134,22 +134,44 @@ Consistent with `client/src/components/Badges.tsx`:
     - If `PENDING`: "Complete Action" button, "Cancel Action" button, "Edit Action" button.
     - If `COMPLETED`: "Edit Details" button (enabled only for original performer or Administrator).
 - **Modal Dialog: Log Action:**
-  - Inputs:
-    - Date/Time: Datetime picker, `max={new Date(Date.now() + 5 * 60 * 1000).toISOString().slice(0, 16)}` (allowing 5-minute clock-skew tolerance).
-    - Mode toggle (`Log Completed Work` vs `Assign Pending Task`).
-    - Description (required, 1–1000 chars).
-    - Result (required if completed).
-    - Assignee dropdown (active staff/admins).
-    - Follow-up checkbox + conditional note textarea.
-    - Attachment notes input.
+  - **Timezone Specification (Critical):** HTML5 `<input type="datetime-local">` interprets values strictly in the user's local browser timezone. Implementations **must not** use raw UTC ISO strings (e.g. `toISOString().slice(0, 16)`), as UTC creates a 7-hour timezone skew in Thailand (UTC+7) that falsely sets `max` in the past and rejects current local timestamps.
+    - Format helper: `formatLocalDatetime(date: Date)` produces `YYYY-MM-DDTHH:mm` using local year, month, date, hours, and minutes (`date.getFullYear()`, `date.getMonth() + 1`, `date.getDate()`, `date.getHours()`, `date.getMinutes()`).
+    - Initial `value`: `formatLocalDatetime(new Date())`.
+    - Upper bound `max`: `formatLocalDatetime(new Date(Date.now() + 5 * 60 * 1000))` (current local time + 5-minute skew tolerance).
+    - API Transmission: Upon form submission, the local datetime string is serialized to UTC ISO-8601 (`new Date(actionDateTime).toISOString()`).
+  - **Inputs:**
+    - Date/Time: Required datetime picker with local formatting and 5-minute future tolerance.
+    - Mode toggle: Segmented radio group (`Log Completed Work` vs `Assign Pending Task`).
+    - Description: Required textarea (1–1000 chars).
+    - Result: Textarea (1–1000 chars); required when mode is `Completed Work`, hidden/optional when `Assign Pending Task`.
+    - Assignee Dropdown: Optional select; populated via `GET /api/staff/ticket-owners` (accessible to both IT Staff and Administrators). Displays active staff and administrator users.
+    - Follow-up: Checkbox (`Follow-up Required`) conditionally revealing a required `Follow-up Note` textarea (1–1000 chars).
+    - Attachment Notes: Optional input for diagnostic file references (max 500 chars).
   - Buttons: `Save Action` (disabled while submitting), `Cancel`.
-  - Idempotent Key Generation: Modal generates a UUIDv4 on open and passes it as `X-Client-Request-Id` / `clientRequestId`.
+  - Idempotent Key Generation: Modal generates a UUIDv4 on open and passes it as `X-Client-Request-Id` and `clientRequestId` body property. On network failure retry, the existing key is reused.
+
 - **Modal Dialog: Complete Action:**
-  - Inputs: Result (required textarea).
-  - Buttons: `Mark Completed`, `Cancel`.
+  - Header: "Complete Action Taken"
+  - Inputs:
+    - Result (required textarea, 1–1000 chars): Detailed description of outcome/resolution.
+    - Attachment Notes (optional input, max 500 chars).
+  - Version Tracking: Sends `expectedVersion: selectedAction.version` for optimistic locking.
+  - Buttons: `Mark Completed` (disabled while submitting), `Cancel`.
+
 - **Modal Dialog: Cancel Action:**
+  - Header: "Cancel Action Taken"
   - Confirmation prompt: "Are you sure you want to cancel this pending action?"
-  - Buttons: `Confirm Cancellation`, `Cancel`.
+  - Inputs: Reason for cancellation (optional textarea, max 500 chars).
+  - Version Tracking: Sends `expectedVersion: selectedAction.version`.
+  - Buttons: `Confirm Cancellation` (danger button, disabled while submitting), `Cancel`.
+
+- **Modal Dialog: Edit Action Details:**
+  - Header: "Edit Action Details"
+  - Permitted Edits:
+    - If `PENDING`: Description, Assignee (from `GET /api/staff/ticket-owners`), Follow-up flag/note, Attachment notes.
+    - If `COMPLETED` (Original Performer or Admin only): Description, Follow-up flag/note, Attachment notes. (Assignee and Result disabled).
+  - Version Tracking: Sends `expectedVersion: selectedAction.version`.
+  - Buttons: `Save Changes` (disabled while submitting), `Cancel`.
 
 #### B. Requester View (Owned Tickets)
 - Rendered in `/tickets/:id`.

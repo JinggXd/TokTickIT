@@ -217,3 +217,44 @@
   - Sandbox restore script: `docker exec toktickit-db pg_restore -U toktickit -d toktickit_test --clean --if-exists /tmp/backup_pre_lab4.dump`.
   - Automated migration test verifies that pre-existing rows and schema survive intact.
 - **Status:** Proposed (TBD)
+
+---
+
+### D11 — Datetime-Local Form Input & Local Timezone Formatting (7-Hour UTC Skew Prevention)
+
+- **Finding / Problem:** Using `new Date().toISOString().slice(0, 16)` as default value or `max` constraint for HTML5 `<input type="datetime-local">` causes a 7-hour timezone skew in Thailand (UTC+7). Because the browser expects `YYYY-MM-DDTHH:mm` in local time, an ISO UTC string sets the upper bound 7 hours into the past, falsely rejecting current local timestamps.
+- **Resolution & Decision:**
+  1. Frontend helper `formatLocalDatetime(date: Date)` formats date components using local getter methods (`getFullYear()`, `getMonth() + 1`, `getDate()`, `getHours()`, `getMinutes()`), returning `YYYY-MM-DDTHH:mm` in the client's local timezone.
+  2. Input initialization sets `value = formatLocalDatetime(new Date())`.
+  3. Upper bound constraint sets `max = formatLocalDatetime(new Date(Date.now() + 5 * 60 * 1000))` (enforcing 5-minute future tolerance in local time).
+  4. Transmission to backend converts the local datetime string to UTC ISO-8601 (`new Date(actionDateTime).toISOString()`).
+- **Status:** Proposed (TBD)
+
+---
+
+### D12 — Eligible Ticket Owners & Assignees Authorization Expansion (`GET /api/staff/ticket-owners`)
+
+- **Finding / Problem:** In Lab 3, `GET /api/staff/ticket-owners` was restricted to `IT_STAFF` only (`requireRole("IT_STAFF")`), preventing Administrators from fetching eligible owners or assigning action tasks from the Administrator interface.
+- **Resolution & Decision:**
+  1. Expand authorization on `GET /api/staff/ticket-owners` to allow both `IT_STAFF` and `ADMINISTRATOR` (`requireRole("IT_STAFF", "ADMINISTRATOR")`).
+  2. The database query already filters `WHERE role IN ('IT_STAFF', 'ADMINISTRATOR') AND isActive = true`.
+  3. Reuses the exact existing route and response schema, maintaining full backward compatibility.
+- **Status:** Proposed (TBD)
+
+---
+
+### D13 — Normalized Action Mutation Contracts (Edit, Complete, Cancel)
+
+- **Finding / Problem:** `PATCH /api/tickets/:id/actions/:actionId`, `POST .../complete`, and `POST .../cancel` lacked detailed request schemas, validation criteria tables, and exact response envelopes in documentation, risking frontend/backend discrepancy.
+- **Resolution & Decision:**
+  1. `PATCH /api/tickets/:id/actions/:actionId`:
+     - Accepts `expectedVersion`, `actionDescription` (1–1000), `assigneeId` (null or active staff/admin; allowed only if action is PENDING), `followUpRequired`, `followUpNote` (mandatory if followUpRequired is true), `attachmentNotes` (max 500).
+     - Completed actions can only be edited by the original performer or an Administrator. Changing assignee or result on a completed action returns 400 Bad Request.
+  2. `POST /api/tickets/:id/actions/:actionId/complete`:
+     - Requires `expectedVersion` and `result` (1–1000 chars non-empty), optional `attachmentNotes`.
+     - Validates action is currently `PENDING`. Transitions to `COMPLETED`, records `performedById = req.user.id`.
+  3. `POST /api/tickets/:id/actions/:actionId/cancel`:
+     - Requires `expectedVersion`, optional `reason` (max 500 chars).
+     - Validates action is currently `PENDING`. Transitions to `CANCELLED`.
+  4. All three mutations acquire row-lock on parent `Ticket` (`SELECT ... FOR UPDATE`), verify parent ticket is not in terminal/resolved status (`RESOLVED`, `CLOSED`, `CANCELLED`), increment `ActionTaken.version`, increment `Ticket.version`, and return the updated action object in a `200 OK` response.
+- **Status:** Proposed (TBD)

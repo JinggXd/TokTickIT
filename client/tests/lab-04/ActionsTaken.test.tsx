@@ -174,4 +174,32 @@ describe("Phase F2 / L4-P05: Actions Taken UI in Ticket Detail", () => {
     expect(container.innerHTML).not.toContain("internalNote");
     expect(container.innerHTML).not.toContain("Internal Notes");
   });
+
+  it("UI-L4-13: Log Action modal initializes datetime in local browser timezone and sets max without UTC skew", async () => {
+    render(
+      <ActionsTakenSection
+        ticketId={101}
+        ticketStatus="IN_PROGRESS"
+        actions={mockActions}
+        currentUser={{ id: 12, name: "Alex IT", role: "IT_STAFF" }}
+        onActionSaved={onActionSaved}
+      />
+    );
+
+    const logBtn = screen.getByRole("button", { name: /\+ Log Action/i });
+    fireEvent.click(logBtn);
+
+    const dateInput = screen.getByLabelText(/Action Date & Time/i) as HTMLInputElement;
+    expect(dateInput).toBeDefined();
+
+    // Verify format matches YYYY-MM-DDTHH:mm
+    expect(dateInput.value).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/);
+    expect(dateInput.max).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/);
+
+    // Ensure the input value is within 1 minute of local time (not skewed by UTC offset)
+    const nowLocal = new Date();
+    const parsedDate = new Date(dateInput.value);
+    const diffMinutes = Math.abs((nowLocal.getTime() - parsedDate.getTime()) / (60 * 1000));
+    expect(diffMinutes).toBeLessThan(2);
+  });
 });

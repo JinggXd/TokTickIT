@@ -703,5 +703,29 @@ describe("Phase F2 / L4-P04: Actions Taken REST API & Authorization", () => {
       expect(retryRes.headers["x-idempotent-replay"]).toBe("true");
       expect(retryRes.body.action.id).toBe(actionId);
     });
+
+    it("API-L4-30: GET /api/staff/ticket-owners allows both IT_STAFF and ADMINISTRATOR", async () => {
+      // 1. Staff access
+      const staffRes = await request(app)
+        .get("/api/staff/ticket-owners")
+        .set(headersAlex);
+      expect(staffRes.status).toBe(200);
+      expect(Array.isArray(staffRes.body)).toBe(true);
+      expect(staffRes.body.length).toBeGreaterThan(0);
+
+      // 2. Administrator access
+      const adminRes = await request(app)
+        .get("/api/staff/ticket-owners")
+        .set(headersAdmin);
+      expect(adminRes.status).toBe(200);
+      expect(Array.isArray(adminRes.body)).toBe(true);
+      expect(adminRes.body.length).toBeGreaterThan(0);
+
+      // 3. Requester forbidden
+      const reqRes = await request(app)
+        .get("/api/staff/ticket-owners")
+        .set(headersReqA);
+      expect(reqRes.status).toBe(403);
+    });
   });
 });

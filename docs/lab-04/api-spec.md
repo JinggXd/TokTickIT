@@ -88,6 +88,29 @@ Standardized Error Constants across the application:
    }
    ```
 
+### 1.4 Eligible Ticket Owners & Action Assignees
+- **Method / Path:** `GET /api/staff/ticket-owners`
+- **Authorization:** `IT_STAFF` and `ADMINISTRATOR` (Explicitly expanded from Lab 3 baseline to authorize Administrators, enabling both IT Staff and Administrators to populate owner assignment and action delegation dropdowns).
+- **Behavior:** Queries active users with role `IT_STAFF` or `ADMINISTRATOR` (`WHERE role IN ('IT_STAFF', 'ADMINISTRATOR') AND isActive = true`) ordered by `name ASC, id ASC`.
+- **Response Format (`200 OK`):**
+  ```json
+  [
+    {
+      "id": 12,
+      "name": "Alex Staff",
+      "role": "IT_STAFF"
+    },
+    {
+      "id": 1,
+      "name": "Admin Root",
+      "role": "ADMINISTRATOR"
+    }
+  ]
+  ```
+- **Error Responses:**
+  - `401 Unauthorized`: Session missing or expired.
+  - `403 Forbidden`: Caller has role `REQUESTER` (`{ "error": "Access denied" }`).
+
 ---
 
 ## 2. Actions Taken Endpoints
@@ -205,56 +228,199 @@ Standardized Error Constants across the application:
 
 ---
 
+---
+
 ### 2.3 Update Action Taken / Assignment
 - **Method / Path:** `PATCH /api/tickets/:id/actions/:actionId`
-- **Authorization:** `IT_STAFF`, `ADMINISTRATOR`.
+- **Authorization:** `IT_STAFF`, `ADMINISTRATOR` (Caller must have an active session with password changed).
 - **Path Parameters:**
-  - `id` (integer, required): Parent Ticket ID.
-  - `actionId` (integer, required): Action Taken ID.
+  - `id` (integer, required): Parent Ticket ID (`^[1-9]\d*$`).
+  - `actionId` (integer, required): Action Taken ID (`^[1-9]\d*$`).
+- **Request Headers:**
+  - `Content-Type: application/json`
+  - `If-Match`: (Optional string) Target `version` number. May be provided as header or inside request body as `expectedVersion`.
+- **Request Body Schema:**
+  | Field | Type | Required | Description & Validation Rules |
+  |---|---|---|---|
+  | `expectedVersion` | Integer | Optional* | Target action version for optimistic concurrency (must match current action `version`, else 409). *Mandatory if `If-Match` header is omitted. |
+  | `actionDescription` | String | Optional | Updated description (1–1000 characters). Cannot be blank. |
+  | `assigneeId` | Integer \| null | Optional | Assigned staff/admin ID. **Allowed only when action is `PENDING`**. Must refer to an active user with role `IT_STAFF` or `ADMINISTRATOR` (else 422 `INVALID_ASSIGNEE`). If `null`, unassigns action. Setting for `COMPLETED` action returns 400. |
+  | `followUpRequired` | Boolean | Optional | Flag indicating follow-up work is required. |
+  | `followUpNote` | String \| null | Optional | Detailed follow-up instructions. **Mandatory (1–1000 chars) if `followUpRequired === true`**. Cleared to `null` if `followUpRequired === false`. |
+  | `attachmentNotes` | String \| null | Optional | Free-text notes or filename reference for diagnostic attachments (max 500 chars). |
+
+- **Permission & State Transition Matrix:**
+  | Current Action Status | Allowed Caller | Permitted Mutable Fields | Forbidden Modifications |
+  |---|---|---|---|
+  | `PENDING` | Any `IT_STAFF` or `ADMINISTRATOR` | `actionDescription`, `assigneeId`, `followUpRequired`, `followUpNote`, `attachmentNotes` | Cannot revert to other status; cannot edit if parent ticket is resolved/closed/cancelled (400). |
+  | `COMPLETED` | Original performer (`performedById === req.user.id`) OR `ADMINISTRATOR` | `actionDescription`, `followUpRequired`, `followUpNote`, `attachmentNotes` | `assigneeId` cannot be changed (400); `result` cannot be modified via PATCH (400); status cannot be reverted (400). Other staff callers receive 403 `FORBIDDEN`. |
+  | `CANCELLED` | None | None | All PATCH attempts return 400 `BAD_REQUEST` ("Cannot modify a cancelled action"). |
+
 - **Atomic Transaction & Locking Order:**
-  1. Lock parent `Ticket` row (`FOR UPDATE`).
+  1. Lock parent `Ticket` row (`SELECT ... FOR UPDATE`).
   2. Validate parent status: If in (`RESOLVED`, `CLOSED`, `CANCELLED`), return `400 Bad Request`.
-  3. Verify nested resource: `action.ticketId === parseInt(req.params.id)`. If mismatch, return `404 Not Found`.
+  3. Verify nested resource: `action.ticketId === parseInt(req.params.id)`. If mismatch or not found, return `404 Not Found`.
   4. Optimistic concurrency: Verify `expectedVersion === action.version`. If mismatch, return `409 Conflict` with `ActionTaken.version`.
-  5. State & Permission Validation:
-     - If action is `CANCELLED`: return `400 Bad Request`.
-     - If action is `PENDING`: any permitted IT Staff/Admin can edit description, assignee, follow-up, attachment notes.
-     - If action is `COMPLETED`: only original performer (`performedById === req.user.id`) or Admin can edit description, follow-up, attachment notes. Changing assignee, result, or reverting to pending returns `400 Bad Request`. Other staff receive `403 Forbidden`.
-  6. Update action, increment `ActionTaken.version = ActionTaken.version + 1`.
-  7. Increment parent `Ticket.version = Ticket.version + 1`.
-  8. Commit transaction. Return `200 OK`.
+  5. Apply updates, increment `ActionTaken.version = ActionTaken.version + 1`.
+  6. Increment parent `Ticket.version = Ticket.version + 1` and update `Ticket.updatedAt = NOW()`.
+  7. Commit transaction. Return `200 OK`.
+
+- **Success Response (`200 OK`):**
+  ```json
+  {
+    "ticketId": 101,
+    "action": {
+      "id": 2,
+      "ticketId": 101,
+      "actionDateTime": "2026-09-25T15:00:00.000Z",
+      "actionDescription": "Updated replacement part specifications",
+      "result": null,
+      "status": "PENDING",
+      "version": 2,
+      "createdById": 12,
+      "performedBy": null,
+      "assignee": {
+        "id": 15,
+        "name": "Marcus IT"
+      },
+      "followUpRequired": true,
+      "followUpNote": "Verify module compatibility on delivery",
+      "attachmentNotes": "spec_sheet.pdf",
+      "createdAt": "2026-09-25T15:02:00.000Z",
+      "updatedAt": "2026-09-25T15:10:00.000Z"
+    }
+  }
+  ```
+
+- **Error Responses:**
+  - `400 Bad Request`: `VALIDATION_FAILED` (blank description, missing follow-up note) or `BAD_REQUEST` (ticket terminal, action cancelled, illegal field edit on completed action).
+  - `401 Unauthorized`: Session missing or expired.
+  - `403 Forbidden`: `FORBIDDEN` (caller is `REQUESTER`, or non-performer staff editing completed action).
+  - `404 Not Found`: `NOT_FOUND` (Ticket or ActionTaken not found).
+  - `409 Conflict`: `CONFLICT` (action version mismatch with `currentVersion` in body).
+  - `422 Unprocessable Entity`: `INVALID_ASSIGNEE` (assignee not found, inactive, or not staff/admin).
 
 ---
 
 ### 2.4 Complete Action Taken
 - **Method / Path:** `POST /api/tickets/:id/actions/:actionId/complete`
 - **Authorization:** `IT_STAFF`, `ADMINISTRATOR`.
+- **Path Parameters:**
+  - `id` (integer, required): Parent Ticket ID (`^[1-9]\d*$`).
+  - `actionId` (integer, required): Action Taken ID (`^[1-9]\d*$`).
+- **Request Body Schema:**
+  | Field | Type | Required | Description & Validation Rules |
+  |---|---|---|---|
+  | `expectedVersion` | Integer | Optional* | Target action version for optimistic concurrency (must match current action `version`, else 409). *Mandatory if `If-Match` header is omitted. |
+  | `result` | String | **Required** | Detailed description of outcome/resolution work performed (1–1000 characters). Cannot be blank. |
+  | `attachmentNotes` | String \| null | Optional | Free-text notes or filename reference for diagnostic attachments (max 500 chars). |
+
 - **Atomic Transaction & Locking Order:**
-  1. Lock parent `Ticket` row (`FOR UPDATE`).
+  1. Lock parent `Ticket` row (`SELECT ... FOR UPDATE`).
   2. Validate parent status: If in (`RESOLVED`, `CLOSED`, `CANCELLED`), return `400 Bad Request`.
   3. Verify nested resource (`action.ticketId === parseInt(req.params.id)`). Mismatch returns `404 Not Found`.
-  4. Action status check: must currently be `PENDING` (400 if already completed/cancelled).
-  5. Check `expectedVersion === action.version` (409 on mismatch).
-  6. Set `status = 'COMPLETED'`, `performedById = req.user.id`, `result = body.result`.
+  4. Action status check: must currently be `PENDING` (return 400 `BAD_REQUEST` if already completed or cancelled).
+  5. Check `expectedVersion === action.version` (return 409 `CONFLICT` on mismatch).
+  6. Set `status = 'COMPLETED'`, `performedById = req.user.id`, `result = body.result.trim()`, `attachmentNotes = body.attachmentNotes`.
   7. Increment `ActionTaken.version = ActionTaken.version + 1`.
-  8. Increment parent `Ticket.version = Ticket.version + 1`.
+  8. Increment parent `Ticket.version = Ticket.version + 1` and update `Ticket.updatedAt = NOW()`.
   9. Commit transaction. Return `200 OK`.
+
+- **Success Response (`200 OK`):**
+  ```json
+  {
+    "ticketId": 101,
+    "action": {
+      "id": 2,
+      "ticketId": 101,
+      "actionDateTime": "2026-09-25T15:00:00.000Z",
+      "actionDescription": "Order replacement SFP module",
+      "result": "Module installed and tested successfully. Optical power levels nominal.",
+      "status": "COMPLETED",
+      "version": 2,
+      "createdById": 12,
+      "performedBy": {
+        "id": 12,
+        "name": "Alex IT"
+      },
+      "assignee": {
+        "id": 15,
+        "name": "Marcus IT"
+      },
+      "followUpRequired": true,
+      "followUpNote": "Install module when shipment arrives on Monday",
+      "attachmentNotes": "power_levels.txt",
+      "createdAt": "2026-09-25T15:02:00.000Z",
+      "updatedAt": "2026-09-25T16:45:00.000Z"
+    }
+  }
+  ```
+
+- **Error Responses:**
+  - `400 Bad Request`: `VALIDATION_FAILED` (missing result, result > 1000 chars) or `BAD_REQUEST` (ticket terminal, action not pending).
+  - `401 Unauthorized`: Session missing or expired.
+  - `403 Forbidden`: `FORBIDDEN` (caller is `REQUESTER`).
+  - `404 Not Found`: `NOT_FOUND` (Ticket or ActionTaken not found).
+  - `409 Conflict`: `CONFLICT` (action version mismatch with `currentVersion`).
 
 ---
 
 ### 2.5 Cancel Action Taken
 - **Method / Path:** `POST /api/tickets/:id/actions/:actionId/cancel`
 - **Authorization:** `IT_STAFF`, `ADMINISTRATOR`.
+- **Path Parameters:**
+  - `id` (integer, required): Parent Ticket ID (`^[1-9]\d*$`).
+  - `actionId` (integer, required): Action Taken ID (`^[1-9]\d*$`).
+- **Request Body Schema:**
+  | Field | Type | Required | Description & Validation Rules |
+  |---|---|---|---|
+  | `expectedVersion` | Integer | Optional* | Target action version for optimistic concurrency (must match current action `version`, else 409). *Mandatory if `If-Match` header is omitted. |
+  | `reason` | String | Optional | Explanation for cancellation (recorded into `result`, max 500 characters). |
+
 - **Atomic Transaction & Locking Order:**
-  1. Lock parent `Ticket` row (`FOR UPDATE`).
+  1. Lock parent `Ticket` row (`SELECT ... FOR UPDATE`).
   2. Validate parent status: If in (`RESOLVED`, `CLOSED`, `CANCELLED`), return `400 Bad Request`.
-  3. Verify nested resource. Mismatch returns `404 Not Found`.
-  4. Action status check: must currently be `PENDING`.
-  5. Check `expectedVersion === action.version` (409 on mismatch).
-  6. Set `status = 'CANCELLED'`.
+  3. Verify nested resource (`action.ticketId === parseInt(req.params.id)`). Mismatch returns `404 Not Found`.
+  4. Action status check: must currently be `PENDING` (return 400 `BAD_REQUEST` if already completed or cancelled).
+  5. Check `expectedVersion === action.version` (return 409 `CONFLICT` on mismatch).
+  6. Set `status = 'CANCELLED'`. If `reason` is supplied, set `result = reason.trim()`.
   7. Increment `ActionTaken.version = ActionTaken.version + 1`.
-  8. Increment parent `Ticket.version = Ticket.version + 1`.
+  8. Increment parent `Ticket.version = Ticket.version + 1` and update `Ticket.updatedAt = NOW()`.
   9. Commit transaction. Return `200 OK`.
+
+- **Success Response (`200 OK`):**
+  ```json
+  {
+    "ticketId": 101,
+    "action": {
+      "id": 2,
+      "ticketId": 101,
+      "actionDateTime": "2026-09-25T15:00:00.000Z",
+      "actionDescription": "Order replacement SFP module",
+      "result": "Cancelled: Spare module found in local IT inventory",
+      "status": "CANCELLED",
+      "version": 2,
+      "createdById": 12,
+      "performedBy": null,
+      "assignee": {
+        "id": 15,
+        "name": "Marcus IT"
+      },
+      "followUpRequired": true,
+      "followUpNote": "Install module when shipment arrives on Monday",
+      "attachmentNotes": null,
+      "createdAt": "2026-09-25T15:02:00.000Z",
+      "updatedAt": "2026-09-25T15:20:00.000Z"
+    }
+  }
+  ```
+
+- **Error Responses:**
+  - `400 Bad Request`: `BAD_REQUEST` (ticket terminal, action not pending).
+  - `401 Unauthorized`: Session missing or expired.
+  - `403 Forbidden`: `FORBIDDEN` (caller is `REQUESTER`).
+  - `404 Not Found`: `NOT_FOUND` (Ticket or ActionTaken not found).
+  - `409 Conflict`: `CONFLICT` (action version mismatch with `currentVersion`).
 
 ---
 
