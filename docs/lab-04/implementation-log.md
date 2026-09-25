@@ -187,3 +187,37 @@ Addressed all remaining items documented in `docs/lab-04/F1-REVIEW-ROUND2.md`:
   - `API-L4-24h`: Replay after action mutation -> 200 OK replay matching immutable payload hash.
 - Synchronized [decisions.md](file:///d:/toktickit/docs/lab-04/decisions.md), [specification.md](file:///d:/toktickit/docs/lab-04/specification.md), [api-spec.md](file:///d:/toktickit/docs/lab-04/api-spec.md), [tests.md](file:///d:/toktickit/docs/lab-04/tests.md), and [PHASES.md](file:///d:/toktickit/docs/lab-04/PHASES.md).
 - Confirmed D01–D10 remain **Proposed (TBD)** awaiting explicit user approval.
+
+---
+
+## 9. GitHub Workflow Execution: Staging Branch, Contract Branch, Issue #46 & Pull Request #47
+
+**Date:** 2026-09-26T01:14:00+07:00  
+**Operating System:** Windows  
+**Shell:** PowerShell  
+
+### Actions Executed:
+1. **Created Staging Branch `lab4-staging`:**
+   - Branched from `main` at `baad45e09272d665bc0cf765236c456edcf0eff7` (post-Lab 3 release PR #45).
+   - Command: `git branch lab4-staging baad45e09272d665bc0cf765236c456edcf0eff7; git push origin lab4-staging`
+   - Exit Code: 0. Successfully pushed new branch `lab4-staging` to GitHub remote `origin`.
+
+2. **Created Contract Feature Branch `docs/lab4-contract`:**
+   - Branched from `lab4-staging`.
+   - Command: `git checkout -b docs/lab4-contract lab4-staging`
+   - Staged exclusively 14 markdown files under `docs/lab-04/` (leaving unmodified/unstaged repo files and untracked artifacts untouched).
+   - Committed: `cb6996b` (`docs(lab4): establish contracts, decision gates, and test traceability (P00-P02)`).
+   - Pushed to remote: `git push origin docs/lab4-contract`. Exit Code: 0.
+
+3. **Created GitHub Issue #46:**
+   - Title: `Lab 4 P00–P02: establish engineering contracts, decision gates, and test traceability`
+   - URL: [https://github.com/JinggXd/TokTickIT/issues/46](https://github.com/JinggXd/TokTickIT/issues/46)
+   - Scope: P00 Baseline audit, P01 Contracts & Decisions (D01–D10 Proposed), P02 Test traceability matrix & issue drafts.
+
+4. **Opened Pull Request #47:**
+   - Title: `docs(lab4): establish contracts and align test/pipeline gates (P00-P02)`
+   - URL: [https://github.com/JinggXd/TokTickIT/pull/47](https://github.com/JinggXd/TokTickIT/pull/47)
+   - Base: `lab4-staging` | Head: `docs/lab4-contract`
+   - Description includes Phase F1 overview, acceptance criteria, validation evidence, and reference `Resolves #46`.
+   - Status: Open. Ready for peer review and Development panel issue linking.
+
