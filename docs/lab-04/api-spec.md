@@ -242,11 +242,11 @@ Standardized Error Constants across the application:
 - **Request Body Schema:**
   | Field | Type | Required | Description & Validation Rules |
   |---|---|---|---|
-  | `expectedVersion` | Integer | Optional* | Target action version for optimistic concurrency (must match current action `version`, else 409). *Mandatory if `If-Match` header is omitted. |
-  | `actionDescription` | String | Optional | Updated description (1–1000 characters). Cannot be blank. |
-  | `assigneeId` | Integer \| null | Optional | Assigned staff/admin ID. **Allowed only when action is `PENDING`**. Must refer to an active user with role `IT_STAFF` or `ADMINISTRATOR` (else 422 `INVALID_ASSIGNEE`). If `null`, unassigns action. Setting for `COMPLETED` action returns 400. |
+  | `expectedVersion` | Integer | Required* | Target action version as a positive integer (`^[1-9]\d*$`). Missing or non-positive integer returns `400 Bad Request` (`VALIDATION_FAILED`). If version does not match current `action.version`, returns `409 Conflict` with `currentVersion`. *Can alternatively be supplied via `If-Match` header. |
+  | `actionDescription` | String | Optional | Updated description (1–1000 characters). Whitespace-only or blank string returns 400 `VALIDATION_FAILED`. |
+  | `assigneeId` | Integer \| null | Optional | Assigned staff/admin ID. **Allowed only when action is `PENDING`**. Must refer to an active user with role `IT_STAFF` or `ADMINISTRATOR` (else 422 `INVALID_ASSIGNEE`). If `null`, unassigns action. Attempting to set or change `assigneeId` on a `COMPLETED` action returns 400 `BAD_REQUEST`. Eligible users queryable via `GET /api/staff/ticket-owners`. |
   | `followUpRequired` | Boolean | Optional | Flag indicating follow-up work is required. |
-  | `followUpNote` | String \| null | Optional | Detailed follow-up instructions. **Mandatory (1–1000 chars) if `followUpRequired === true`**. Cleared to `null` if `followUpRequired === false`. |
+  | `followUpNote` | String \| null | Optional | Detailed follow-up instructions. **Mandatory (1–1000 non-whitespace chars) whenever `followUpRequired === true`** (evaluated post-merge). Cleared to `null` if `followUpRequired === false`. If `followUpRequired` is true and note is empty/whitespace, returns 400 `VALIDATION_FAILED`. |
   | `attachmentNotes` | String \| null | Optional | Free-text notes or filename reference for diagnostic attachments (max 500 chars). |
 
 - **Permission & State Transition Matrix:**
@@ -256,11 +256,24 @@ Standardized Error Constants across the application:
   | `COMPLETED` | Original performer (`performedById === req.user.id`) OR `ADMINISTRATOR` | `actionDescription`, `followUpRequired`, `followUpNote`, `attachmentNotes` | `assigneeId` cannot be changed (400); `result` cannot be modified via PATCH (400); status cannot be reverted (400). Other staff callers receive 403 `FORBIDDEN`. |
   | `CANCELLED` | None | None | All PATCH attempts return 400 `BAD_REQUEST` ("Cannot modify a cancelled action"). |
 
+- **Validation & Error Precedence Order:**
+  1. `401 Unauthorized`: Session missing or expired.
+  2. `403 Forbidden`: Caller has role `REQUESTER`, or non-performer staff attempts to edit a completed action.
+  3. `404 Not Found`: Parent `Ticket` does not exist, `actionId` does not exist, or `action.ticketId !== ticketId`.
+  4. `400 Bad Request`:
+     - Parent ticket is in `RESOLVED`, `CLOSED`, or `CANCELLED` status (`BAD_REQUEST`).
+     - Action is in `CANCELLED` status (`BAD_REQUEST`).
+     - `expectedVersion` is missing or not a positive integer (`VALIDATION_FAILED`).
+     - Illegal field edit on completed action (e.g. attempting to change `assigneeId` or `result`) (`BAD_REQUEST`).
+     - Validation failure: blank description, or `followUpRequired === true` with empty/whitespace `followUpNote` (`VALIDATION_FAILED`).
+  5. `409 Conflict`: `expectedVersion !== action.version` (`CONFLICT`).
+  6. `422 Unprocessable Entity`: `assigneeId` does not target an active `IT_STAFF` or `ADMINISTRATOR` (`INVALID_ASSIGNEE`).
+
 - **Atomic Transaction & Locking Order:**
   1. Lock parent `Ticket` row (`SELECT ... FOR UPDATE`).
   2. Validate parent status: If in (`RESOLVED`, `CLOSED`, `CANCELLED`), return `400 Bad Request`.
   3. Verify nested resource: `action.ticketId === parseInt(req.params.id)`. If mismatch or not found, return `404 Not Found`.
-  4. Optimistic concurrency: Verify `expectedVersion === action.version`. If mismatch, return `409 Conflict` with `ActionTaken.version`.
+  4. Optimistic concurrency: Verify `expectedVersion === action.version`. If mismatch, return `409 Conflict` with `currentVersion: action.version`.
   5. Apply updates, increment `ActionTaken.version = ActionTaken.version + 1`.
   6. Increment parent `Ticket.version = Ticket.version + 1` and update `Ticket.updatedAt = NOW()`.
   7. Commit transaction. Return `200 OK`.
@@ -292,14 +305,6 @@ Standardized Error Constants across the application:
   }
   ```
 
-- **Error Responses:**
-  - `400 Bad Request`: `VALIDATION_FAILED` (blank description, missing follow-up note) or `BAD_REQUEST` (ticket terminal, action cancelled, illegal field edit on completed action).
-  - `401 Unauthorized`: Session missing or expired.
-  - `403 Forbidden`: `FORBIDDEN` (caller is `REQUESTER`, or non-performer staff editing completed action).
-  - `404 Not Found`: `NOT_FOUND` (Ticket or ActionTaken not found).
-  - `409 Conflict`: `CONFLICT` (action version mismatch with `currentVersion` in body).
-  - `422 Unprocessable Entity`: `INVALID_ASSIGNEE` (assignee not found, inactive, or not staff/admin).
-
 ---
 
 ### 2.4 Complete Action Taken
@@ -311,8 +316,8 @@ Standardized Error Constants across the application:
 - **Request Body Schema:**
   | Field | Type | Required | Description & Validation Rules |
   |---|---|---|---|
-  | `expectedVersion` | Integer | Optional* | Target action version for optimistic concurrency (must match current action `version`, else 409). *Mandatory if `If-Match` header is omitted. |
-  | `result` | String | **Required** | Detailed description of outcome/resolution work performed (1–1000 characters). Cannot be blank. |
+  | `expectedVersion` | Integer | Required* | Target action version as a positive integer. Missing or non-positive returns 400 `VALIDATION_FAILED`. Mismatch returns 409 `CONFLICT`. *Can alternatively be supplied via `If-Match` header. |
+  | `result` | String | **Required** | Detailed description of outcome/resolution work performed (1–1000 characters). Blank or whitespace-only returns 400 `VALIDATION_FAILED`. |
   | `attachmentNotes` | String \| null | Optional | Free-text notes or filename reference for diagnostic attachments (max 500 chars). |
 
 - **Atomic Transaction & Locking Order:**
@@ -374,7 +379,7 @@ Standardized Error Constants across the application:
 - **Request Body Schema:**
   | Field | Type | Required | Description & Validation Rules |
   |---|---|---|---|
-  | `expectedVersion` | Integer | Optional* | Target action version for optimistic concurrency (must match current action `version`, else 409). *Mandatory if `If-Match` header is omitted. |
+  | `expectedVersion` | Integer | Required* | Target action version as a positive integer (`^[1-9]\d*$`). Missing or non-positive integer returns 400 `VALIDATION_FAILED`. Mismatch returns 409 `CONFLICT`. *Can alternatively be supplied via `If-Match` header. |
   | `reason` | String | Optional | Explanation for cancellation (recorded into `result`, max 500 characters). |
 
 - **Atomic Transaction & Locking Order:**
