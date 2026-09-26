@@ -260,5 +260,5 @@
   3. `POST /api/tickets/:id/actions/:actionId/cancel`:
      - Requires `expectedVersion`, optional `reason` (max 500 chars).
      - Validates action is currently `PENDING`. Transitions to `CANCELLED`.
-  4. All three mutations acquire row-lock on parent `Ticket` (`SELECT ... FOR UPDATE`), verify parent ticket is not in terminal/resolved status (`RESOLVED`, `CLOSED`, `CANCELLED`), increment `ActionTaken.version`, increment `Ticket.version`, and return the updated action object in a `200 OK` response.
+  4. Transaction and error precedence: All three mutations acquire row-lock on parent `Ticket` (`SELECT ... FOR UPDATE`). If Ticket is missing, returns `404 Not Found`. Next, the nested `ActionTaken` is verified (`action.ticketId === ticketId`); if missing or mismatched, returns `404 Not Found` (`NOT_FOUND`), strictly taking precedence over the 400 terminal lock. Next, verifies parent ticket is not in terminal status (`RESOLVED`, `CLOSED`, `CANCELLED` -> 400 `BAD_REQUEST`). Optimistic concurrency verifies `expectedVersion === action.version` (409 `CONFLICT`). Applies updates, increments `ActionTaken.version` and `Ticket.version`, and returns the updated action object in `200 OK`.
 - **Status:** Proposed (TBD)

@@ -10,6 +10,7 @@
 - F1-01: D06/D11/UI ใช้ local datetime สำหรับ input และ max; serialize UTC ตอนส่ง API
 - F1-02: API/UI/D12 ระบุ safe assignee lookup ให้ Staff/Admin โดยชัดเจน
 - F1-03: API mutation schemas/validation/responses และ version precondition ถูกระบุแล้ว
+- F1-04: ลำดับ error precedence ตรงกัน: ใน transaction ของ PATCH, complete, cancel ตรวจ nested action 404 ก่อนตรวจ parent ticket closed 400 พร้อมแผนเทสต์ API-L4-14b
 - ขอบเขต idempotency ตรงกันเป็น `(createdById, ticketId, clientRequestId)` พร้อม immutable request hash และ replay ก่อน terminal-status check
 - ตาราง decisions และรายการอ้างอิงครอบคลุม D01–D13
 - PHASES แสดง F2 เป็น Implemented-unverified ตามโค้ดที่มี แทน Planned; ไม่อ้างผ่าน gates
@@ -56,8 +57,9 @@ Acceptance record: **บันทึกคำสั่งและข้อก�
 - Baseline log รายงาน builds/client 82 tests/harness 24 tests ผ่าน; เป็นผล run ที่บันทึกไว้ก่อนหน้า ไม่ใช่ rerun รอบ cleanup
 - ชื่อและ target test paths ถูกตรวจเชิงเอกสาร; ไม่เท่ากับ product AC ผ่าน
 - F2 verification items ได้รับการทดสอบจริงแล้ว:
-  - Missing version guard: `actions.ts` ป้องกัน missing/invalid `expectedVersion` ด้วย 400 `VALIDATION_FAILED` (ผ่าน 32/32 tests ใน `actions-taken.api.test.ts`)
-  - Timezone assertion: `ActionsTaken.test.tsx` เพิ่ม `UI-L4-13b` fixed-clock assertion ยืนยัน local time และ `max = now + 5m` ถูกต้อง (ผ่าน 8/8 tests, client suite รวม 91/91 tests)
+  - Error precedence on closed tickets: `actions.ts` ตรวจพบ nested action 404 ก่อน parent ticket closed 400 (ผ่าน `API-L4-14b` ใน `actions-taken.api.test.ts`)
+  - Missing version guard: `actions.ts` ป้องกัน missing/invalid `expectedVersion` ด้วย 400 `VALIDATION_FAILED` (ผ่าน 33/33 tests ใน `actions-taken.api.test.ts`)
+  - Timezone assertion: `ActionsTaken.test.tsx` เพิ่ม `UI-L4-13b` fixed-clock assertion ยืนยัน local time และ `max = now + 5m` ถูกต้อง (ผ่าน 8/8 tests, client suite รวม 92/92 tests)
 
 ## Gate ปิดงาน
 

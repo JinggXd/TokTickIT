@@ -269,3 +269,7 @@ Current checkout at inspection: feature/actions-and-workflow-phase2-lab4, HEAD 3
    - Full client suite: 17/17 files, 91/91 tests passed (100%).
 4. **Documentation Synchronization:**
    - Synchronized all contract documents (`ui-spec.md`, `decisions.md`, `api-spec.md`, `specification.md`, `tests.md`, `PHASES.md`, `issue-drafts.md`, `F1-CLOSEOUT.md`) onto `docs/lab4-contract` and pushed to remote to ensure PR #47 contains the authoritative snapshot.
+5. **Error Precedence Alignment (Nested Action 404 vs Terminal Ticket 400):**
+   - **Finding:** In `api-spec.md` §2.3, the validation error precedence list specified 404 (mismatched/non-existent action) before 400 (terminal ticket lock), whereas transaction step 2 checked terminal status before step 3 checked nested action.
+   - **Resolution:** Reordered transaction steps in `api-spec.md` (§2.3, §2.4, §2.5) and `server/src/routes/actions.ts` (PATCH, complete, cancel) so that the nested action lookup occurs immediately after row-locking the parent ticket. If the action does not exist or does not belong to the ticket, `404 Not Found` is returned immediately before evaluating terminal ticket lock (`400 Bad Request`).
+   - **Test Evidence:** Added `API-L4-14b` in `actions-taken.api.test.ts` testing PATCH, complete, and cancel on a resolved ticket with mismatched actionId and non-existent actionId; all assert `404 Not Found` (33/33 tests passing).
