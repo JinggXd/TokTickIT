@@ -156,7 +156,7 @@
 - **Handout References:** §3 (p1), §4.1 (p2), §8.3 (p6).
 - **Resolution & Concrete Proposal:**
   - `actionDateTime`: Datetime when the intervention took place. Must not be in the future (`<= now() + 5m`). Defaults to current time if omitted.
-  - UI date-time input restricts max date to `new Date(Date.now() + 5 * 60 * 1000).toISOString().slice(0, 16)`.
+  - UI date-time input uses local browser timezone formatting (`formatLocalDatetime(new Date(Date.now() + 5 * 60 * 1000))`, returning `YYYY-MM-DDTHH:mm`) as `max` attribute to avoid UTC timezone skew (e.g. 7 hours in Thailand UTC+7), and serializes to ISO UTC upon form submission (strictly matching D11 and ui-spec.md §3.4.A).
   - `createdAt`: System audit timestamp recorded by PostgreSQL `now()`.
 - **Status:** Proposed (TBD)
 
