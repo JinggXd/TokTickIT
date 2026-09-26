@@ -2,8 +2,8 @@
 
 **Date:** 2026-09-25  
 **Document Version:** 1.1.0 (Revised following F1-Review Findings)  
-**Status:** DRAFT (For planning reference; not created on GitHub yet)  
-**Target Branch Policy:** All feature branches (`feature/lab4-*`) merge into `lab4-staging` via PR. Explicit Development-panel Issue linking is required for every PR. Peer review occurs per feature package. Only release PR #15 merges `lab4-staging` into `main`.
+**Status:** Planning index. F1 Issue #46 / PR #47 are recorded in implementation-log.md; current remote review/link status is not reverified. Remaining entries are drafts unless linked to actual evidence.
+**Target Branch Policy:** All feature branches (`codex/lab4-*` by default; preserve existing team branch names) merge into `lab4-staging` via PR. Explicit Development-panel Issue linking is required for every PR. Peer review occurs per feature package. Only the reviewed release PR merges `lab4-staging` into `main`.
 
 ---
 
@@ -12,7 +12,7 @@
 - **Labels:** `phase:f1`, `type:chore`, `scope:baseline`
 - **Dependencies:** None
 - **Scope:**
-  - Audit existing repo state, clean git working tree, inspect previous Lab 3 PR release.
+  - Audit existing repo state, preserve existing working-tree changes, inspect previous Lab 3 PR release.
   - Verify fail-closed test environment safeguards (`server/src/config/testEnvironment.ts`).
   - Execute baseline build checks and client test suites (82/82 passing).
 - **Planned Test IDs / Evidence:** `tsc` server build (0 errors), Vite client build (0 errors), `npm run test:client` (82/82 pass).
@@ -20,7 +20,7 @@
 
 ---
 
-### Issue 2: [L4-P01] Sprint 4 Engineering Contracts & Decision Gates (D01–D10)
+### Issue 2: [L4-P01] Sprint 4 Engineering Contracts & Decision Gates (D01–D13)
 - **Phase:** F1
 - **Labels:** `phase:f1`, `type:documentation`, `scope:contract`
 - **Dependencies:** L4-P00
@@ -28,7 +28,7 @@
   - Formulate 11-section `specification.md` compliant with §9.
   - Draft REST API contracts in `api-spec.md` with uniform error envelopes matching Lab 3.
   - Draft Zen Green UI and multi-viewport responsive design in `ui-spec.md`.
-  - Address Decision Gates D01–D10 in `decisions.md`.
+  - Address Decision Gates D01–D13 in `decisions.md`.
   - Prepare verified patch for `AGENTS.md` and `.antigravityrules` in `proposed-agents-patch.md`.
 - **Planned Test IDs / Evidence:** Documentation consistency check; `git apply --check` on proposed patches (code 0).
 - **Gate:** Contracts internally consistent and matching rubric and baseline requirements.

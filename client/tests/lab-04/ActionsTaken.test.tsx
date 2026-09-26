@@ -176,6 +176,7 @@ describe("Phase F2 / L4-P05: Actions Taken UI in Ticket Detail", () => {
   });
 
   it("UI-L4-13: Log Action modal initializes datetime in local browser timezone and sets max without UTC skew", async () => {
+    // 1. Dynamic check
     render(
       <ActionsTakenSection
         ticketId={101}
@@ -201,5 +202,32 @@ describe("Phase F2 / L4-P05: Actions Taken UI in Ticket Detail", () => {
     const parsedDate = new Date(dateInput.value);
     const diffMinutes = Math.abs((nowLocal.getTime() - parsedDate.getTime()) / (60 * 1000));
     expect(diffMinutes).toBeLessThan(2);
+  });
+
+  it("UI-L4-13b: Fixed-clock assertion verifies local now and max = now + 5m boundary", () => {
+    const fixedNow = new Date(2026, 8, 26, 14, 30, 0); // Local Sep 26, 2026 14:30:00
+    vi.useFakeTimers();
+    vi.setSystemTime(fixedNow);
+
+    try {
+      render(
+        <ActionsTakenSection
+          ticketId={101}
+          ticketStatus="IN_PROGRESS"
+          actions={mockActions}
+          currentUser={{ id: 12, name: "Alex IT", role: "IT_STAFF" }}
+          onActionSaved={onActionSaved}
+        />
+      );
+
+      const logBtn = screen.getByRole("button", { name: /\+ Log Action/i });
+      fireEvent.click(logBtn);
+
+      const dateInput = screen.getByLabelText(/Action Date & Time/i) as HTMLInputElement;
+      expect(dateInput.value).toBe("2026-09-26T14:30");
+      expect(dateInput.max).toBe("2026-09-26T14:35");
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });

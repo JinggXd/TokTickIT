@@ -47,6 +47,28 @@ function formatActionResponse(action: any) {
   };
 }
 
+function parseExpectedVersion(
+  body: any,
+  ifMatchHeader?: string
+): { valid: boolean; version?: number; error?: string } {
+  const raw =
+    body?.expectedVersion !== undefined ? body.expectedVersion : ifMatchHeader;
+  if (raw === undefined || raw === null || raw === "") {
+    return {
+      valid: false,
+      error: "expectedVersion is required (must be a positive integer).",
+    };
+  }
+  const num = typeof raw === "number" ? raw : Number(raw);
+  if (!Number.isInteger(num) || num <= 0) {
+    return {
+      valid: false,
+      error: "expectedVersion must be a positive integer.",
+    };
+  }
+  return { valid: true, version: num };
+}
+
 // ---------------------------------------------------------------------------
 // 2.1 List Actions Taken for Ticket
 // GET /api/tickets/:id/actions
@@ -399,24 +421,7 @@ actionsRouter.patch(
           };
         }
 
-        // 4. Optimistic concurrency check
-        const expectedVersion =
-          req.body.expectedVersion !== undefined
-            ? Number(req.body.expectedVersion)
-            : req.header("if-match")
-            ? parseInt(req.header("if-match")!, 10)
-            : undefined;
-
-        if (expectedVersion !== undefined && expectedVersion !== action.version) {
-          throw {
-            status: 409,
-            error: "CONFLICT",
-            message: "Action Taken was modified by another user. Please refresh and try again.",
-            currentVersion: action.version,
-          };
-        }
-
-        // 5. State & Permission validation
+        // 4. State & Permission validation
         if (action.status === "CANCELLED") {
           throw {
             status: 400,
@@ -448,6 +453,17 @@ actionsRouter.patch(
             };
           }
         }
+
+        // 5. Optimistic concurrency version validation (400 if missing or invalid)
+        const versionRes = parseExpectedVersion(req.body, req.header("if-match"));
+        if (!versionRes.valid) {
+          throw {
+            status: 400,
+            error: "VALIDATION_FAILED",
+            message: versionRes.error,
+          };
+        }
+        const expectedVersion = versionRes.version!;
 
         // Validate edits
         const dataToUpdate: any = {
@@ -541,6 +557,15 @@ actionsRouter.patch(
             };
           }
           dataToUpdate.attachmentNotes = notes;
+        }
+
+        if (expectedVersion !== action.version) {
+          throw {
+            status: 409,
+            error: "CONFLICT",
+            message: "Action Taken was modified by another user. Please refresh and try again.",
+            currentVersion: action.version,
+          };
         }
 
         const savedAction = await (tx as any).actionTaken.update({
@@ -644,21 +669,15 @@ actionsRouter.post(
           };
         }
 
-        const expectedVersion =
-          req.body.expectedVersion !== undefined
-            ? Number(req.body.expectedVersion)
-            : req.header("if-match")
-            ? parseInt(req.header("if-match")!, 10)
-            : undefined;
-
-        if (expectedVersion !== undefined && expectedVersion !== action.version) {
+        const versionRes = parseExpectedVersion(req.body, req.header("if-match"));
+        if (!versionRes.valid) {
           throw {
-            status: 409,
-            error: "CONFLICT",
-            message: "Action Taken was modified by another user. Please refresh and try again.",
-            currentVersion: action.version,
+            status: 400,
+            error: "VALIDATION_FAILED",
+            message: versionRes.error,
           };
         }
+        const expectedVersion = versionRes.version!;
 
         const resultText = (req.body.result || "").trim();
         if (!resultText || resultText.length < 1 || resultText.length > 1000) {
@@ -666,6 +685,26 @@ actionsRouter.post(
             status: 400,
             error: "VALIDATION_FAILED",
             message: "result is mandatory when completing an action (1-1000 characters).",
+          };
+        }
+
+        if (req.body.attachmentNotes !== undefined) {
+          const notes = req.body.attachmentNotes ? String(req.body.attachmentNotes).trim() : null;
+          if (notes && notes.length > 500) {
+            throw {
+              status: 400,
+              error: "VALIDATION_FAILED",
+              message: "attachmentNotes cannot exceed 500 characters.",
+            };
+          }
+        }
+
+        if (expectedVersion !== action.version) {
+          throw {
+            status: 409,
+            error: "CONFLICT",
+            message: "Action Taken was modified by another user. Please refresh and try again.",
+            currentVersion: action.version,
           };
         }
 
@@ -678,13 +717,6 @@ actionsRouter.post(
 
         if (req.body.attachmentNotes !== undefined) {
           const notes = req.body.attachmentNotes ? String(req.body.attachmentNotes).trim() : null;
-          if (notes && notes.length > 500) {
-            throw {
-              status: 400,
-              error: "VALIDATION_FAILED",
-              message: "attachmentNotes cannot exceed 500 characters.",
-            };
-          }
           dataToUpdate.attachmentNotes = notes;
         }
 
@@ -788,14 +820,17 @@ actionsRouter.post(
           };
         }
 
-        const expectedVersion =
-          req.body.expectedVersion !== undefined
-            ? Number(req.body.expectedVersion)
-            : req.header("if-match")
-            ? parseInt(req.header("if-match")!, 10)
-            : undefined;
+        const versionRes = parseExpectedVersion(req.body, req.header("if-match"));
+        if (!versionRes.valid) {
+          throw {
+            status: 400,
+            error: "VALIDATION_FAILED",
+            message: versionRes.error,
+          };
+        }
+        const expectedVersion = versionRes.version!;
 
-        if (expectedVersion !== undefined && expectedVersion !== action.version) {
+        if (expectedVersion !== action.version) {
           throw {
             status: 409,
             error: "CONFLICT",

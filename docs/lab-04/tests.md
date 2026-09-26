@@ -125,3 +125,7 @@ e2e/lab-04/
 | **MIG-L4-01** | Migration | AC-34, AC-35 | Idempotent seed and schema migration preservation | Zero data loss, seed twice identical | `server/tests/lab-04/migration-preservation.test.ts`| Planned |
 | **MIG-L4-02** | Migration | D10 | Sandbox backup and restore recovery verification | pg_dump and pg_restore test successful | `server/tests/lab-04/migration-preservation.test.ts`| Planned |
 | **PERF-L4-01** | Performance | DoD | Dashboard metrics performance smoke test on 500 tickets (p95 < 200ms) | 50 samples, p95 < 200ms | `server/tests/lab-04/performance-smoke.test.ts` | Planned |
+
+## Evidence status clarification — 2026-09-26
+
+`Implemented` means a test body exists. `API-L4-30b` is the eligible-assignee lookup test; `API-L4-30` remains the Admin dashboard test. The lookup test title was aligned with this matrix. In F2 implementation verification, `UI-L4-13` and `UI-L4-13b` verified both local initialization and fixed-clock `max = local now + 5m` boundary (8/8 pass in `ActionsTaken.test.tsx`). `API-L4-22b` through `API-L4-22e` verified version guards, empty complete results, and follow-up notes (32/32 pass in `actions-taken.api.test.ts`). Full client suite passed at 91/91 (100%).

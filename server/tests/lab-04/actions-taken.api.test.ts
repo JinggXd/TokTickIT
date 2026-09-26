@@ -510,6 +510,84 @@ describe("Phase F2 / L4-P04: Actions Taken REST API & Authorization", () => {
     expect(resStale.body.currentVersion).toBe(1);
   });
 
+  describe("API-L4-22: Action Mutation Validation & Version Precondition Guard", () => {
+    let testActionId: number;
+
+    beforeAll(async () => {
+      const createRes = await request(app)
+        .post(`/api/tickets/${testTicketOpen.id}/actions`)
+        .set(headersAlex)
+        .send({
+          actionDescription: "Action for mutation validation testing",
+          status: "PENDING",
+        });
+      testActionId = createRes.body.action.id;
+      createdActionIds.push(testActionId);
+    });
+
+    it("API-L4-22b: PATCH returns 400 VALIDATION_FAILED when expectedVersion is missing or non-positive", async () => {
+      // 1. Missing expectedVersion
+      const resMissing = await request(app)
+        .patch(`/api/tickets/${testTicketOpen.id}/actions/${testActionId}`)
+        .set(headersAlex)
+        .send({ actionDescription: "Missing version" });
+      expect(resMissing.status).toBe(400);
+      expect(resMissing.body.error).toBe("VALIDATION_FAILED");
+
+      // 2. Non-positive integer (0)
+      const resZero = await request(app)
+        .patch(`/api/tickets/${testTicketOpen.id}/actions/${testActionId}`)
+        .set(headersAlex)
+        .send({ actionDescription: "Zero version", expectedVersion: 0 });
+      expect(resZero.status).toBe(400);
+      expect(resZero.body.error).toBe("VALIDATION_FAILED");
+
+      // 3. String non-integer
+      const resNaN = await request(app)
+        .patch(`/api/tickets/${testTicketOpen.id}/actions/${testActionId}`)
+        .set(headersAlex)
+        .send({ actionDescription: "NaN version", expectedVersion: "invalid" });
+      expect(resNaN.status).toBe(400);
+      expect(resNaN.body.error).toBe("VALIDATION_FAILED");
+    });
+
+    it("API-L4-22c: Complete returns 400 VALIDATION_FAILED when expectedVersion is missing or result is empty", async () => {
+      // 1. Missing expectedVersion
+      const resMissing = await request(app)
+        .post(`/api/tickets/${testTicketOpen.id}/actions/${testActionId}/complete`)
+        .set(headersAlex)
+        .send({ result: "Done" });
+      expect(resMissing.status).toBe(400);
+      expect(resMissing.body.error).toBe("VALIDATION_FAILED");
+
+      // 2. Empty / whitespace-only result
+      const resEmptyResult = await request(app)
+        .post(`/api/tickets/${testTicketOpen.id}/actions/${testActionId}/complete`)
+        .set(headersAlex)
+        .send({ expectedVersion: 1, result: "   " });
+      expect(resEmptyResult.status).toBe(400);
+      expect(resEmptyResult.body.error).toBe("VALIDATION_FAILED");
+    });
+
+    it("API-L4-22d: Cancel returns 400 VALIDATION_FAILED when expectedVersion is missing", async () => {
+      const resMissing = await request(app)
+        .post(`/api/tickets/${testTicketOpen.id}/actions/${testActionId}/cancel`)
+        .set(headersAlex)
+        .send({});
+      expect(resMissing.status).toBe(400);
+      expect(resMissing.body.error).toBe("VALIDATION_FAILED");
+    });
+
+    it("API-L4-22e: PATCH returns 400 VALIDATION_FAILED when followUpRequired is true without followUpNote", async () => {
+      const res = await request(app)
+        .patch(`/api/tickets/${testTicketOpen.id}/actions/${testActionId}`)
+        .set(headersAlex)
+        .send({ expectedVersion: 1, followUpRequired: true, followUpNote: "   " });
+      expect(res.status).toBe(400);
+      expect(res.body.error).toBe("VALIDATION_FAILED");
+    });
+  });
+
   describe("API-L4-24a to API-L4-24h: Idempotent Retry Protocol & Scoping (D09)", () => {
     const clientRequestId = "e5b8d28a-77e8-466d-a192-3d846c97a2d1";
 
@@ -704,7 +782,7 @@ describe("Phase F2 / L4-P04: Actions Taken REST API & Authorization", () => {
       expect(retryRes.body.action.id).toBe(actionId);
     });
 
-    it("API-L4-30: GET /api/staff/ticket-owners allows both IT_STAFF and ADMINISTRATOR", async () => {
+    it("API-L4-30b: GET /api/staff/ticket-owners allows both IT_STAFF and ADMINISTRATOR", async () => {
       // 1. Staff access
       const staffRes = await request(app)
         .get("/api/staff/ticket-owners")
