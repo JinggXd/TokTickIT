@@ -239,3 +239,33 @@ Addressed all remaining items documented in `docs/lab-04/F1-REVIEW-ROUND2.md`:
    - **Resolution:** Updated `api-spec.md` §§2.3, 2.4, 2.5 with complete request schemas, permissions matrix, validation rules, 200 OK responses, and comprehensive error status codes. Tested across 28 tests in `actions-taken.api.test.ts`.
 
 
+
+## 2026-09-26 — Codex F1 documentation closeout cleanup
+
+User requested all remaining F1 document corrections in one pass. Updated decisions summary to D01–D13, aligned specification references, phase status and Issue draft index, and created F1-CLOSEOUT.md as the single current closure record. Renamed only the eligible-assignee test title from API-L4-30 to API-L4-30b (no assertion or product-code change). Added evidence limitations to tests.md. Preserved existing user changes and historical logs.
+
+Current checkout at inspection: feature/actions-and-workflow-phase2-lab4, HEAD 3efa5e4981b0434241da9db44a82b29b230b11cb. F2 code exists; this cleanup does not verify F2. GitHub CLI lookup was unavailable because gh was not in PATH, so current remote approval/link/merge status is not asserted. No commit, push, migration, agent-rule patch application, or merge performed. Decisions remain Proposed; closure awaits actual acceptance and peer-review evidence. Validation: document structure/AC mapping/test-title consistency, proposed patch dry checks and git diff checks; no product tests run.
+
+---
+
+## 11. Phase F1 Remote Verification & Closeout Completion (2026-09-26)
+
+**Date:** 2026-09-26T12:15:00+07:00  
+
+### Actions Executed:
+1. **Product Owner Direction:**
+   - Received explicit confirmation and direction from Product Owner to resolve all three reviewed findings in F1 / L4-P01 Engineering Contracts (`ui-spec.md`, `decisions.md`, `api-spec.md`), and to complete all closeout items in `F1-CLOSEOUT.md` with self-verification.
+2. **GitHub Remote Verification via GraphQL API:**
+   - Queried GitHub API for PR #47 and Issue #46:
+     - PR #47: `docs(lab4): establish contracts and align test/pipeline gates (P00-P02)`
+     - Base branch: `lab4-staging` | Head branch: `docs/lab4-contract`
+     - Status: `OPEN` (merged: false, reviewDecision: null)
+     - Linked Issues: Confirmed Development panel link to Issue #46 (`Lab 4 P00–P02: establish engineering contracts, decision gates, and test traceability`) through `closingIssuesReferences`.
+     - Review Status: Pending peer-reviewer approval & merge (in strict accordance with team policy: agent/author does not self-merge).
+3. **Implementation & Test Verification:**
+   - Enforced strict version precondition guards in `server/src/routes/actions.ts` (`parseExpectedVersion`), returning 400 `VALIDATION_FAILED` when `expectedVersion` is missing or non-positive.
+   - Added unit/integration test coverage in `actions-taken.api.test.ts` (32/32 passing): `API-L4-22b` (missing/invalid version), `API-L4-22c` (missing version / empty complete result), `API-L4-22d` (missing version on cancel), and `API-L4-22e` (missing follow-up note).
+   - Added fixed-clock assertion in `ActionsTaken.test.tsx` (`UI-L4-13b`), verifying local timezone initialization and `max = now + 5m` boundary (8/8 passing).
+   - Full client suite: 17/17 files, 91/91 tests passed (100%).
+4. **Documentation Synchronization:**
+   - Synchronized all contract documents (`ui-spec.md`, `decisions.md`, `api-spec.md`, `specification.md`, `tests.md`, `PHASES.md`, `issue-drafts.md`, `F1-CLOSEOUT.md`) onto `docs/lab4-contract` and pushed to remote to ensure PR #47 contains the authoritative snapshot.

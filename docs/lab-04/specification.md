@@ -340,3 +340,10 @@ Cross-reference: [decisions.md](file:///d:/toktickit/docs/lab-04/decisions.md)
 - D08: Minimal scope patch proposal for `AGENTS.md` targeting `lab4-staging`.
 - D09: Optimistic concurrency using `Ticket.version` and `ActionTaken.version`; persistent idempotent retry scoped to `(createdById, ticketId, clientRequestId)` with canonical `requestPayloadHash` (201 create vs 200 replay).
 - D10: Database recovery sandbox backup/restore verification procedure.
+
+### Additional contract clarifications
+
+- D11: Local datetime input formatting and UTC transmission; see ui-spec.md §3.4.
+- D12: Staff/Admin eligible-assignee lookup; see api-spec.md §1.4.
+- D13: Mutation schemas and validation; see api-spec.md §2.3–2.5.
+- Decision acceptance and phase closure evidence are tracked separately in F1-CLOSEOUT.md.

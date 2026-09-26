@@ -1,4 +1,4 @@
-# TokTickIT Lab 4 — Architectural & Business Rule Decisions (D01–D10)
+# TokTickIT Lab 4 — Architectural & Business Rule Decisions (D01–D13)
 
 **Date:** 2026-09-25  
 **Document Version:** 1.2.0 (Revised following F1-Review Round 2 Findings)  
@@ -13,7 +13,7 @@
 |---|---|---|---|---|
 | **D01** | Action Taken Actor Semantics, Model Fields, Lifecycle & Inactive Assignee Rejection | §3, §4.1, §4.3, §4.4, §8.3, §14 Part 6 | **Proposed (TBD)** | `createdById` (server auto), `performedById` (set on completion/creation), `assigneeId` (nullable, active IT Staff/Admin). Statuses `PENDING`, `COMPLETED`, `CANCELLED`. Inactive assignee rejected with 422 `INVALID_ASSIGNEE`. Model includes `version: Int @default(1)`. |
 | **D02** | Ticket Resolution Gate, Follow-Up Semantics & Concurrency Serialization | §4.5, §9, §14 Part 7 | **Proposed (TBD)** | Resolution requires >= 1 `COMPLETED` Action Taken and 0 `PENDING` actions (422 `RESOLUTION_GATE_FAILED`). Follow-up flag/note is an informational audit trail; any necessary follow-up work is logged as a separate action. Action mutations acquire row lock on Ticket and increment `Ticket.version`. |
-| **D03** | Append-Only Scope vs Action Modification & Terminal Locking | §8.3, §14 Part 7 | **Proposed (TBD)** | Comments, Notes, and Ticket status transitions remain append-only without inventing a new history table. Pending actions editable by staff/admin. Completed actions editable only by original performer or Admin for description/notes. Parent RESOLVED, CLOSED, or CANCELLED locks all actions. Nested `actionId` must belong to `ticketId`. |
+| **D03** | Append-Only Scope vs Action Modification & Terminal Locking | §8.3, §14 Part 7 | **Proposed (TBD)** | Comments and Notes remain append-only; Ticket transitions preserve existing records without adding a history table. Pending actions editable by staff/admin. Completed actions editable only by original performer or Admin for description/notes. Parent RESOLVED, CLOSED, or CANCELLED locks all actions. Nested `actionId` must belong to `ticketId`. |
 | **D04** | Requester Visibility into All Actions Taken & Confidentiality Safeguards | §4.3, §8.3 | **Proposed (TBD)** | Requesters view **ALL** Actions Taken (`PENDING`, `COMPLETED`, `CANCELLED`) on owned tickets in read-only mode. Foreign tickets strictly 403 Forbidden with exact baseline message. Zero leakage of Internal Notes. |
 | **D05** | Single Metric Dictionary, Drill-down Targets & Status-Set Parity | §4.6, §6.2, §8.1, §8.2, §14 Part 5 & 8 | **Proposed (TBD)** | 1-to-1 parity between Card Count <-> API Field <-> DB Query <-> Drill-down URL. Added `recent=7d` and `statusGroup=open/active` query parameters. `myRecentActions` contains actions performed by current user. Admin dashboard links to `/admin/tickets/:id`. |
 | **D06** | Action Event Date/Time vs Server Creation Timestamp | §3, §4.1, §8.3 | **Proposed (TBD)** | `actionDateTime` is event time (<= now + 5m clock-skew tolerance). `createdAt` is immutable server timestamp. |
@@ -21,6 +21,10 @@
 | **D08** | AGENTS.md & .antigravityrules Minimal Scope Adjustment | AGENTS.md, .antigravityrules | **Proposed (TBD)** | Minimal patch verified with `git apply --check` (code 0) without overwriting Lab 3 pipeline. |
 | **D09** | Concurrency, Optimistic Locking & Idempotent Retry Protocol | §5.1, §6.1, §8.5 | **Proposed (TBD)** | Persistent `clientRequestId` scoped to `(createdById, ticketId, clientRequestId)` with 200 replay vs 201 created. Transactional parent ticket locking before any action mutation. Action updates require `expectedVersion` (409 Conflict). |
 | **D10** | Safe Database Recovery & Sandbox Procedure | §5.2 | **Proposed (TBD)** | Sandbox backup/restore test procedure documented using `pg_dump`/`pg_restore` on disposable test database. |
+
+| **D11** | Local datetime input | F1-01; ui-spec §3.4 | **Proposed (TBD)** | Local input values/max; UTC only for API transmission; supersedes the old D06 UTC-input example. |
+| **D12** | Eligible assignee lookup | F1-02; api-spec §1.4 | **Proposed (TBD)** | GET /api/staff/ticket-owners allows Staff/Admin and retains the safe active-user DTO. |
+| **D13** | Action mutation schemas | F1-03; api-spec §2.3–2.5 | **Proposed (TBD)** | Explicit edit/complete/cancel validation, version precondition and success responses. |
 
 ---
 
