@@ -1,5 +1,5 @@
-import type { RequesterUser, SafeUser, Category, RelatedSystem, Priority, TicketStatus, Ticket, Role } from "./types.js";
-export type { RequesterUser, SafeUser, Category, RelatedSystem, Priority, TicketStatus, Ticket, Role };
+import type { RequesterUser, SafeUser, Category, RelatedSystem, Priority, TicketStatus, Ticket, Role, ActionTaken } from "./types.js";
+export type { RequesterUser, SafeUser, Category, RelatedSystem, Priority, TicketStatus, Ticket, Role, ActionTaken };
 
 const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:3000";
 
@@ -817,5 +817,133 @@ export async function resetAdminUserPassword(userId: number, initialPassword: st
     throw err;
   }
 }
+
+// ---------------------------------------------------------------------------
+// Lab 4: Actions Taken APIs
+// ---------------------------------------------------------------------------
+
+export async function fetchActionsTaken(ticketId: number): Promise<{ ticketId: number; actions: ActionTaken[] }> {
+  const response = await apiFetch(`${API_URL}/api/tickets/${ticketId}/actions`);
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    const err: any = new Error(data.message || data.error || "Unable to load actions.");
+    err.status = response.status;
+    err.error = data.error;
+    throw err;
+  }
+  return data;
+}
+
+export async function createActionTaken(
+  ticketId: number,
+  payload: {
+    actionDateTime?: string;
+    actionDescription: string;
+    status?: "COMPLETED" | "PENDING";
+    result?: string;
+    assigneeId?: number | null;
+    followUpRequired?: boolean;
+    followUpNote?: string | null;
+    attachmentNotes?: string | null;
+    clientRequestId?: string;
+  },
+  clientRequestIdHeader?: string,
+): Promise<{ ticketId: number; action: ActionTaken }> {
+  const headers: Record<string, string> = { "Content-Type": "application/json" };
+  if (clientRequestIdHeader) {
+    headers["X-Client-Request-Id"] = clientRequestIdHeader;
+  }
+  const response = await apiFetch(`${API_URL}/api/tickets/${ticketId}/actions`, {
+    method: "POST",
+    headers,
+    body: JSON.stringify(payload),
+  });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    const err: any = new Error(data.message || data.error || "Unable to create action.");
+    err.status = response.status;
+    err.error = data.error;
+    throw err;
+  }
+  return data;
+}
+
+export async function updateActionTaken(
+  ticketId: number,
+  actionId: number,
+  payload: {
+    expectedVersion?: number;
+    actionDescription?: string;
+    assigneeId?: number | null;
+    followUpRequired?: boolean;
+    followUpNote?: string | null;
+    attachmentNotes?: string | null;
+  },
+): Promise<{ ticketId: number; action: ActionTaken }> {
+  const response = await apiFetch(`${API_URL}/api/tickets/${ticketId}/actions/${actionId}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    const err: any = new Error(data.message || data.error || "Unable to update action.");
+    err.status = response.status;
+    err.error = data.error;
+    err.currentVersion = data.currentVersion;
+    throw err;
+  }
+  return data;
+}
+
+export async function completeActionTaken(
+  ticketId: number,
+  actionId: number,
+  payload: {
+    expectedVersion?: number;
+    result: string;
+    attachmentNotes?: string;
+  },
+): Promise<{ ticketId: number; action: ActionTaken }> {
+  const response = await apiFetch(`${API_URL}/api/tickets/${ticketId}/actions/${actionId}/complete`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    const err: any = new Error(data.message || data.error || "Unable to complete action.");
+    err.status = response.status;
+    err.error = data.error;
+    err.currentVersion = data.currentVersion;
+    throw err;
+  }
+  return data;
+}
+
+export async function cancelActionTaken(
+  ticketId: number,
+  actionId: number,
+  payload: {
+    expectedVersion?: number;
+    reason?: string;
+  },
+): Promise<{ ticketId: number; action: ActionTaken }> {
+  const response = await apiFetch(`${API_URL}/api/tickets/${ticketId}/actions/${actionId}/cancel`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    const err: any = new Error(data.message || data.error || "Unable to cancel action.");
+    err.status = response.status;
+    err.error = data.error;
+    err.currentVersion = data.currentVersion;
+    throw err;
+  }
+  return data;
+}
+
 
 

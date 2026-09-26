@@ -38,6 +38,12 @@ enum Role {
   ADMINISTRATOR
 }
 
+enum ActionStatus {
+  PENDING
+  COMPLETED
+  CANCELLED
+}
+
 model User {
   id                  Int          @id @default(autoincrement())
   name                String
@@ -57,6 +63,9 @@ model User {
   uploadedAttachments    Attachment[]    @relation("AttachmentUploader")
   publicComments         PublicComment[]
   internalNotes          InternalNote[]
+  actionsCreated         ActionTaken[]   @relation("ActionCreator")
+  actionsPerformed       ActionTaken[]   @relation("ActionPerformer")
+  actionsAssigned        ActionTaken[]   @relation("ActionAssignee")
   sessions               Session[]
 
   @@map("RequesterUser")
@@ -123,6 +132,7 @@ model Ticket {
   attachments         Attachment[]
   publicComments      PublicComment[]
   internalNotes       InternalNote[]
+  actionsTaken        ActionTaken[]
 
   createdAt           DateTime     @default(now())
   updatedAt           DateTime     @updatedAt
@@ -176,3 +186,40 @@ model InternalNote {
 
   @@index([ticketId, createdAt])
 }
+
+model ActionTaken {
+  id                Int          @id @default(autoincrement())
+  ticketId          Int
+  ticket            Ticket       @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+
+  actionDateTime    DateTime     @default(now())
+  actionDescription String
+  result            String?
+  status            ActionStatus @default(COMPLETED)
+
+  createdById       Int
+  createdBy         User         @relation("ActionCreator", fields: [createdById], references: [id])
+
+  performedById     Int?
+  performedBy       User?        @relation("ActionPerformer", fields: [performedById], references: [id])
+
+  assigneeId        Int?
+  assignee          User?        @relation("ActionAssignee", fields: [assigneeId], references: [id])
+
+  followUpRequired  Boolean      @default(false)
+  followUpNote      String?
+  attachmentNotes   String?
+
+  version            Int          @default(1)
+  clientRequestId    String?
+  requestPayloadHash String?
+
+  createdAt          DateTime     @default(now())
+  updatedAt          DateTime     @updatedAt
+
+  @@index([ticketId, actionDateTime])
+  @@index([performedById])
+  @@index([assigneeId])
+  @@index([status])
+  @@unique([createdById, ticketId, clientRequestId])
+}

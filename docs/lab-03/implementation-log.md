@@ -1180,6 +1180,35 @@ Following resolution of peer review feedback, queue strict-mode handling, direct
 
 ### 4. Major Phase Status Update
 
-- **Phase F3 (P07–P10):** Transited from `Implemented — รอยืนยัน E2E ล่าสุด` to **`Verified`**.
-- **Phase F4 (P11–P12):** Transited from `Implemented — รอยืนยัน E2E ล่าสุด` to **`Verified`**.
-- **Phase F5 (P13–P14):** Ready for peer reviewer inspection, branch merge into `lab3-staging`, release PR to `main`, and final documentation packaging.
+- **Phase F3 (P07–P10):** Transited to **`Merged to lab3-staging`** (PR #41, commit `37164aa`).
+- **Phase F4 (P11–P12):** Transited to **`Merged to lab3-staging`** (PR #43, commit `df9ad81`).
+- **Phase F5 (P13–P14):** Transited to **`Verified / Completed`** (Release PR #45 merged to `main`, commit `baad45e09272d665bc0cf765236c456edcf0eff7`).
+
+---
+
+## 2026-09-20 — Phase F5: Final Release Integration & Verification on `main`
+
+### 1. Release Integration Summary
+
+- **Release PR #45:** `release(lab-03): release TokTickIT multi-role ticketing system (Phases F1–F4)`
+- **Base:** `main` | **Head:** `lab3-staging`
+- **Associated Issue:** Closed Issue #44 automatically via `Closes #44`
+- **Peer Reviewer:** `yuminnini`
+- **Review Decision:** `APPROVED`
+- **Merge Timestamp:** 2026-09-20T11:32:03Z (18:32:03 GMT+7)
+- **Final `main` SHA:** `baad45e09272d665bc0cf765236c456edcf0eff7`
+
+### 2. Final Verification Suites on Clean `main`
+
+All test suites were executed directly on the final `main` checkout (`baad45e09272d665bc0cf765236c456edcf0eff7`) against the verified disposable Docker test database (`toktickit_test` on port 5433):
+
+| Test Suite | Command | Duration | Tests Passed | Failed | Skipped | Status |
+|---|---|---:|---:|---:|---:|---|
+| **Server Tests** | `$env:DATABASE_URL_TEST="postgresql://toktickit:toktickit@localhost:5433/toktickit_test?schema=public"; npm run test:server` | 38.51s | **263 / 263** (25 files) | 0 | 0 | **VERIFIED** |
+| **Client Tests** | `npm run test:client` | 23.16s | **82 / 82** (15 files) | 0 | 0 | **VERIFIED** |
+| **Playwright E2E** | `$env:DATABASE_URL_TEST="postgresql://toktickit:toktickit@localhost:5433/toktickit_test?schema=public"; npm run test:e2e` | 2.8m | **108 / 108** (3 viewports) | 0 | 0 | **VERIFIED** |
+| **Server Build** | `npm --prefix server run build` | 1.8s | TypeScript build (`tsc`) | 0 | 0 | **VERIFIED** |
+| **Client Build** | `npm --prefix client run build` | 1.4s | Production Vite build | 0 | 0 | **VERIFIED** |
+
+Zero tests failed, zero tests skipped. All 56 Acceptance Criteria (AC-01 through AC-56) are satisfied with full backward-compatibility and zero regressions against the Lab 2 baseline.
+

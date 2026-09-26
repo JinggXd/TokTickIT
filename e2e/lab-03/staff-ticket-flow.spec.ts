@@ -265,7 +265,8 @@ test.describe("E2E-11: Complete IT Staff triage workflow", () => {
     const btn = page.getByTestId("staff-change-status-btn");
     await expect(btn).toBeEnabled();
     await btn.click();
-    await expect(page.locator(".alert-success, [role='alert']")).toBeVisible({ timeout: 6_000 });
+    await expect(page.locator(".alert-success")).toBeVisible({ timeout: 6_000 });
+    await expect(page.locator(".alert-danger")).not.toBeVisible();
     await expect(page.locator("[data-testid='status-badge-IN_PROGRESS'], .badge:has-text('In Progress')").first()).toBeVisible();
     await page.screenshot({ path: screenshotPath(testInfo, "e2e11-status-in-progress.png") });
   });
@@ -302,6 +303,19 @@ test.describe("E2E-11: Complete IT Staff triage workflow", () => {
     await page.goto(`/staff/tickets/${ticketId}`);
     await expect(page.getByTestId("staff-ticket-detail-page")).toBeVisible();
 
+    // Record completed Action Taken before resolving (satisfies Resolution Gate BR-12)
+    const logBtn = page.getByRole("button", { name: /\+ Log Action/i });
+    await expect(logBtn).toBeVisible({ timeout: 6_000 });
+    await logBtn.click();
+
+    await expect(page.getByRole("dialog")).toBeVisible({ timeout: 6_000 });
+    await page.locator("#log-action-desc").fill("Replaced damaged patch cable and tested network throughput");
+    await page.locator("#log-action-result").fill("Connection restored at 1Gbps full duplex with zero packet loss");
+    await page.getByRole("button", { name: /Save Action/i }).click();
+
+    await expect(page.getByRole("dialog")).not.toBeVisible({ timeout: 6_000 });
+    await expect(page.getByText("Replaced damaged patch cable and tested network throughput")).toBeVisible({ timeout: 6_000 });
+
     const sel = page.getByTestId("staff-status-select");
     await expect(sel.locator("option[value='RESOLVED']")).toHaveCount(1);
     await sel.selectOption("RESOLVED");
@@ -314,7 +328,8 @@ test.describe("E2E-11: Complete IT Staff triage workflow", () => {
     await expect(confirmBtn).toBeVisible({ timeout: 6_000 });
     await confirmBtn.click();
 
-    await expect(page.locator(".alert-success, [role='alert']")).toBeVisible({ timeout: 6_000 });
+    await expect(page.locator(".alert-success")).toBeVisible({ timeout: 6_000 });
+    await expect(page.locator(".alert-danger")).not.toBeVisible();
     await expect(page.locator("[data-testid='status-badge-RESOLVED'], .badge:has-text('Resolved')").first()).toBeVisible();
     await page.screenshot({ path: screenshotPath(testInfo, "e2e11-status-resolved.png") });
   });
@@ -349,7 +364,8 @@ test.describe("E2E-11: Complete IT Staff triage workflow", () => {
     await expect(confirmBtn).toBeVisible({ timeout: 6_000 });
     await confirmBtn.click();
 
-    await expect(page.locator(".alert-success, [role='alert']")).toBeVisible({ timeout: 6_000 });
+    await expect(page.locator(".alert-success")).toBeVisible({ timeout: 6_000 });
+    await expect(page.locator(".alert-danger")).not.toBeVisible();
     await expect(page.locator("[data-testid='status-badge-CLOSED'], .badge:has-text('Closed')").first()).toBeVisible();
     await page.screenshot({ path: screenshotPath(testInfo, "e2e11-status-closed.png") });
   });

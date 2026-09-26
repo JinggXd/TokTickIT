@@ -58,6 +58,26 @@ export const ALLOWED_TRANSITIONS: Record<TicketStatus, TicketStatus[]> = {
   CANCELLED: [],
 };
 
+export type ActionStatus = "PENDING" | "COMPLETED" | "CANCELLED";
+
+export interface ActionTaken {
+  id: number;
+  ticketId: number;
+  actionDateTime: string;
+  actionDescription: string;
+  result: string | null;
+  status: ActionStatus;
+  version: number;
+  createdById: number;
+  performedBy: { id: number; name: string } | null;
+  assignee: { id: number; name: string } | null;
+  followUpRequired: boolean;
+  followUpNote: string | null;
+  attachmentNotes: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface Attachment {
   id: number;
   fileName: string;
