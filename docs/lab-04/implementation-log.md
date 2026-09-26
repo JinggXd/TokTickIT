@@ -273,3 +273,42 @@ Current checkout at inspection: feature/actions-and-workflow-phase2-lab4, HEAD 3
    - **Finding:** In `api-spec.md` §2.3, the validation error precedence list specified 404 (mismatched/non-existent action) before 400 (terminal ticket lock), whereas transaction step 2 checked terminal status before step 3 checked nested action.
    - **Resolution:** Reordered transaction steps in `api-spec.md` (§2.3, §2.4, §2.5) and `server/src/routes/actions.ts` (PATCH, complete, cancel) so that the nested action lookup occurs immediately after row-locking the parent ticket. If the action does not exist or does not belong to the ticket, `404 Not Found` is returned immediately before evaluating terminal ticket lock (`400 Bad Request`).
    - **Test Evidence:** Added `API-L4-14b` in `actions-taken.api.test.ts` testing PATCH, complete, and cancel on a resolved ticket with mismatched actionId and non-existent actionId; all assert `404 Not Found` (33/33 tests passing).
+
+---
+
+## 12. Phase F2 Implementation, Hardening & PR #49 Open (2026-09-26)
+
+**Date:** 2026-09-26T19:07:00+07:00  
+**Feature Branch:** `feature/actions-and-workflow-phase2-lab4`  
+**Base Branch:** `lab4-staging`  
+**GitHub Issue:** [#48](https://github.com/JinggXd/TokTickIT/issues/48) (`Phase F2 (P03–P06): Actions Taken, Workflow State Machine & Resolution Gate`)  
+**Pull Request:** [#49](https://github.com/JinggXd/TokTickIT/pull/49) (`feat(f2): implement Actions Taken, workflow state machine & resolution gate (P03-P06)`)  
+**Development Panel Link:** Verified linked via `closingIssuesReferences` (`Resolves #48`).  
+
+### Scope & Work Packages Completed:
+1. **L4-P03: Schema Migration & Idempotent Seed:**
+   - ActionTaken model created with status enum (`PENDING`, `COMPLETED`, `CANCELLED`), actor references (`createdById`, `performedById`, `assigneeId`), version tracking, and clientRequestId idempotency.
+   - Preserved all baseline Lab 1-3 data without regression.
+2. **L4-P04: Actions Taken REST API:**
+   - Endpoints: `POST /api/tickets/:id/actions`, `PUT/PATCH /api/tickets/:id/actions/:actionId`, `POST /api/actions/:id/complete`, `POST /api/actions/:id/cancel`.
+   - Concurrency locking using `SELECT ... FOR UPDATE` and version bumping on parent ticket.
+3. **L4-P05: Actions Taken UI:**
+   - Timeline display on Staff, Admin, and Requester views (100% confidentiality of internal notes).
+   - Form modal dialogs with validation, optimistic submit-locking, Escape/close guards, and local timezone handling.
+4. **L4-P06: Workflow State Machine & Resolution Gate:**
+   - 64-transition matrix enforced; BR-12 Resolution Gate blocks transition to `RESOLVED` unless >= 1 `COMPLETED` action exists and 0 `PENDING` actions remain.
+
+### Hardening & Peer Review Fixes Completed:
+- **E2E Triage Workflow (`staff-ticket-flow.spec.ts`):** Added Action Taken logging step prior to ticket resolution to fulfill BR-12; updated alert assertions to `.alert-success` and verified absence of `.alert-danger`.
+- **Complete Action API (`actions.ts`):** Validated string types on `result` and `attachmentNotes`, returning `400 VALIDATION_FAILED` instead of unhandled 500 TypeError. Added `API-L4-07b`.
+- **Actions Taken UI Submissions (`ActionsTakenSection.tsx`):** Added `isSubmittingRef`, disabled inputs during submit, locked Escape key and close buttons during network in-flight (`UI-L4-14`).
+- **Staff Owner Loading (`StaffTicketDetail.tsx`):** Fixed staff owner fetching for Admin read-only view.
+- **Migration & Concurrency Verification:** Ran real SQL migration preservation test (`MIG-L4-01b`) and concurrency race tests under multi-worker setup.
+
+### Verification Status:
+- Server TypeScript (`tsc`): 0 errors
+- Client Vite (`tsc && vite build`): 0 errors
+- Client Vitest suite: 96 / 96 passed (17 files)
+- Server Vitest suite: 323 / 323 passed (including all 60 Lab 4 tests)
+- Documentation: Created `docs/lab-04/what_i_have_done2.md` and `docs/lab-04/aiused2.md`
+
