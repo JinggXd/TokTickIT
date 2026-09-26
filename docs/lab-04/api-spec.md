@@ -270,9 +270,9 @@ Standardized Error Constants across the application:
   6. `422 Unprocessable Entity`: `assigneeId` does not target an active `IT_STAFF` or `ADMINISTRATOR` (`INVALID_ASSIGNEE`).
 
 - **Atomic Transaction & Locking Order:**
-  1. Lock parent `Ticket` row (`SELECT ... FOR UPDATE`).
-  2. Validate parent status: If in (`RESOLVED`, `CLOSED`, `CANCELLED`), return `400 Bad Request`.
-  3. Verify nested resource: `action.ticketId === parseInt(req.params.id)`. If mismatch or not found, return `404 Not Found`.
+  1. Lock parent `Ticket` row (`SELECT ... FOR UPDATE`). If Ticket does not exist, return `404 Not Found`.
+  2. Verify nested resource: `action.ticketId === parseInt(req.params.id)`. If action does not exist or does not belong to this ticket, return `404 Not Found` (`NOT_FOUND`).
+  3. Validate parent status: If in (`RESOLVED`, `CLOSED`, `CANCELLED`), return `400 Bad Request` (`BAD_REQUEST`).
   4. Optimistic concurrency: Verify `expectedVersion === action.version`. If mismatch, return `409 Conflict` with `currentVersion: action.version`.
   5. Apply updates, increment `ActionTaken.version = ActionTaken.version + 1`.
   6. Increment parent `Ticket.version = Ticket.version + 1` and update `Ticket.updatedAt = NOW()`.
@@ -321,9 +321,9 @@ Standardized Error Constants across the application:
   | `attachmentNotes` | String \| null | Optional | Free-text notes or filename reference for diagnostic attachments (max 500 chars). |
 
 - **Atomic Transaction & Locking Order:**
-  1. Lock parent `Ticket` row (`SELECT ... FOR UPDATE`).
-  2. Validate parent status: If in (`RESOLVED`, `CLOSED`, `CANCELLED`), return `400 Bad Request`.
-  3. Verify nested resource (`action.ticketId === parseInt(req.params.id)`). Mismatch returns `404 Not Found`.
+  1. Lock parent `Ticket` row (`SELECT ... FOR UPDATE`). If Ticket does not exist, return `404 Not Found`.
+  2. Verify nested resource (`action.ticketId === parseInt(req.params.id)`). If action does not exist or does not belong to this ticket, return `404 Not Found` (`NOT_FOUND`).
+  3. Validate parent status: If in (`RESOLVED`, `CLOSED`, `CANCELLED`), return `400 Bad Request` (`BAD_REQUEST`).
   4. Action status check: must currently be `PENDING` (return 400 `BAD_REQUEST` if already completed or cancelled).
   5. Check `expectedVersion === action.version` (return 409 `CONFLICT` on mismatch).
   6. Set `status = 'COMPLETED'`, `performedById = req.user.id`, `result = body.result.trim()`, `attachmentNotes = body.attachmentNotes`.
@@ -383,9 +383,9 @@ Standardized Error Constants across the application:
   | `reason` | String | Optional | Explanation for cancellation (recorded into `result`, max 500 characters). |
 
 - **Atomic Transaction & Locking Order:**
-  1. Lock parent `Ticket` row (`SELECT ... FOR UPDATE`).
-  2. Validate parent status: If in (`RESOLVED`, `CLOSED`, `CANCELLED`), return `400 Bad Request`.
-  3. Verify nested resource (`action.ticketId === parseInt(req.params.id)`). Mismatch returns `404 Not Found`.
+  1. Lock parent `Ticket` row (`SELECT ... FOR UPDATE`). If Ticket does not exist, return `404 Not Found`.
+  2. Verify nested resource (`action.ticketId === parseInt(req.params.id)`). If action does not exist or does not belong to this ticket, return `404 Not Found` (`NOT_FOUND`).
+  3. Validate parent status: If in (`RESOLVED`, `CLOSED`, `CANCELLED`), return `400 Bad Request` (`BAD_REQUEST`).
   4. Action status check: must currently be `PENDING` (return 400 `BAD_REQUEST` if already completed or cancelled).
   5. Check `expectedVersion === action.version` (return 409 `CONFLICT` on mismatch).
   6. Set `status = 'CANCELLED'`. If `reason` is supplied, set `result = reason.trim()`.

@@ -395,16 +395,7 @@ actionsRouter.patch(
         }
         const parentTicket = ticketRows[0];
 
-        // 2. Validate parent status
-        if (["RESOLVED", "CLOSED", "CANCELLED"].includes(parentTicket.currentStatus)) {
-          throw {
-            status: 400,
-            error: "BAD_REQUEST",
-            message: "Cannot modify actions on a resolved, closed, or cancelled ticket.",
-          };
-        }
-
-        // 3. Verify nested resource
+        // 2. Verify nested resource (404 takes precedence over terminal status 400)
         const action = await (tx as any).actionTaken.findUnique({
           where: { id: actionId },
           include: {
@@ -418,6 +409,15 @@ actionsRouter.patch(
             status: 404,
             error: "NOT_FOUND",
             message: "Action Taken not found under this ticket.",
+          };
+        }
+
+        // 3. Validate parent status
+        if (["RESOLVED", "CLOSED", "CANCELLED"].includes(parentTicket.currentStatus)) {
+          throw {
+            status: 400,
+            error: "BAD_REQUEST",
+            message: "Cannot modify actions on a resolved, closed, or cancelled ticket.",
           };
         }
 
@@ -637,14 +637,6 @@ actionsRouter.post(
         }
         const parentTicket = ticketRows[0];
 
-        if (["RESOLVED", "CLOSED", "CANCELLED"].includes(parentTicket.currentStatus)) {
-          throw {
-            status: 400,
-            error: "BAD_REQUEST",
-            message: "Cannot modify actions on a resolved, closed, or cancelled ticket.",
-          };
-        }
-
         const action = await (tx as any).actionTaken.findUnique({
           where: { id: actionId },
           include: {
@@ -658,6 +650,14 @@ actionsRouter.post(
             status: 404,
             error: "NOT_FOUND",
             message: "Action Taken not found under this ticket.",
+          };
+        }
+
+        if (["RESOLVED", "CLOSED", "CANCELLED"].includes(parentTicket.currentStatus)) {
+          throw {
+            status: 400,
+            error: "BAD_REQUEST",
+            message: "Cannot modify actions on a resolved, closed, or cancelled ticket.",
           };
         }
 
@@ -788,14 +788,6 @@ actionsRouter.post(
         }
         const parentTicket = ticketRows[0];
 
-        if (["RESOLVED", "CLOSED", "CANCELLED"].includes(parentTicket.currentStatus)) {
-          throw {
-            status: 400,
-            error: "BAD_REQUEST",
-            message: "Cannot modify actions on a resolved, closed, or cancelled ticket.",
-          };
-        }
-
         const action = await (tx as any).actionTaken.findUnique({
           where: { id: actionId },
           include: {
@@ -809,6 +801,14 @@ actionsRouter.post(
             status: 404,
             error: "NOT_FOUND",
             message: "Action Taken not found under this ticket.",
+          };
+        }
+
+        if (["RESOLVED", "CLOSED", "CANCELLED"].includes(parentTicket.currentStatus)) {
+          throw {
+            status: 400,
+            error: "BAD_REQUEST",
+            message: "Cannot modify actions on a resolved, closed, or cancelled ticket.",
           };
         }
 

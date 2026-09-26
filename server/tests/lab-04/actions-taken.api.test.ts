@@ -412,6 +412,42 @@ describe("Phase F2 / L4-P04: Actions Taken REST API & Authorization", () => {
     expect(res.status).toBe(404);
   });
 
+  it("API-L4-14b: Closed/resolved ticket with mismatched or non-existent actionId returns 404 (not 400)", async () => {
+    const openTicketActionId = createdActionIds[0]; // Belongs to testTicketOpen, NOT testTicketResolved
+
+    // 1. PATCH with mismatched actionId on resolved ticket returns 404 (precedence over 400 terminal lock)
+    const patchRes = await request(app)
+      .patch(`/api/tickets/${testTicketResolved.id}/actions/${openTicketActionId}`)
+      .set(headersAlex)
+      .send({ actionDescription: "Mismatch on resolved", expectedVersion: 1 });
+    expect(patchRes.status).toBe(404);
+    expect(patchRes.body.error).toBe("NOT_FOUND");
+
+    // 2. Complete with mismatched actionId on resolved ticket returns 404
+    const completeRes = await request(app)
+      .post(`/api/tickets/${testTicketResolved.id}/actions/${openTicketActionId}/complete`)
+      .set(headersAlex)
+      .send({ result: "Complete mismatch", expectedVersion: 1 });
+    expect(completeRes.status).toBe(404);
+    expect(completeRes.body.error).toBe("NOT_FOUND");
+
+    // 3. Cancel with mismatched actionId on resolved ticket returns 404
+    const cancelRes = await request(app)
+      .post(`/api/tickets/${testTicketResolved.id}/actions/${openTicketActionId}/cancel`)
+      .set(headersAlex)
+      .send({ expectedVersion: 1 });
+    expect(cancelRes.status).toBe(404);
+    expect(cancelRes.body.error).toBe("NOT_FOUND");
+
+    // 4. Non-existent actionId (999999) on resolved ticket returns 404
+    const nonExistentRes = await request(app)
+      .patch(`/api/tickets/${testTicketResolved.id}/actions/999999`)
+      .set(headersAlex)
+      .send({ actionDescription: "Non-existent", expectedVersion: 1 });
+    expect(nonExistentRes.status).toBe(404);
+    expect(nonExistentRes.body.error).toBe("NOT_FOUND");
+  });
+
   it("API-L4-15: Non-performer Staff attempts to edit completed action returns 403", async () => {
     // Create completed action by Alex
     const createRes = await request(app)
