@@ -169,8 +169,22 @@ describe("Phase F2 / L4-P06: Ticket Workflow & Resolution Gate", () => {
   it("API-L4-23b: Resolution race: Concurrent action create and status transition resolve safely under row lock", async () => {
     const ticket = await createTestTicket("IN_PROGRESS", true);
 
-    // Initial version is 1
-    const initialVersion = ticket.version;
+    // Pre-create 1 completed action so the resolution gate (>=1 completed action, 0 pending) is satisfied
+    await (prisma as any).actionTaken.create({
+      data: {
+        ticketId: ticket.id,
+        createdById: staffAlex.id,
+        performedById: staffAlex.id,
+        actionDescription: "Pre-existing completed diagnostic",
+        status: "COMPLETED",
+        result: "Diagnosis confirmed",
+        clientRequestId: "pre-action-" + Date.now(),
+        requestPayloadHash: "pre-hash",
+      },
+    });
+
+    const currentTicket = await prisma.ticket.findUniqueOrThrow({ where: { id: ticket.id } });
+    const initialVersion = currentTicket.version;
 
     // Both requests dispatched concurrently via Promise.all
     const [actionRes, statusRes] = await Promise.all([
@@ -193,7 +207,7 @@ describe("Phase F2 / L4-P06: Ticket Workflow & Resolution Gate", () => {
 
     // Under row-level locking (SELECT ... FOR UPDATE) and optimistic concurrency:
     // If action commits first -> actionRes is 201, statusRes gets 409 CONFLICT (version mismatch)
-    // If status transition commits first -> statusRes is 200, actionRes gets 400 BAD_REQUEST (ticket resolved)
+    // If status transition commits first -> statusRes is 200 (resolution gate passes), actionRes gets 400 BAD_REQUEST (ticket resolved)
     if (actionRes.status === 201) {
       expect(statusRes.status).toBe(409);
       expect(statusRes.body.error).toBe("CONFLICT");

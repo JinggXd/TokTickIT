@@ -1,8 +1,20 @@
 import React from "react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import { render, screen, fireEvent, waitFor, within } from "@testing-library/react";
 import { ActionsTakenSection } from "../../src/components/ActionsTakenSection.js";
 import { ActionTaken } from "../../src/types.js";
+import * as api from "../../src/api.js";
+
+vi.mock("../../src/api.js", async () => {
+  const actual = await vi.importActual<typeof import("../../src/api.js")>("../../src/api.js");
+  return {
+    ...actual,
+    createActionTaken: vi.fn(),
+    completeActionTaken: vi.fn(),
+    cancelActionTaken: vi.fn(),
+    updateActionTaken: vi.fn(),
+  };
+});
 
 const mockActions: ActionTaken[] = [
   {
@@ -352,4 +364,86 @@ describe("Phase F2 / L4-P05: Actions Taken UI in Ticket Detail", () => {
     );
     expect(screen.queryByTestId("edit-action-btn-1")).toBeNull();
   });
+
+  it("UI-L4-14: Modal locks close button, Escape key, and form inputs during submission", async () => {
+    let resolveSubmit: (value: any) => void = () => {};
+    const pendingPromise = new Promise((resolve) => {
+      resolveSubmit = resolve;
+    });
+    vi.mocked(api.createActionTaken).mockReturnValue(pendingPromise as any);
+
+    render(
+      <ActionsTakenSection
+        ticketId={101}
+        ticketStatus="IN_PROGRESS"
+        actions={mockActions}
+        currentUser={{ id: 12, name: "Alex IT", role: "IT_STAFF" }}
+        onActionSaved={onActionSaved}
+      />
+    );
+
+    const logBtn = screen.getByRole("button", { name: /\+ Log Action/i });
+    fireEvent.click(logBtn);
+
+    const descInput = screen.getByLabelText(/Action Description/i) as HTMLTextAreaElement;
+    const resultInput = screen.getByLabelText(/Result \/ Resolution Details/i) as HTMLTextAreaElement;
+    const datetimeInput = screen.getByLabelText(/Action Date & Time/i) as HTMLInputElement;
+
+    fireEvent.change(descInput, { target: { value: "Replaced faulty switch" } });
+    fireEvent.change(resultInput, { target: { value: "Switch operational" } });
+
+    const submitBtn = screen.getByRole("button", { name: /Save Action/i });
+    fireEvent.click(submitBtn);
+
+    // Now submission is pending (isSubmitting === true)
+    // 1. Submit button shows Saving... and is disabled
+    expect(screen.getByRole("button", { name: /Saving\.\.\./i })).toBeDefined();
+
+    const dialog = screen.getByRole("dialog");
+
+    // 2. Close button (X) must be disabled
+    const closeBtn = screen.getByLabelText("Close") as HTMLButtonElement;
+    expect(closeBtn.disabled).toBe(true);
+
+    // 3. Cancel button in footer must be disabled
+    const cancelBtn = within(dialog).getByRole("button", { name: /^Cancel$/i }) as HTMLButtonElement;
+    expect(cancelBtn.disabled).toBe(true);
+
+    // 4. Form inputs must be disabled
+    expect(descInput.disabled).toBe(true);
+    expect(resultInput.disabled).toBe(true);
+    expect(datetimeInput.disabled).toBe(true);
+
+    // 5. Escape key must NOT close the modal
+    fireEvent.keyDown(window, { key: "Escape" });
+    expect(screen.getByRole("dialog")).toBeDefined();
+
+    // Resolve the promise
+    resolveSubmit({
+      ticketId: 101,
+      action: {
+        id: 3,
+        ticketId: 101,
+        actionDateTime: "2026-09-25T16:00:00.000Z",
+        actionDescription: "Replaced faulty switch",
+        result: "Switch operational",
+        status: "COMPLETED",
+        version: 1,
+        createdById: 12,
+        performedBy: { id: 12, name: "Alex IT" },
+        assignee: null,
+        followUpRequired: false,
+        followUpNote: null,
+        attachmentNotes: null,
+        createdAt: "2026-09-25T16:00:00.000Z",
+        updatedAt: "2026-09-25T16:00:00.000Z",
+      },
+    });
+
+    await waitFor(() => {
+      expect(screen.queryByRole("dialog")).toBeNull();
+    });
+    expect(onActionSaved).toHaveBeenCalledTimes(1);
+  });
 });
+

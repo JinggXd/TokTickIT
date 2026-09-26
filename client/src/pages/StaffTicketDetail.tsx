@@ -83,9 +83,7 @@ export const StaffTicketDetail: React.FC<StaffTicketDetailProps> = ({ ticketId, 
 
     try {
       const fetchDetailFn = readOnly ? fetchAdminTicketDetail : fetchStaffTicketDetail;
-      const ownersPromise = readOnly
-        ? Promise.resolve([] as TicketOwner[])
-        : fetchTicketOwners().catch(() => [] as TicketOwner[]);
+      const ownersPromise = fetchTicketOwners().catch(() => [] as TicketOwner[]);
 
       const [ticketData, ownersData, commentsData, notesData] = await Promise.all([
         fetchDetailFn(ticketId),

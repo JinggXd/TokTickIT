@@ -773,18 +773,25 @@ actionsRouter.post(
         }
         const expectedVersion = versionRes.version!;
 
-        const resultText = (req.body.result || "").trim();
-        if (!resultText || resultText.length < 1 || resultText.length > 1000) {
+        if (
+          req.body.result === undefined ||
+          typeof req.body.result !== "string" ||
+          !req.body.result.trim() ||
+          req.body.result.trim().length > 1000
+        ) {
           throw {
             status: 400,
             error: "VALIDATION_FAILED",
             message: "result is mandatory when completing an action (1-1000 characters).",
           };
         }
+        const resultText = req.body.result.trim();
 
-        if (req.body.attachmentNotes !== undefined) {
-          const notes = req.body.attachmentNotes ? String(req.body.attachmentNotes).trim() : null;
-          if (notes && notes.length > 500) {
+        if (req.body.attachmentNotes !== undefined && req.body.attachmentNotes !== null) {
+          if (
+            typeof req.body.attachmentNotes !== "string" ||
+            req.body.attachmentNotes.trim().length > 500
+          ) {
             throw {
               status: 400,
               error: "VALIDATION_FAILED",

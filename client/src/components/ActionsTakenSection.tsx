@@ -69,6 +69,10 @@ export const ActionsTakenSection: React.FC<ActionsTakenSectionProps> = ({
   const [cancelReason, setCancelReason] = useState("");
 
   const modalRef = useRef<HTMLDivElement>(null);
+  const isSubmittingRef = useRef(isSubmitting);
+  useEffect(() => {
+    isSubmittingRef.current = isSubmitting;
+  }, [isSubmitting]);
 
   // Focus trap and Escape listener for accessible modals
   useEffect(() => {
@@ -89,7 +93,9 @@ export const ActionsTakenSection: React.FC<ActionsTakenSectionProps> = ({
 
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
-        closeModal();
+        if (!isSubmittingRef.current) {
+          closeModal();
+        }
         return;
       }
 
@@ -124,7 +130,7 @@ export const ActionsTakenSection: React.FC<ActionsTakenSectionProps> = ({
       clearTimeout(timer);
       window.removeEventListener("keydown", handleKeyDown);
     };
-  }, [activeModal]);
+  }, [activeModal, isSubmitting]);
 
   const openLogModal = () => {
     const nowLocal = formatLocalDatetime(new Date());
@@ -169,7 +175,8 @@ export const ActionsTakenSection: React.FC<ActionsTakenSectionProps> = ({
     setActiveModal("EDIT");
   };
 
-  const closeModal = () => {
+  const closeModal = (force = false) => {
+    if (!force && isSubmittingRef.current) return;
     setActiveModal(null);
     setSelectedAction(null);
     setModalError(null);
@@ -211,7 +218,7 @@ export const ActionsTakenSection: React.FC<ActionsTakenSectionProps> = ({
         },
         clientRequestId,
       );
-      closeModal();
+      closeModal(true);
       onActionSaved();
     } catch (err: any) {
       setModalError(err.message || "Failed to log action.");
@@ -236,7 +243,7 @@ export const ActionsTakenSection: React.FC<ActionsTakenSectionProps> = ({
         expectedVersion: selectedAction.version,
         attachmentNotes: attachmentNotes.trim() || undefined,
       });
-      closeModal();
+      closeModal(true);
       onActionSaved();
     } catch (err: any) {
       setModalError(err.message || "Failed to complete action.");
@@ -256,7 +263,7 @@ export const ActionsTakenSection: React.FC<ActionsTakenSectionProps> = ({
         expectedVersion: selectedAction.version,
         reason: cancelReason.trim() || undefined,
       });
-      closeModal();
+      closeModal(true);
       onActionSaved();
     } catch (err: any) {
       setModalError(err.message || "Failed to cancel action.");
@@ -288,7 +295,7 @@ export const ActionsTakenSection: React.FC<ActionsTakenSectionProps> = ({
         followUpNote: followUpRequired ? followUpNote.trim() : null,
         attachmentNotes: attachmentNotes.trim() || null,
       });
-      closeModal();
+      closeModal(true);
       onActionSaved();
     } catch (err: any) {
       setModalError(err.message || "Failed to update action.");
@@ -486,7 +493,7 @@ export const ActionsTakenSection: React.FC<ActionsTakenSectionProps> = ({
               <form onSubmit={handleLogSubmit}>
                 <div className="modal-header">
                   <h5 className="modal-title fw-bold">Log New Action</h5>
-                  <button type="button" className="btn-close" onClick={closeModal} aria-label="Close"></button>
+                  <button type="button" className="btn-close" onClick={() => closeModal()} aria-label="Close" disabled={isSubmitting}></button>
                 </div>
                 <div className="modal-body">
                   {modalError && <div className="alert alert-danger py-2">{modalError}</div>}
@@ -503,6 +510,7 @@ export const ActionsTakenSection: React.FC<ActionsTakenSectionProps> = ({
                         max={maxDatetime}
                         value={actionDateTime}
                         onChange={(e) => setActionDateTime(e.target.value)}
+                        disabled={isSubmitting}
                         required
                       />
                       <div className="form-text small">Max 5 minutes in future.</div>
@@ -517,6 +525,7 @@ export const ActionsTakenSection: React.FC<ActionsTakenSectionProps> = ({
                           id="mode-completed"
                           checked={statusMode === "COMPLETED"}
                           onChange={() => setStatusMode("COMPLETED")}
+                          disabled={isSubmitting}
                         />
                         <label className="btn btn-outline-success" htmlFor="mode-completed">
                           Completed Work
@@ -528,6 +537,7 @@ export const ActionsTakenSection: React.FC<ActionsTakenSectionProps> = ({
                           id="mode-pending"
                           checked={statusMode === "PENDING"}
                           onChange={() => setStatusMode("PENDING")}
+                          disabled={isSubmitting}
                         />
                         <label className="btn btn-outline-warning" htmlFor="mode-pending">
                           Pending Task
@@ -548,6 +558,7 @@ export const ActionsTakenSection: React.FC<ActionsTakenSectionProps> = ({
                       value={description}
                       onChange={(e) => setDescription(e.target.value)}
                       maxLength={1000}
+                      disabled={isSubmitting}
                       required
                     ></textarea>
                   </div>
@@ -565,6 +576,7 @@ export const ActionsTakenSection: React.FC<ActionsTakenSectionProps> = ({
                         value={result}
                         onChange={(e) => setResult(e.target.value)}
                         maxLength={1000}
+                        disabled={isSubmitting}
                         required
                       ></textarea>
                     </div>
@@ -580,6 +592,7 @@ export const ActionsTakenSection: React.FC<ActionsTakenSectionProps> = ({
                         className="form-select"
                         value={assigneeId}
                         onChange={(e) => setAssigneeId(e.target.value ? Number(e.target.value) : "")}
+                        disabled={isSubmitting}
                       >
                         <option value="">Unassigned</option>
                         {assignableStaff.map((staff) => (
@@ -599,6 +612,7 @@ export const ActionsTakenSection: React.FC<ActionsTakenSectionProps> = ({
                         className="form-check-input"
                         checked={followUpRequired}
                         onChange={(e) => setFollowUpRequired(e.target.checked)}
+                        disabled={isSubmitting}
                       />
                       <label htmlFor="log-action-followup" className="form-check-label fw-medium">
                         Follow-up Required
@@ -612,6 +626,7 @@ export const ActionsTakenSection: React.FC<ActionsTakenSectionProps> = ({
                         value={followUpNote}
                         onChange={(e) => setFollowUpNote(e.target.value)}
                         maxLength={1000}
+                        disabled={isSubmitting}
                         required
                       ></textarea>
                     )}
@@ -629,11 +644,12 @@ export const ActionsTakenSection: React.FC<ActionsTakenSectionProps> = ({
                       value={attachmentNotes}
                       onChange={(e) => setAttachmentNotes(e.target.value)}
                       maxLength={500}
+                      disabled={isSubmitting}
                     />
                   </div>
                 </div>
                 <div className="modal-footer">
-                  <button type="button" className="btn btn-secondary" onClick={closeModal} disabled={isSubmitting}>
+                  <button type="button" className="btn btn-secondary" onClick={() => closeModal()} disabled={isSubmitting}>
                     Cancel
                   </button>
                   <button type="submit" className="btn btn-success" disabled={isSubmitting}>
@@ -659,7 +675,7 @@ export const ActionsTakenSection: React.FC<ActionsTakenSectionProps> = ({
               <form onSubmit={handleCompleteSubmit}>
                 <div className="modal-header">
                   <h5 className="modal-title fw-bold">Complete Action Taken</h5>
-                  <button type="button" className="btn-close" onClick={closeModal} aria-label="Close"></button>
+                  <button type="button" className="btn-close" onClick={() => closeModal()} aria-label="Close" disabled={isSubmitting}></button>
                 </div>
                 <div className="modal-body">
                   {modalError && <div className="alert alert-danger py-2">{modalError}</div>}
@@ -678,6 +694,7 @@ export const ActionsTakenSection: React.FC<ActionsTakenSectionProps> = ({
                       value={result}
                       onChange={(e) => setResult(e.target.value)}
                       maxLength={1000}
+                      disabled={isSubmitting}
                       required
                     ></textarea>
                   </div>
@@ -692,11 +709,12 @@ export const ActionsTakenSection: React.FC<ActionsTakenSectionProps> = ({
                       value={attachmentNotes}
                       onChange={(e) => setAttachmentNotes(e.target.value)}
                       maxLength={500}
+                      disabled={isSubmitting}
                     />
                   </div>
                 </div>
                 <div className="modal-footer">
-                  <button type="button" className="btn btn-secondary" onClick={closeModal} disabled={isSubmitting}>
+                  <button type="button" className="btn btn-secondary" onClick={() => closeModal()} disabled={isSubmitting}>
                     Cancel
                   </button>
                   <button type="submit" className="btn btn-success" disabled={isSubmitting}>
@@ -722,7 +740,7 @@ export const ActionsTakenSection: React.FC<ActionsTakenSectionProps> = ({
               <form onSubmit={handleCancelSubmit}>
                 <div className="modal-header">
                   <h5 className="modal-title fw-bold text-danger">Cancel Pending Action</h5>
-                  <button type="button" className="btn-close" onClick={closeModal} aria-label="Close"></button>
+                  <button type="button" className="btn-close" onClick={() => closeModal()} aria-label="Close" disabled={isSubmitting}></button>
                 </div>
                 <div className="modal-body">
                   {modalError && <div className="alert alert-danger py-2">{modalError}</div>}
@@ -744,11 +762,12 @@ export const ActionsTakenSection: React.FC<ActionsTakenSectionProps> = ({
                       value={cancelReason}
                       onChange={(e) => setCancelReason(e.target.value)}
                       maxLength={500}
+                      disabled={isSubmitting}
                     />
                   </div>
                 </div>
                 <div className="modal-footer">
-                  <button type="button" className="btn btn-secondary" onClick={closeModal} disabled={isSubmitting}>
+                  <button type="button" className="btn btn-secondary" onClick={() => closeModal()} disabled={isSubmitting}>
                     Cancel
                   </button>
                   <button type="submit" className="btn btn-danger" disabled={isSubmitting}>
@@ -774,7 +793,7 @@ export const ActionsTakenSection: React.FC<ActionsTakenSectionProps> = ({
               <form onSubmit={handleEditSubmit}>
                 <div className="modal-header">
                   <h5 className="modal-title fw-bold">Edit Action Details</h5>
-                  <button type="button" className="btn-close" onClick={closeModal} aria-label="Close"></button>
+                  <button type="button" className="btn-close" onClick={() => closeModal()} aria-label="Close" disabled={isSubmitting}></button>
                 </div>
                 <div className="modal-body">
                   {modalError && <div className="alert alert-danger py-2">{modalError}</div>}
@@ -790,6 +809,7 @@ export const ActionsTakenSection: React.FC<ActionsTakenSectionProps> = ({
                       value={description}
                       onChange={(e) => setDescription(e.target.value)}
                       maxLength={1000}
+                      disabled={isSubmitting}
                       required
                     ></textarea>
                   </div>
@@ -804,6 +824,7 @@ export const ActionsTakenSection: React.FC<ActionsTakenSectionProps> = ({
                         className="form-select"
                         value={assigneeId}
                         onChange={(e) => setAssigneeId(e.target.value ? Number(e.target.value) : "")}
+                        disabled={isSubmitting}
                       >
                         <option value="">Unassigned</option>
                         {assignableStaff.map((staff) => (
@@ -823,6 +844,7 @@ export const ActionsTakenSection: React.FC<ActionsTakenSectionProps> = ({
                         className="form-check-input"
                         checked={followUpRequired}
                         onChange={(e) => setFollowUpRequired(e.target.checked)}
+                        disabled={isSubmitting}
                       />
                       <label htmlFor="edit-action-followup" className="form-check-label fw-medium">
                         Follow-up Required
@@ -835,6 +857,7 @@ export const ActionsTakenSection: React.FC<ActionsTakenSectionProps> = ({
                         value={followUpNote}
                         onChange={(e) => setFollowUpNote(e.target.value)}
                         maxLength={1000}
+                        disabled={isSubmitting}
                         required
                       ></textarea>
                     )}
@@ -851,11 +874,12 @@ export const ActionsTakenSection: React.FC<ActionsTakenSectionProps> = ({
                       value={attachmentNotes}
                       onChange={(e) => setAttachmentNotes(e.target.value)}
                       maxLength={500}
+                      disabled={isSubmitting}
                     />
                   </div>
                 </div>
                 <div className="modal-footer">
-                  <button type="button" className="btn btn-secondary" onClick={closeModal} disabled={isSubmitting}>
+                  <button type="button" className="btn btn-secondary" onClick={() => closeModal()} disabled={isSubmitting}>
                     Cancel
                   </button>
                   <button type="submit" className="btn btn-primary" disabled={isSubmitting}>

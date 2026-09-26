@@ -273,6 +273,52 @@ describe("Phase F2 / L4-P04: Actions Taken REST API & Authorization", () => {
     expect(ticketAfter!.version).toBe(ticketBefore!.version + 1);
   });
 
+  it("API-L4-07b: Complete pending action with invalid or non-string result returns 400 VALIDATION_FAILED", async () => {
+    const createRes = await request(app)
+      .post(`/api/tickets/${testTicketOpen.id}/actions`)
+      .set(headersAlex)
+      .send({
+        actionDescription: "Pending action for validation test",
+        status: "PENDING",
+      });
+    expect(createRes.status).toBe(201);
+    const actionId = createRes.body.action.id;
+    createdActionIds.push(actionId);
+
+    // Number type
+    const resNumber = await request(app)
+      .post(`/api/tickets/${testTicketOpen.id}/actions/${actionId}/complete`)
+      .set(headersBrian)
+      .send({
+        result: 123,
+        expectedVersion: 1,
+      });
+    expect(resNumber.status).toBe(400);
+    expect(resNumber.body.error).toBe("VALIDATION_FAILED");
+
+    // Boolean type
+    const resBool = await request(app)
+      .post(`/api/tickets/${testTicketOpen.id}/actions/${actionId}/complete`)
+      .set(headersBrian)
+      .send({
+        result: true,
+        expectedVersion: 1,
+      });
+    expect(resBool.status).toBe(400);
+    expect(resBool.body.error).toBe("VALIDATION_FAILED");
+
+    // Empty or whitespace-only string
+    const resEmpty = await request(app)
+      .post(`/api/tickets/${testTicketOpen.id}/actions/${actionId}/complete`)
+      .set(headersBrian)
+      .send({
+        result: "   ",
+        expectedVersion: 1,
+      });
+    expect(resEmpty.status).toBe(400);
+    expect(resEmpty.body.error).toBe("VALIDATION_FAILED");
+  });
+
   it("API-L4-08: Cancel pending action with expectedVersion", async () => {
     const createRes = await request(app)
       .post(`/api/tickets/${testTicketOpen.id}/actions`)
