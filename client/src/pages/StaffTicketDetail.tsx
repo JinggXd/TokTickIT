@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
+import { useAuth } from "../context/AuthContext.js";
 import {
   fetchStaffTicketDetail,
   fetchAdminTicketDetail,
@@ -30,11 +31,14 @@ interface StaffTicketDetailProps {
 const CONFIRMATION_STATUSES = new Set(["RESOLVED", "CLOSED", "CANCELLED", "REOPENED"]);
 
 export const StaffTicketDetail: React.FC<StaffTicketDetailProps> = ({ ticketId, onBack, readOnly = false }) => {
+  const { user: currentUser } = useAuth();
   const [ticket, setTicket] = useState<StaffTicketDetailType | null>(null);
   const [ticketOwners, setTicketOwners] = useState<TicketOwner[]>([]);
   const [comments, setComments] = useState<CommentItem[]>([]);
   const [notes, setNotes] = useState<CommentItem[]>([]);
   const [actions, setActions] = useState<ActionTaken[]>([]);
+  const [actionsLoading, setActionsLoading] = useState(false);
+  const [actionsError, setActionsError] = useState<string | null>(null);
 
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -46,6 +50,7 @@ export const StaffTicketDetail: React.FC<StaffTicketDetailProps> = ({ ticketId, 
   const [selectedItPriority, setSelectedItPriority] = useState<Priority | "">("");
   const [selectedTargetStatus, setSelectedTargetStatus] = useState<TicketStatus | "">("");
   const [showStatusConfirmModal, setShowStatusConfirmModal] = useState(false);
+  const [modalStatusError, setModalStatusError] = useState<string | null>(null);
   const [isSubmittingAction, setIsSubmittingAction] = useState(false);
 
   // Comment & Note inputs
@@ -56,6 +61,19 @@ export const StaffTicketDetail: React.FC<StaffTicketDetailProps> = ({ ticketId, 
   const [noteInput, setNoteInput] = useState("");
   const [isSubmittingNote, setIsSubmittingNote] = useState(false);
   const [noteError, setNoteError] = useState<string | null>(null);
+
+  const loadActions = useCallback(async () => {
+    setActionsLoading(true);
+    setActionsError(null);
+    try {
+      const data = await fetchActionsTaken(ticketId);
+      setActions(data.actions || []);
+    } catch (err: any) {
+      setActionsError(err.message || "Failed to load actions taken.");
+    } finally {
+      setActionsLoading(false);
+    }
+  }, [ticketId]);
 
   // Load ticket data
   const loadData = useCallback(async () => {
@@ -69,19 +87,17 @@ export const StaffTicketDetail: React.FC<StaffTicketDetailProps> = ({ ticketId, 
         ? Promise.resolve([] as TicketOwner[])
         : fetchTicketOwners().catch(() => [] as TicketOwner[]);
 
-      const [ticketData, ownersData, commentsData, notesData, actionsData] = await Promise.all([
+      const [ticketData, ownersData, commentsData, notesData] = await Promise.all([
         fetchDetailFn(ticketId),
         ownersPromise,
         fetchPublicComments(ticketId).catch(() => [] as CommentItem[]),
         fetchInternalNotes(ticketId).catch(() => [] as CommentItem[]),
-        fetchActionsTaken(ticketId).catch(() => ({ ticketId, actions: [] })),
       ]);
 
       setTicket(ticketData);
       setTicketOwners(ownersData);
       setComments(commentsData);
       setNotes(notesData);
-      setActions(actionsData.actions || []);
 
       setSelectedOwnerId(ticketData.ticketOwner?.id ?? "");
       setSelectedItPriority(ticketData.itPriority);
@@ -91,7 +107,9 @@ export const StaffTicketDetail: React.FC<StaffTicketDetailProps> = ({ ticketId, 
     } finally {
       setIsLoading(false);
     }
-  }, [ticketId, readOnly]);
+
+    loadActions();
+  }, [ticketId, readOnly, loadActions]);
 
   useEffect(() => {
     loadData();
@@ -166,6 +184,7 @@ export const StaffTicketDetail: React.FC<StaffTicketDetailProps> = ({ ticketId, 
   // Status transition handler
   const handleStatusChangeRequest = () => {
     if (!selectedTargetStatus) return;
+    setModalStatusError(null);
     if (CONFIRMATION_STATUSES.has(selectedTargetStatus)) {
       setShowStatusConfirmModal(true);
     } else {
@@ -178,20 +197,27 @@ export const StaffTicketDetail: React.FC<StaffTicketDetailProps> = ({ ticketId, 
     setIsSubmittingAction(true);
     setConflictError(null);
     setActionSuccess(null);
-    setShowStatusConfirmModal(false);
+    setModalStatusError(null);
+    setError(null);
 
     try {
       await updateTicketStatus(ticket.id, targetStatus, ticket.version);
       setActionSuccess(`Status transitioned to ${targetStatus} successfully!`);
+      setShowStatusConfirmModal(false);
       await loadData();
     } catch (err: any) {
+      const errMsg =
+        err.status === 422 || err.error === "RESOLUTION_GATE_FAILED"
+          ? err.message || "Ticket resolution requires at least one completed Action Taken and no pending actions."
+          : err.status === 409 || err.error === "CONFLICT"
+          ? err.message || "This ticket was modified by another user. Please refresh."
+          : err.message || "Failed to update status.";
+
       if (err.status === 409 || err.error === "CONFLICT") {
-        setConflictError(err.message || "This ticket was modified by another user. Please refresh.");
-      } else if (err.status === 422 || err.error === "RESOLUTION_GATE_FAILED") {
-        setError(err.message || "Ticket resolution requires at least one completed Action Taken and no pending actions.");
-      } else {
-        setError(err.message || "Failed to update status.");
+        setConflictError(errMsg);
       }
+      setError(errMsg);
+      setModalStatusError(errMsg);
     } finally {
       setIsSubmittingAction(false);
     }
@@ -311,6 +337,24 @@ export const StaffTicketDetail: React.FC<StaffTicketDetailProps> = ({ ticketId, 
       </div>
 
       {/* Notifications */}
+      {error && (
+        <div
+          className="alert alert-danger alert-dismissible fade show shadow-sm d-flex justify-content-between align-items-center mb-3"
+          data-testid="staff-detail-error-alert"
+          role="alert"
+        >
+          <div>
+            <strong>⚠️ Error:</strong> {error}
+          </div>
+          <button
+            type="button"
+            className="btn-close"
+            onClick={() => setError(null)}
+            aria-label="Close"
+          ></button>
+        </div>
+      )}
+
       {conflictError && (
         <div className="alert alert-warning shadow-sm d-flex justify-content-between align-items-center mb-3" data-testid="staff-conflict-alert">
           <div>
@@ -507,7 +551,11 @@ export const StaffTicketDetail: React.FC<StaffTicketDetailProps> = ({ ticketId, 
         ticketId={ticket.id}
         ticketStatus={ticket.currentStatus}
         actions={actions}
-        readOnly={readOnly}
+        currentUser={currentUser}
+        readOnly={currentUser?.role ? !["IT_STAFF", "ADMINISTRATOR"].includes(currentUser.role) : readOnly}
+        isLoading={actionsLoading}
+        error={actionsError}
+        onRetry={loadActions}
         onActionSaved={loadData}
         assignableStaff={ticketOwners.map((o) => ({ id: o.id, name: o.name }))}
       />
@@ -688,9 +736,15 @@ export const StaffTicketDetail: React.FC<StaffTicketDetailProps> = ({ ticketId, 
                   type="button"
                   className="btn-close"
                   onClick={() => setShowStatusConfirmModal(false)}
+                  disabled={isSubmittingAction}
                 ></button>
               </div>
               <div className="modal-body">
+                {modalStatusError && (
+                  <div className="alert alert-danger small mb-3" data-testid="status-modal-error">
+                    {modalStatusError}
+                  </div>
+                )}
                 <p>
                   Are you sure you want to transition this ticket status to{" "}
                   <strong>{selectedTargetStatus}</strong>?
@@ -711,6 +765,7 @@ export const StaffTicketDetail: React.FC<StaffTicketDetailProps> = ({ ticketId, 
                   type="button"
                   className="btn btn-outline-secondary"
                   onClick={() => setShowStatusConfirmModal(false)}
+                  disabled={isSubmittingAction}
                 >
                   Cancel
                 </button>
@@ -719,8 +774,9 @@ export const StaffTicketDetail: React.FC<StaffTicketDetailProps> = ({ ticketId, 
                   className="btn btn-primary"
                   onClick={() => executeStatusTransition(selectedTargetStatus as TicketStatus)}
                   data-testid="confirm-status-transition-btn"
+                  disabled={isSubmittingAction}
                 >
-                  Confirm & Update
+                  {isSubmittingAction ? "Updating..." : "Confirm & Update"}
                 </button>
               </div>
             </div>

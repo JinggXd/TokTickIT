@@ -147,6 +147,7 @@ actionsRouter.post(
         ? req.body.clientRequestId.trim()
         : undefined;
 
+    // 1. Parameter & Input Validation
     if (headerKey && bodyKey && headerKey !== bodyKey) {
       res.status(400).json({
         error: "VALIDATION_FAILED",
@@ -162,6 +163,128 @@ actionsRouter.post(
         message: "Invalid clientRequestId format; must be UUIDv4.",
       });
       return;
+    }
+
+    const dateRes = validateActionDateTime(req.body.actionDateTime);
+    if (!dateRes.valid) {
+      res.status(400).json({
+        error: "VALIDATION_FAILED",
+        message: dateRes.error,
+      });
+      return;
+    }
+    const actionDateTime = dateRes.date!;
+
+    if (
+      req.body.actionDescription === undefined ||
+      typeof req.body.actionDescription !== "string"
+    ) {
+      res.status(400).json({
+        error: "VALIDATION_FAILED",
+        message: "actionDescription must be a string between 1 and 1000 characters.",
+      });
+      return;
+    }
+    const actionDesc = req.body.actionDescription.trim();
+    if (!actionDesc || actionDesc.length < 1 || actionDesc.length > 1000) {
+      res.status(400).json({
+        error: "VALIDATION_FAILED",
+        message: "actionDescription must be between 1 and 1000 characters.",
+      });
+      return;
+    }
+
+    if (
+      req.body.status !== undefined &&
+      req.body.status !== "PENDING" &&
+      req.body.status !== "COMPLETED"
+    ) {
+      res.status(400).json({
+        error: "VALIDATION_FAILED",
+        message: "status must be PENDING or COMPLETED.",
+      });
+      return;
+    }
+    const status = req.body.status === "PENDING" ? "PENDING" : "COMPLETED";
+
+    let resText: string | null = null;
+    if (status === "COMPLETED") {
+      if (
+        req.body.result === undefined ||
+        typeof req.body.result !== "string" ||
+        !req.body.result.trim() ||
+        req.body.result.trim().length > 1000
+      ) {
+        res.status(400).json({
+          error: "VALIDATION_FAILED",
+          message: "result is mandatory for completed actions (1-1000 characters).",
+        });
+        return;
+      }
+      resText = req.body.result.trim();
+    } else {
+      if (req.body.result !== undefined && req.body.result !== null) {
+        if (
+          typeof req.body.result !== "string" ||
+          req.body.result.trim().length > 1000
+        ) {
+          res.status(400).json({
+            error: "VALIDATION_FAILED",
+            message: "result cannot exceed 1000 characters.",
+          });
+          return;
+        }
+        resText = req.body.result.trim();
+      }
+    }
+
+    const followUpRequired = Boolean(req.body.followUpRequired);
+    let followUpNote: string | null = null;
+    if (followUpRequired) {
+      if (
+        req.body.followUpNote === undefined ||
+        typeof req.body.followUpNote !== "string" ||
+        !req.body.followUpNote.trim() ||
+        req.body.followUpNote.trim().length > 1000
+      ) {
+        res.status(400).json({
+          error: "VALIDATION_FAILED",
+          message: "followUpNote is mandatory when followUpRequired is true.",
+        });
+        return;
+      }
+      followUpNote = req.body.followUpNote.trim();
+    }
+
+    let attachmentNotes: string | null = null;
+    if (req.body.attachmentNotes !== undefined && req.body.attachmentNotes !== null) {
+      if (
+        typeof req.body.attachmentNotes !== "string" ||
+        req.body.attachmentNotes.trim().length > 500
+      ) {
+        res.status(400).json({
+          error: "VALIDATION_FAILED",
+          message: "attachmentNotes cannot exceed 500 characters.",
+        });
+        return;
+      }
+      attachmentNotes = req.body.attachmentNotes.trim();
+    }
+
+    let assigneeId: number | null = null;
+    if (req.body.assigneeId !== undefined && req.body.assigneeId !== null) {
+      if (
+        typeof req.body.assigneeId !== "number" ||
+        !Number.isInteger(req.body.assigneeId) ||
+        req.body.assigneeId <= 0
+      ) {
+        res.status(422).json({
+          error: "INVALID_ASSIGNEE",
+          message: "Assignee must be an active IT Staff or Administrator.",
+        });
+        return;
+      }
+      assigneeId = req.body.assigneeId;
     }
 
     const requestPayloadHash = computeRequestPayloadHash(req.body);
@@ -216,39 +339,6 @@ actionsRouter.post(
           };
         }
 
-        // 4. Input validation
-        const dateRes = validateActionDateTime(req.body.actionDateTime);
-        if (!dateRes.valid) {
-          throw {
-            status: 400,
-            error: "VALIDATION_FAILED",
-            message: dateRes.error,
-          };
-        }
-        const actionDateTime = dateRes.date!;
-
-        const actionDesc = (req.body.actionDescription || "").trim();
-        if (!actionDesc || actionDesc.length < 1 || actionDesc.length > 1000) {
-          throw {
-            status: 400,
-            error: "VALIDATION_FAILED",
-            message: "actionDescription must be between 1 and 1000 characters.",
-          };
-        }
-
-        const status = req.body.status === "PENDING" ? "PENDING" : "COMPLETED";
-
-        const resText = req.body.result ? req.body.result.trim() : null;
-        if (status === "COMPLETED") {
-          if (!resText || resText.length < 1 || resText.length > 1000) {
-            throw {
-              status: 400,
-              error: "VALIDATION_FAILED",
-              message: "result is mandatory for completed actions (1-1000 characters).",
-            };
-          }
-        }
-
         let assigneeId: number | null = null;
         if (req.body.assigneeId !== undefined && req.body.assigneeId !== null) {
           if (typeof req.body.assigneeId !== "number" || !Number.isInteger(req.body.assigneeId)) {
@@ -273,31 +363,6 @@ actionsRouter.post(
             };
           }
           assigneeId = assignee.id;
-        }
-
-        const followUpRequired = Boolean(req.body.followUpRequired);
-        const followUpNote = req.body.followUpNote ? req.body.followUpNote.trim() : null;
-        if (
-          followUpRequired &&
-          (!followUpNote || followUpNote.length < 1 || followUpNote.length > 1000)
-        ) {
-          throw {
-            status: 400,
-            error: "VALIDATION_FAILED",
-            message:
-              "followUpNote is mandatory when followUpRequired is true (1-1000 characters).",
-          };
-        }
-
-        const attachmentNotes = req.body.attachmentNotes
-          ? req.body.attachmentNotes.trim()
-          : null;
-        if (attachmentNotes && attachmentNotes.length > 500) {
-          throw {
-            status: 400,
-            error: "VALIDATION_FAILED",
-            message: "attachmentNotes cannot exceed 500 characters.",
-          };
         }
 
         const performedById = status === "COMPLETED" ? req.user!.id : null;
@@ -479,15 +544,18 @@ actionsRouter.patch(
         }
 
         if (req.body.actionDescription !== undefined) {
-          const desc = String(req.body.actionDescription).trim();
-          if (desc.length < 1 || desc.length > 1000) {
+          if (
+            typeof req.body.actionDescription !== "string" ||
+            !req.body.actionDescription.trim() ||
+            req.body.actionDescription.trim().length > 1000
+          ) {
             throw {
               status: 400,
               error: "VALIDATION_FAILED",
               message: "actionDescription must be between 1 and 1000 characters.",
             };
           }
-          dataToUpdate.actionDescription = desc;
+          dataToUpdate.actionDescription = req.body.actionDescription.trim();
         }
 
         if (action.status === "PENDING" && req.body.assigneeId !== undefined) {
@@ -523,40 +591,66 @@ actionsRouter.patch(
           const followUpRequired = Boolean(req.body.followUpRequired);
           dataToUpdate.followUpRequired = followUpRequired;
           if (followUpRequired) {
-            const note = (req.body.followUpNote || action.followUpNote || "").trim();
-            if (!note || note.length > 1000) {
-              throw {
-                status: 400,
-                error: "VALIDATION_FAILED",
-                message: "followUpNote is mandatory when followUpRequired is true.",
-              };
+            if (req.body.followUpNote !== undefined) {
+              if (
+                typeof req.body.followUpNote !== "string" ||
+                !req.body.followUpNote.trim() ||
+                req.body.followUpNote.trim().length > 1000
+              ) {
+                throw {
+                  status: 400,
+                  error: "VALIDATION_FAILED",
+                  message: "followUpNote is mandatory when followUpRequired is true.",
+                };
+              }
+              dataToUpdate.followUpNote = req.body.followUpNote.trim();
+            } else {
+              if (!action.followUpNote || !action.followUpNote.trim()) {
+                throw {
+                  status: 400,
+                  error: "VALIDATION_FAILED",
+                  message: "followUpNote is mandatory when followUpRequired is true.",
+                };
+              }
+              dataToUpdate.followUpNote = action.followUpNote;
             }
-            dataToUpdate.followUpNote = note;
           } else {
             dataToUpdate.followUpNote = null;
           }
-        } else if (req.body.followUpNote !== undefined && action.followUpRequired) {
-          const note = String(req.body.followUpNote).trim();
-          if (!note || note.length > 1000) {
-            throw {
-              status: 400,
-              error: "VALIDATION_FAILED",
-              message: "followUpNote cannot be empty when followUpRequired is true.",
-            };
+        } else if (req.body.followUpNote !== undefined) {
+          if (action.followUpRequired) {
+            if (
+              typeof req.body.followUpNote !== "string" ||
+              !req.body.followUpNote.trim() ||
+              req.body.followUpNote.trim().length > 1000
+            ) {
+              throw {
+                status: 400,
+                error: "VALIDATION_FAILED",
+                message: "followUpNote cannot be empty when followUpRequired is true.",
+              };
+            }
+            dataToUpdate.followUpNote = req.body.followUpNote.trim();
+          } else {
+            dataToUpdate.followUpNote = null;
           }
-          dataToUpdate.followUpNote = note;
         }
 
         if (req.body.attachmentNotes !== undefined) {
-          const notes = req.body.attachmentNotes ? String(req.body.attachmentNotes).trim() : null;
-          if (notes && notes.length > 500) {
+          if (req.body.attachmentNotes === null || req.body.attachmentNotes === "") {
+            dataToUpdate.attachmentNotes = null;
+          } else if (
+            typeof req.body.attachmentNotes !== "string" ||
+            req.body.attachmentNotes.trim().length > 500
+          ) {
             throw {
               status: 400,
               error: "VALIDATION_FAILED",
               message: "attachmentNotes cannot exceed 500 characters.",
             };
+          } else {
+            dataToUpdate.attachmentNotes = req.body.attachmentNotes.trim();
           }
-          dataToUpdate.attachmentNotes = notes;
         }
 
         if (expectedVersion !== action.version) {
@@ -830,6 +924,21 @@ actionsRouter.post(
         }
         const expectedVersion = versionRes.version!;
 
+        let cancelReason: string | null = null;
+        if (req.body.reason !== undefined && req.body.reason !== null) {
+          if (
+            typeof req.body.reason !== "string" ||
+            req.body.reason.trim().length > 500
+          ) {
+            throw {
+              status: 400,
+              error: "VALIDATION_FAILED",
+              message: "reason cannot exceed 500 characters.",
+            };
+          }
+          cancelReason = req.body.reason.trim();
+        }
+
         if (expectedVersion !== action.version) {
           throw {
             status: 409,
@@ -844,8 +953,8 @@ actionsRouter.post(
           version: { increment: 1 },
         };
 
-        if (req.body.reason) {
-          dataToUpdate.result = String(req.body.reason).trim();
+        if (cancelReason) {
+          dataToUpdate.result = cancelReason;
         }
 
         const savedAction = await (tx as any).actionTaken.update({

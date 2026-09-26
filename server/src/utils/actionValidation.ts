@@ -34,20 +34,47 @@ export interface NormalizedActionPayload {
 }
 
 export function normalizeActionPayload(body: any): NormalizedActionPayload {
-  const followUpRequired = Boolean(body.followUpRequired);
+  const followUpRequired = Boolean(body?.followUpRequired);
+
+  let formattedDate: string | null = null;
+  if (body?.actionDateTime) {
+    const d = new Date(body.actionDateTime);
+    if (!isNaN(d.getTime())) {
+      formattedDate = d.toISOString();
+    } else {
+      formattedDate = String(body.actionDateTime);
+    }
+  }
+
+  const safeTrim = (val: any): string | null => {
+    if (val === undefined || val === null) return null;
+    if (typeof val === "string") return val.trim();
+    return String(val).trim();
+  };
+
+  const actionDescription = typeof body?.actionDescription === "string"
+    ? body.actionDescription.trim()
+    : safeTrim(body?.actionDescription) || "";
+
+  const status = body?.status === "PENDING" ? "PENDING" : "COMPLETED";
+
   return {
-    actionDateTime: body.actionDateTime ? new Date(body.actionDateTime).toISOString() : null,
-    actionDescription: (body.actionDescription || "").trim(),
-    status: body.status === "PENDING" ? "PENDING" : "COMPLETED",
-    result: body.result ? body.result.trim() : null,
-    assigneeId: typeof body.assigneeId === "number" ? body.assigneeId : null,
+    actionDateTime: formattedDate,
+    actionDescription,
+    status,
+    result: safeTrim(body?.result),
+    assigneeId: typeof body?.assigneeId === "number" ? body.assigneeId : null,
     followUpRequired,
-    followUpNote: followUpRequired && body.followUpNote ? body.followUpNote.trim() : null,
-    attachmentNotes: body.attachmentNotes ? body.attachmentNotes.trim() : null,
+    followUpNote: followUpRequired ? safeTrim(body?.followUpNote) : null,
+    attachmentNotes: safeTrim(body?.attachmentNotes),
   };
 }
 
 export function computeRequestPayloadHash(body: any): string {
-  const normalized = normalizeActionPayload(body);
-  return crypto.createHash("sha256").update(JSON.stringify(normalized)).digest("hex");
+  try {
+    const normalized = normalizeActionPayload(body);
+    return crypto.createHash("sha256").update(JSON.stringify(normalized)).digest("hex");
+  } catch {
+    return crypto.createHash("sha256").update(String(Date.now())).digest("hex");
+  }
 }

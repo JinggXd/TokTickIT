@@ -52,6 +52,8 @@ export function RequesterTicketDetail({
 
   // Actions Taken
   const [actions, setActions] = useState<ActionTaken[]>([]);
+  const [actionsLoading, setActionsLoading] = useState(false);
+  const [actionsError, setActionsError] = useState<string | null>(null);
 
   const loadTicket = useCallback(async () => {
     setLoading(true);
@@ -82,11 +84,15 @@ export function RequesterTicketDetail({
   }, [ticketId]);
 
   const loadActions = useCallback(async () => {
+    setActionsLoading(true);
+    setActionsError(null);
     try {
       const data = await fetchActionsTaken(ticketId);
       setActions(data.actions || []);
-    } catch {
-      // non-fatal
+    } catch (err: any) {
+      setActionsError(err.message || "Failed to load actions taken.");
+    } finally {
+      setActionsLoading(false);
     }
   }, [ticketId]);
 
@@ -360,6 +366,9 @@ export function RequesterTicketDetail({
             ticketStatus={ticket.currentStatus}
             actions={actions}
             readOnly={true}
+            isLoading={actionsLoading}
+            error={actionsError}
+            onRetry={loadActions}
             onActionSaved={loadActions}
           />
 

@@ -166,34 +166,42 @@ describe("Phase F2 / L4-P06: Ticket Workflow & Resolution Gate", () => {
     expect(res.body.error).toBe("BAD_REQUEST");
   });
 
-  it("API-L4-23b: Resolution race: Action create commits before resolution, causing resolution to fail with 409", async () => {
+  it("API-L4-23b: Resolution race: Concurrent action create and status transition resolve safely under row lock", async () => {
     const ticket = await createTestTicket("IN_PROGRESS", true);
 
     // Initial version is 1
-    const staleVersion = ticket.version;
+    const initialVersion = ticket.version;
 
-    // Concurrent action create executes, incrementing ticket version to 2
-    const actionRes = await request(app)
-      .post(`/api/tickets/${ticket.id}/actions`)
-      .set(headersAlex)
-      .send({
-        actionDescription: "Concurrent action created",
-        status: "COMPLETED",
-        result: "Increments parent ticket version",
-      });
-    expect(actionRes.status).toBe(201);
+    // Both requests dispatched concurrently via Promise.all
+    const [actionRes, statusRes] = await Promise.all([
+      request(app)
+        .post(`/api/tickets/${ticket.id}/actions`)
+        .set(headersAlex)
+        .send({
+          actionDescription: "Concurrent action created",
+          status: "COMPLETED",
+          result: "Increments parent ticket version",
+        }),
+      request(app)
+        .patch(`/api/staff/tickets/${ticket.id}/status`)
+        .set(headersAlex)
+        .send({
+          status: "RESOLVED",
+          expectedVersion: initialVersion,
+        }),
+    ]);
 
-    // Now resolve attempt using staleVersion fails with 409
-    const res = await request(app)
-      .patch(`/api/staff/tickets/${ticket.id}/status`)
-      .set(headersAlex)
-      .send({
-        status: "RESOLVED",
-        expectedVersion: staleVersion,
-      });
-
-    expect(res.status).toBe(409);
-    expect(res.body.error).toBe("CONFLICT");
+    // Under row-level locking (SELECT ... FOR UPDATE) and optimistic concurrency:
+    // If action commits first -> actionRes is 201, statusRes gets 409 CONFLICT (version mismatch)
+    // If status transition commits first -> statusRes is 200, actionRes gets 400 BAD_REQUEST (ticket resolved)
+    if (actionRes.status === 201) {
+      expect(statusRes.status).toBe(409);
+      expect(statusRes.body.error).toBe("CONFLICT");
+    } else {
+      expect(statusRes.status).toBe(200);
+      expect(actionRes.status).toBe(400);
+      expect(actionRes.body.error).toBe("BAD_REQUEST");
+    }
   });
 
   it("API-L4-23c: Parent Close/Cancel race: Action mutation fails with 400 if ticket closed concurrently", async () => {

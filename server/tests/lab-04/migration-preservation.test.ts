@@ -13,15 +13,53 @@ describe("Phase F2 / L4-P03: Database Migration, Model & Idempotent Seed (MIG-L4
   });
 
   it("MIG-L4-01: proves populated database data is preserved and zero tables dropped", async () => {
-    const userCount = await prisma.user.count();
-    const ticketCount = await prisma.ticket.count();
-    const categoryCount = await prisma.category.count();
-    const systemCount = await prisma.relatedSystem.count();
+    // 1. Snapshot all pre-existing users, tickets, categories
+    const initialUsers = await prisma.user.findMany({ orderBy: { id: "asc" } });
+    const initialTickets = await prisma.ticket.findMany({ orderBy: { id: "asc" } });
+    const initialCategories = await prisma.category.findMany({ orderBy: { id: "asc" } });
+    const initialSystems = await prisma.relatedSystem.findMany({ orderBy: { id: "asc" } });
 
-    expect(userCount).toBeGreaterThanOrEqual(5);
-    expect(ticketCount).toBeGreaterThanOrEqual(20);
-    expect(categoryCount).toBeGreaterThanOrEqual(4);
-    expect(systemCount).toBeGreaterThanOrEqual(4);
+    expect(initialUsers.length).toBeGreaterThanOrEqual(5);
+    expect(initialTickets.length).toBeGreaterThanOrEqual(20);
+    expect(initialCategories.length).toBeGreaterThanOrEqual(4);
+    expect(initialSystems.length).toBeGreaterThanOrEqual(4);
+
+    // 2. Execute idempotent seed / migration operation
+    await seed(prisma);
+
+    // 3. Post-operation verification: compare snapshot before and after
+    const postUsers = await prisma.user.findMany({ orderBy: { id: "asc" } });
+    const postTickets = await prisma.ticket.findMany({ orderBy: { id: "asc" } });
+    const postCategories = await prisma.category.findMany({ orderBy: { id: "asc" } });
+    const postSystems = await prisma.relatedSystem.findMany({ orderBy: { id: "asc" } });
+
+    // Assert counts are not diminished
+    expect(postUsers.length).toBeGreaterThanOrEqual(initialUsers.length);
+    expect(postTickets.length).toBeGreaterThanOrEqual(initialTickets.length);
+    expect(postCategories.length).toBeGreaterThanOrEqual(initialCategories.length);
+    expect(postSystems.length).toBeGreaterThanOrEqual(initialSystems.length);
+
+    // Assert pre-existing users preserved exact properties
+    for (const u of initialUsers) {
+      const match = postUsers.find((p) => p.id === u.id);
+      expect(match).toBeDefined();
+      expect(match!.email).toBe(u.email);
+      expect(match!.name).toBe(u.name);
+      expect(match!.role).toBe(u.role);
+      expect(match!.passwordHash).toBe(u.passwordHash);
+      expect(match!.isActive).toBe(u.isActive);
+    }
+
+    // Assert pre-existing tickets preserved exact properties
+    for (const t of initialTickets) {
+      const match = postTickets.find((p) => p.id === t.id);
+      expect(match).toBeDefined();
+      expect(match!.ticketNo).toBe(t.ticketNo);
+      expect(match!.summary).toBe(t.summary);
+      expect(match!.currentStatus).toBe(t.currentStatus);
+      expect(match!.requesterId).toBe(t.requesterId);
+      expect(match!.categoryId).toBe(t.categoryId);
+    }
   });
 
   it("MIG-L4-01: proves idempotent seed can run repeatedly without duplicate key errors", async () => {

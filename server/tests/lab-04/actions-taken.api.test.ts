@@ -622,6 +622,82 @@ describe("Phase F2 / L4-P04: Actions Taken REST API & Authorization", () => {
       expect(res.status).toBe(400);
       expect(res.body.error).toBe("VALIDATION_FAILED");
     });
+
+    it("API-L4-22f: POST returns 400 VALIDATION_FAILED when actionDateTime is invalid or actionDescription is non-string (no crash)", async () => {
+      // 1. Invalid date
+      const resBadDate = await request(app)
+        .post(`/api/tickets/${testTicketOpen.id}/actions`)
+        .set(headersAlex)
+        .send({
+          actionDateTime: "not-a-valid-date",
+          actionDescription: "Valid description",
+          status: "PENDING",
+        });
+      expect(resBadDate.status).toBe(400);
+      expect(resBadDate.body.error).toBe("VALIDATION_FAILED");
+
+      // 2. Numeric description
+      const resNumericDesc = await request(app)
+        .post(`/api/tickets/${testTicketOpen.id}/actions`)
+        .set(headersAlex)
+        .send({
+          actionDescription: 12345,
+          status: "PENDING",
+        });
+      expect(resNumericDesc.status).toBe(400);
+      expect(resNumericDesc.body.error).toBe("VALIDATION_FAILED");
+    });
+
+    it("API-L4-22g: POST returns 400 VALIDATION_FAILED when status is invalid", async () => {
+      const res = await request(app)
+        .post(`/api/tickets/${testTicketOpen.id}/actions`)
+        .set(headersAlex)
+        .send({
+          actionDescription: "Valid description",
+          status: "INVALID_STATUS",
+        });
+      expect(res.status).toBe(400);
+      expect(res.body.error).toBe("VALIDATION_FAILED");
+    });
+
+    it("API-L4-22h: Cancel returns 400 VALIDATION_FAILED when reason exceeds 500 characters", async () => {
+      const res = await request(app)
+        .post(`/api/tickets/${testTicketOpen.id}/actions/${testActionId}/cancel`)
+        .set(headersAlex)
+        .send({
+          expectedVersion: 1,
+          reason: "a".repeat(501),
+        });
+      expect(res.status).toBe(400);
+      expect(res.body.error).toBe("VALIDATION_FAILED");
+    });
+
+    it("API-L4-22i: PATCH returns 400 VALIDATION_FAILED when sending empty followUpNote on follow-up action", async () => {
+      // Create action with followUpRequired: true
+      const createRes = await request(app)
+        .post(`/api/tickets/${testTicketOpen.id}/actions`)
+        .set(headersAlex)
+        .send({
+          actionDescription: "Action with followup",
+          status: "PENDING",
+          followUpRequired: true,
+          followUpNote: "Existing initial note",
+        });
+      expect(createRes.status).toBe(201);
+      const actionId = createRes.body.action.id;
+      createdActionIds.push(actionId);
+
+      // Attempt PATCH with empty followUpNote
+      const res = await request(app)
+        .patch(`/api/tickets/${testTicketOpen.id}/actions/${actionId}`)
+        .set(headersAlex)
+        .send({
+          expectedVersion: 1,
+          followUpNote: "   ",
+        });
+      expect(res.status).toBe(400);
+      expect(res.body.error).toBe("VALIDATION_FAILED");
+    });
   });
 
   describe("API-L4-24a to API-L4-24h: Idempotent Retry Protocol & Scoping (D09)", () => {

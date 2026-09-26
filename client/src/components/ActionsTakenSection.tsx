@@ -14,6 +14,9 @@ export interface ActionsTakenSectionProps {
   actions: ActionTaken[];
   currentUser?: { id: number; name: string; role: string } | null;
   readOnly?: boolean;
+  isLoading?: boolean;
+  error?: string | null;
+  onRetry?: () => void;
   onActionSaved: () => void;
   assignableStaff?: Array<{ id: number; name: string }>;
 }
@@ -39,6 +42,9 @@ export const ActionsTakenSection: React.FC<ActionsTakenSectionProps> = ({
   actions,
   currentUser,
   readOnly = false,
+  isLoading = false,
+  error = null,
+  onRetry,
   onActionSaved,
   assignableStaff = [],
 }) => {
@@ -64,15 +70,60 @@ export const ActionsTakenSection: React.FC<ActionsTakenSectionProps> = ({
 
   const modalRef = useRef<HTMLDivElement>(null);
 
-  // Close modal on Escape key
+  // Focus trap and Escape listener for accessible modals
   useEffect(() => {
+    if (!activeModal) return;
+
+    const timer = setTimeout(() => {
+      if (modalRef.current) {
+        const focusableSelector =
+          'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+        const focusables = Array.from(
+          modalRef.current.querySelectorAll<HTMLElement>(focusableSelector)
+        ).filter((el) => !el.hasAttribute("disabled") && el.getAttribute("aria-hidden") !== "true");
+        if (focusables.length > 0) {
+          focusables[0].focus();
+        }
+      }
+    }, 10);
+
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && activeModal) {
+      if (e.key === "Escape") {
         closeModal();
+        return;
+      }
+
+      if (e.key === "Tab" && modalRef.current) {
+        const focusableSelector =
+          'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+        const focusables = Array.from(
+          modalRef.current.querySelectorAll<HTMLElement>(focusableSelector)
+        ).filter((el) => !el.hasAttribute("disabled") && el.getAttribute("aria-hidden") !== "true");
+
+        if (focusables.length === 0) return;
+
+        const first = focusables[0];
+        const last = focusables[focusables.length - 1];
+
+        if (e.shiftKey) {
+          if (document.activeElement === first || !modalRef.current.contains(document.activeElement)) {
+            e.preventDefault();
+            last.focus();
+          }
+        } else {
+          if (document.activeElement === last || !modalRef.current.contains(document.activeElement)) {
+            e.preventDefault();
+            first.focus();
+          }
+        }
       }
     };
+
     window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener("keydown", handleKeyDown);
+    };
   }, [activeModal]);
 
   const openLogModal = () => {
@@ -268,7 +319,28 @@ export const ActionsTakenSection: React.FC<ActionsTakenSectionProps> = ({
       </div>
 
       <div className="card-body p-0">
-        {actions.length === 0 ? (
+        {isLoading ? (
+          <div className="p-4 text-center text-muted" data-testid="actions-taken-loading">
+            <div className="spinner-border spinner-border-sm text-success me-2" role="status">
+              <span className="visually-hidden">Loading actions...</span>
+            </div>
+            <span>Loading actions taken...</span>
+          </div>
+        ) : error ? (
+          <div className="p-4 text-center text-danger" data-testid="actions-taken-error">
+            <p className="mb-2">⚠️ Failed to load actions taken: {error}</p>
+            {onRetry && (
+              <button
+                type="button"
+                className="btn btn-outline-danger btn-sm"
+                onClick={onRetry}
+                data-testid="retry-actions-btn"
+              >
+                🔄 Retry
+              </button>
+            )}
+          </div>
+        ) : actions.length === 0 ? (
           <div className="p-4 text-center text-muted">
             <p className="mb-1">No actions taken yet for this ticket.</p>
             {!readOnly && !isTerminal && <p className="small mb-0">Click "+ Log Action" above to record diagnostic or repair work.</p>}

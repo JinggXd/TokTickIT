@@ -230,4 +230,126 @@ describe("Phase F2 / L4-P05: Actions Taken UI in Ticket Detail", () => {
       vi.useRealTimers();
     }
   });
+
+  it("UI-L4-05b: Focus trap cycles focus inside modal dialog on Tab and Shift+Tab", async () => {
+    render(
+      <ActionsTakenSection
+        ticketId={101}
+        ticketStatus="IN_PROGRESS"
+        actions={mockActions}
+        currentUser={{ id: 12, name: "Alex IT", role: "IT_STAFF" }}
+        onActionSaved={onActionSaved}
+      />
+    );
+
+    const logBtn = screen.getByRole("button", { name: /\+ Log Action/i });
+    fireEvent.click(logBtn);
+
+    const dialog = screen.getByRole("dialog");
+    expect(dialog).toBeDefined();
+
+    // Find all focusable elements inside dialog
+    const focusableSelector =
+      'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+    const focusables = Array.from(dialog.querySelectorAll<HTMLElement>(focusableSelector));
+    expect(focusables.length).toBeGreaterThan(1);
+
+    const firstElement = focusables[0];
+    const lastElement = focusables[focusables.length - 1];
+
+    // Focus last element and press Tab -> should wrap to first element
+    lastElement.focus();
+    expect(document.activeElement).toBe(lastElement);
+    fireEvent.keyDown(window, { key: "Tab" });
+    expect(document.activeElement).toBe(firstElement);
+
+    // Focus first element and press Shift+Tab -> should wrap to last element
+    firstElement.focus();
+    expect(document.activeElement).toBe(firstElement);
+    fireEvent.keyDown(window, { key: "Tab", shiftKey: true });
+    expect(document.activeElement).toBe(lastElement);
+
+    // Close modal
+    fireEvent.keyDown(window, { key: "Escape" });
+  });
+
+  it("UI-L4-04b: Actions Taken renders loading state and error state with retry button", () => {
+    const onRetry = vi.fn();
+    const { rerender } = render(
+      <ActionsTakenSection
+        ticketId={101}
+        ticketStatus="IN_PROGRESS"
+        actions={[]}
+        isLoading={true}
+        onActionSaved={onActionSaved}
+      />
+    );
+
+    expect(screen.getByTestId("actions-taken-loading")).toBeDefined();
+    expect(screen.getByText(/Loading actions taken/i)).toBeDefined();
+
+    // Rerender with error
+    rerender(
+      <ActionsTakenSection
+        ticketId={101}
+        ticketStatus="IN_PROGRESS"
+        actions={[]}
+        isLoading={false}
+        error="Network timeout"
+        onRetry={onRetry}
+        onActionSaved={onActionSaved}
+      />
+    );
+
+    expect(screen.getByTestId("actions-taken-error")).toBeDefined();
+    expect(screen.getByText(/Failed to load actions taken: Network timeout/i)).toBeDefined();
+
+    const retryBtn = screen.getByTestId("retry-actions-btn");
+    fireEvent.click(retryBtn);
+    expect(onRetry).toHaveBeenCalledTimes(1);
+  });
+
+  it("UI-L4-04c: Administrator can see Log Action and Controls, Staff performer can see Edit on completed action", () => {
+    const { rerender } = render(
+      <ActionsTakenSection
+        ticketId={101}
+        ticketStatus="IN_PROGRESS"
+        actions={mockActions}
+        currentUser={{ id: 99, name: "Admin User", role: "ADMINISTRATOR" }}
+        readOnly={false}
+        onActionSaved={onActionSaved}
+      />
+    );
+
+    // Admin sees Log Action button
+    expect(screen.getByRole("button", { name: /\+ Log Action/i })).toBeDefined();
+    // Admin can edit completed action (action 1 performed by Alex)
+    expect(screen.getByTestId("edit-action-btn-1")).toBeDefined();
+
+    // Staff user who is performer (Alex IT, id 12) sees Edit on completed action
+    rerender(
+      <ActionsTakenSection
+        ticketId={101}
+        ticketStatus="IN_PROGRESS"
+        actions={mockActions}
+        currentUser={{ id: 12, name: "Alex IT", role: "IT_STAFF" }}
+        readOnly={false}
+        onActionSaved={onActionSaved}
+      />
+    );
+    expect(screen.getByTestId("edit-action-btn-1")).toBeDefined();
+
+    // Other staff (id 999) cannot edit completed action
+    rerender(
+      <ActionsTakenSection
+        ticketId={101}
+        ticketStatus="IN_PROGRESS"
+        actions={mockActions}
+        currentUser={{ id: 999, name: "Other Staff", role: "IT_STAFF" }}
+        readOnly={false}
+        onActionSaved={onActionSaved}
+      />
+    );
+    expect(screen.queryByTestId("edit-action-btn-1")).toBeNull();
+  });
 });
