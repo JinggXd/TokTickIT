@@ -353,27 +353,148 @@ export const ActionsTakenSection: React.FC<ActionsTakenSectionProps> = ({
             {!readOnly && !isTerminal && <p className="small mb-0">Click "+ Log Action" above to record diagnostic or repair work.</p>}
           </div>
         ) : (
-          <div className="table-responsive">
-            <table className="table table-hover align-middle mb-0">
-              <thead className="table-light small text-muted text-uppercase">
-                <tr>
-                  <th style={{ width: "16%" }}>Date & Time</th>
-                  <th style={{ width: "12%" }}>Status</th>
-                  <th style={{ width: "26%" }}>Description & Result</th>
-                  <th style={{ width: "18%" }}>Staff / Assignee</th>
-                  <th style={{ width: "16%" }}>Follow-Up & Notes</th>
-                  {!readOnly && <th style={{ width: "12%" }} className="text-end">Controls</th>}
-                </tr>
-              </thead>
-              <tbody>
-                {actions.map((act) => {
-                  const isPerformer = currentUser?.id === act.performedBy?.id;
-                  const isAdmin = currentUser?.role === "ADMINISTRATOR";
-                  const canEditCompleted = act.status === "COMPLETED" && (isPerformer || isAdmin);
+          <>
+            {/* Desktop & Tablet Table View (≥ 768px) per ui-spec.md Section 5 */}
+            <div className="d-none d-md-block table-responsive">
+              <table className="table table-hover align-middle mb-0">
+                <thead className="table-light small text-muted text-uppercase">
+                  <tr>
+                    <th style={{ width: "16%" }}>Date & Time</th>
+                    <th style={{ width: "12%" }}>Status</th>
+                    <th style={{ width: "26%" }}>Description & Result</th>
+                    <th style={{ width: "18%" }}>Staff / Assignee</th>
+                    <th style={{ width: "16%" }}>Follow-Up & Notes</th>
+                    {!readOnly && <th style={{ width: "12%" }} className="text-end">Controls</th>}
+                  </tr>
+                </thead>
+                <tbody>
+                  {actions.map((act) => {
+                    const isPerformer = currentUser?.id === act.performedBy?.id;
+                    const isAdmin = currentUser?.role === "ADMINISTRATOR";
+                    const canEditCompleted = act.status === "COMPLETED" && (isPerformer || isAdmin);
 
-                  return (
-                    <tr key={act.id} data-testid={`action-row-${act.id}`}>
-                      <td className="small text-muted">
+                    return (
+                      <tr key={act.id} data-testid={`action-row-${act.id}`}>
+                        <td className="small text-muted">
+                          {new Date(act.actionDateTime).toLocaleString(undefined, {
+                            day: "numeric",
+                            month: "short",
+                            year: "numeric",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
+                        </td>
+                        <td>
+                          <ActionStatusBadge status={act.status} />
+                        </td>
+                        <td>
+                          <div className="fw-medium text-dark">{act.actionDescription}</div>
+                          {act.result && (
+                            <div className="small text-success mt-1">
+                              <strong>Result:</strong> {act.result}
+                            </div>
+                          )}
+                        </td>
+                        <td className="small">
+                          {act.performedBy && (
+                            <div>
+                              <span className="text-muted">By:</span> <strong>{act.performedBy.name}</strong>
+                            </div>
+                          )}
+                          {act.assignee && (
+                            <div className="text-muted mt-1">
+                              <span>Assigned:</span> <strong>{act.assignee.name}</strong>
+                            </div>
+                          )}
+                          {!act.performedBy && !act.assignee && <span className="text-muted">—</span>}
+                        </td>
+                        <td className="small">
+                          {act.followUpRequired && (
+                            <div className="mb-1">
+                              <span className="badge bg-warning text-dark me-1">Follow-up</span>
+                              {act.followUpNote && <span className="text-dark">{act.followUpNote}</span>}
+                            </div>
+                          )}
+                          {act.attachmentNotes && (
+                            <div className="text-muted">
+                              <i className="bi bi-paperclip me-1"></i>
+                              <span>{act.attachmentNotes}</span>
+                            </div>
+                          )}
+                          {!act.followUpRequired && !act.attachmentNotes && <span className="text-muted">—</span>}
+                        </td>
+                        {!readOnly && (
+                          <td className="text-end">
+                            {!isTerminal && (
+                              <div className="btn-group btn-group-sm">
+                                {act.status === "PENDING" && (
+                                  <>
+                                    <button
+                                      type="button"
+                                      className="btn btn-outline-success btn-sm"
+                                      data-testid={`complete-action-btn-${act.id}`}
+                                      onClick={() => openCompleteModal(act)}
+                                      title="Complete Action"
+                                    >
+                                      Complete
+                                    </button>
+                                    <button
+                                      type="button"
+                                      className="btn btn-outline-secondary btn-sm"
+                                      data-testid={`edit-action-btn-${act.id}`}
+                                      onClick={() => openEditModal(act)}
+                                      title="Edit Action"
+                                    >
+                                      Edit
+                                    </button>
+                                    <button
+                                      type="button"
+                                      className="btn btn-outline-danger btn-sm"
+                                      data-testid={`cancel-action-btn-${act.id}`}
+                                      onClick={() => openCancelModal(act)}
+                                      title="Cancel Action"
+                                    >
+                                      Cancel
+                                    </button>
+                                  </>
+                                )}
+                                {canEditCompleted && (
+                                  <button
+                                    type="button"
+                                    className="btn btn-outline-secondary btn-sm"
+                                    data-testid={`edit-action-btn-${act.id}`}
+                                    onClick={() => openEditModal(act)}
+                                    title="Edit Details"
+                                  >
+                                    Edit
+                                  </button>
+                                )}
+                              </div>
+                            )}
+                          </td>
+                        )}
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Mobile Card View (< 768px) per ui-spec.md Section 5 (line 208) */}
+            <div className="d-block d-md-none p-3" data-testid="actions-taken-mobile-cards">
+              {actions.map((act) => {
+                const isPerformer = currentUser?.id === act.performedBy?.id;
+                const isAdmin = currentUser?.role === "ADMINISTRATOR";
+                const canEditCompleted = act.status === "COMPLETED" && (isPerformer || isAdmin);
+
+                return (
+                  <div
+                    key={act.id}
+                    className="card card-zen p-3 mb-3 border shadow-none"
+                    data-testid={`action-card-${act.id}`}
+                  >
+                    <div className="d-flex justify-content-between align-items-center mb-2">
+                      <span className="small text-muted" data-testid={`action-card-datetime-${act.id}`}>
                         {new Date(act.actionDateTime).toLocaleString(undefined, {
                           day: "numeric",
                           month: "short",
@@ -381,32 +502,36 @@ export const ActionsTakenSection: React.FC<ActionsTakenSectionProps> = ({
                           hour: "2-digit",
                           minute: "2-digit",
                         })}
-                      </td>
-                      <td>
-                        <ActionStatusBadge status={act.status} />
-                      </td>
-                      <td>
-                        <div className="fw-medium text-dark">{act.actionDescription}</div>
-                        {act.result && (
-                          <div className="small text-success mt-1">
-                            <strong>Result:</strong> {act.result}
-                          </div>
-                        )}
-                      </td>
-                      <td className="small">
-                        {act.performedBy && (
-                          <div>
-                            <span className="text-muted">By:</span> <strong>{act.performedBy.name}</strong>
-                          </div>
-                        )}
-                        {act.assignee && (
-                          <div className="text-muted mt-1">
-                            <span>Assigned:</span> <strong>{act.assignee.name}</strong>
-                          </div>
-                        )}
-                        {!act.performedBy && !act.assignee && <span className="text-muted">—</span>}
-                      </td>
-                      <td className="small">
+                      </span>
+                      <ActionStatusBadge status={act.status} />
+                    </div>
+
+                    <div className="fw-semibold text-dark mb-1" data-testid={`action-card-description-${act.id}`}>
+                      {act.actionDescription}
+                    </div>
+
+                    {act.result && (
+                      <div className="small text-success mb-2 p-2 bg-light rounded" data-testid={`action-card-result-${act.id}`}>
+                        <strong>Result:</strong> {act.result}
+                      </div>
+                    )}
+
+                    <div className="small text-muted mb-2" data-testid={`action-card-actors-${act.id}`}>
+                      {act.performedBy && (
+                        <div>
+                          <span>Performed by:</span> <strong className="text-dark">{act.performedBy.name}</strong>
+                        </div>
+                      )}
+                      {act.assignee && (
+                        <div className="mt-1">
+                          <span>Assignee:</span> <strong className="text-dark">{act.assignee.name}</strong>
+                        </div>
+                      )}
+                      {!act.performedBy && !act.assignee && <span>—</span>}
+                    </div>
+
+                    {(act.followUpRequired || act.attachmentNotes) && (
+                      <div className="small mb-2" data-testid={`action-card-followup-${act.id}`}>
                         {act.followUpRequired && (
                           <div className="mb-1">
                             <span className="badge bg-warning text-dark me-1">Follow-up</span>
@@ -419,64 +544,56 @@ export const ActionsTakenSection: React.FC<ActionsTakenSectionProps> = ({
                             <span>{act.attachmentNotes}</span>
                           </div>
                         )}
-                        {!act.followUpRequired && !act.attachmentNotes && <span className="text-muted">—</span>}
-                      </td>
-                      {!readOnly && (
-                        <td className="text-end">
-                          {!isTerminal && (
-                            <div className="btn-group btn-group-sm">
-                              {act.status === "PENDING" && (
-                                <>
-                                  <button
-                                    type="button"
-                                    className="btn btn-outline-success btn-sm"
-                                    data-testid={`complete-action-btn-${act.id}`}
-                                    onClick={() => openCompleteModal(act)}
-                                    title="Complete Action"
-                                  >
-                                    Complete
-                                  </button>
-                                  <button
-                                    type="button"
-                                    className="btn btn-outline-secondary btn-sm"
-                                    data-testid={`edit-action-btn-${act.id}`}
-                                    onClick={() => openEditModal(act)}
-                                    title="Edit Action"
-                                  >
-                                    Edit
-                                  </button>
-                                  <button
-                                    type="button"
-                                    className="btn btn-outline-danger btn-sm"
-                                    data-testid={`cancel-action-btn-${act.id}`}
-                                    onClick={() => openCancelModal(act)}
-                                    title="Cancel Action"
-                                  >
-                                    Cancel
-                                  </button>
-                                </>
-                              )}
-                              {canEditCompleted && (
-                                <button
-                                  type="button"
-                                  className="btn btn-outline-secondary btn-sm"
-                                  data-testid={`edit-action-btn-${act.id}`}
-                                  onClick={() => openEditModal(act)}
-                                  title="Edit Details"
-                                >
-                                  Edit
-                                </button>
-                              )}
-                            </div>
-                          )}
-                        </td>
-                      )}
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+                      </div>
+                    )}
+
+                    {!readOnly && !isTerminal && (
+                      <div className="mt-2 pt-2 border-top d-flex gap-2" data-testid={`action-card-controls-${act.id}`}>
+                        {act.status === "PENDING" && (
+                          <>
+                            <button
+                              type="button"
+                              className="btn btn-outline-success btn-sm flex-fill"
+                              data-testid={`mobile-complete-action-btn-${act.id}`}
+                              onClick={() => openCompleteModal(act)}
+                            >
+                              Complete
+                            </button>
+                            <button
+                              type="button"
+                              className="btn btn-outline-secondary btn-sm flex-fill"
+                              data-testid={`mobile-edit-action-btn-${act.id}`}
+                              onClick={() => openEditModal(act)}
+                            >
+                              Edit
+                            </button>
+                            <button
+                              type="button"
+                              className="btn btn-outline-danger btn-sm flex-fill"
+                              data-testid={`mobile-cancel-action-btn-${act.id}`}
+                              onClick={() => openCancelModal(act)}
+                            >
+                              Cancel
+                            </button>
+                          </>
+                        )}
+                        {canEditCompleted && (
+                          <button
+                            type="button"
+                            className="btn btn-outline-secondary btn-sm flex-fill"
+                            data-testid={`mobile-edit-action-btn-${act.id}`}
+                            onClick={() => openEditModal(act)}
+                          >
+                            Edit Details
+                          </button>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </>
         )}
       </div>
 

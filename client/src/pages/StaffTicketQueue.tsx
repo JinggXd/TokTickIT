@@ -459,8 +459,9 @@ export const StaffTicketQueue: React.FC<StaffTicketQueueProps> = ({ onSelectTick
               <span className="small text-muted">Showing page</span>
               <span className="small fw-bold">{pagination.page}</span>
               <span className="small text-muted">of {pagination.totalPages} ({pagination.total} total)</span>
-              <span className="ms-3 small text-muted">Per page:</span>
+              <label htmlFor="queue-page-size" className="ms-3 small text-muted">Per page:</label>
               <select
+                id="queue-page-size"
                 className="form-select form-select-sm"
                 style={{ width: "auto" }}
                 value={pageSize}

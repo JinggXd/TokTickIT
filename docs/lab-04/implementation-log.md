@@ -312,3 +312,38 @@ Current checkout at inspection: feature/actions-and-workflow-phase2-lab4, HEAD 3
 - Server Vitest suite: 324 / 324 passed (including all 60 Lab 4 tests; expanded API-L4-10a/b coverage on CLOSED and CANCELLED terminal tickets)
 - Documentation: Created `docs/lab-04/what_i_have_done2.md` and `docs/lab-04/aiused2.md`
 
+---
+
+## 13. Phase F2 Completion, Mobile Card List, Workflow Tests & E2E Verification (2026-09-27)
+
+**Date:** 2026-09-27T23:00:00+07:00  
+**Feature Branch:** `feature/actions-and-workflow-phase2-lab4`  
+**Base Branch:** `lab4-staging`  
+**GitHub Issue:** [#48](https://github.com/JinggXd/TokTickIT/issues/48)  
+**Pull Request:** [#49](https://github.com/JinggXd/TokTickIT/pull/49)  
+
+### Deliverables & Key Changes:
+1. **Mobile (<768px) Card List View (UI-spec line 208, UI-L4-15):**
+   - In `client/src/components/ActionsTakenSection.tsx`, converted Actions Taken from a simple table into a responsive view: desktop table (`d-none d-md-block table-responsive`) and mobile card list (`d-block d-md-none p-3`, `data-testid="actions-taken-mobile-cards"`).
+   - Each mobile card displays: Date/Time, Status badge (`PENDING`, `COMPLETED`, `CANCELLED`), Description, Result, Performed by / Assignee, Follow-up indicator, and Staff action controls (`Complete`, `Edit`, `Cancel`).
+   - Added component test `UI-L4-15` in `client/tests/lab-04/ActionsTaken.test.tsx` (13/13 tests pass).
+   - Retaken 375px screenshots for Staff and Requester, asserting `document.documentElement.scrollWidth <= 375px` (0 horizontal overflow).
+2. **Ticket Workflow Client Tests (UI-L4-09, UI-L4-10):**
+   - Created `client/tests/lab-04/TicketWorkflow.test.tsx`:
+     - `UI-L4-09`: 422 `RESOLUTION_GATE_FAILED` resolution gate error banner rendered inside status confirmation modal when attempting to resolve a ticket with 0 completed actions.
+     - `UI-L4-10`: 409 `CONFLICT` stale version conflict banner instructing user to reload page, with interactive Refresh button.
+3. **End-to-End Specs (E2E-L4-01, E2E-L4-02):**
+   - Created `e2e/lab-04/actions-taken-flow.spec.ts` (`E2E-L4-01`): Full action lifecycle from Staff log pending action -> assign staff -> complete with result -> Requester read-only view with zero mutation controls.
+   - Created `e2e/lab-04/ticket-resolution.spec.ts` (`E2E-L4-02`): Resolution gate enforcement showing resolution attempt blocked with 422 banner when ticket has no completed action, and succeeding once a completed action is logged.
+   - Both specs pass across Desktop (1280px), Tablet (768px), and Mobile (375px) viewports (6/6 tests pass).
+4. **Accessibility Hardening (UI-spec 7.1):**
+   - Added `<label htmlFor="queue-page-size">` for page size dropdown in `StaffTicketQueue.tsx`.
+   - Added `<label htmlFor="staff-reassign-owner-select">`, `<label htmlFor="staff-public-comment-input">`, and `<label htmlFor="staff-internal-note-input">` in `StaffTicketDetail.tsx`.
+5. **MIG-L4-02 Deferral:**
+   - Sandbox backup/restore recovery verification (`MIG-L4-02`) is explicitly deferred to Phase F4 (L4-P11) on disposable test DB (`toktickit_test_*`). Documented in `PHASES.md` and `tests.md`.
+6. **Full Test Suite Verification:**
+   - Client Vitest suite: 18 files, 99 passed (100%).
+   - Server Vitest suite: 29 files, 324 passed (100%).
+   - Playwright E2E suite: 114 passed across Desktop, Tablet, and Mobile viewports (2.7m runtime, 0 failed, 0 skipped).
+
+

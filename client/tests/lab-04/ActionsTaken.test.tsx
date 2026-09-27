@@ -72,10 +72,10 @@ describe("Phase F2 / L4-P05: Actions Taken UI in Ticket Detail", () => {
     );
 
     expect(screen.getByText("Actions Taken")).toBeDefined();
-    expect(screen.getByText("Checked switch port and replaced patch cord")).toBeDefined();
-    expect(screen.getByText("Order replacement SFP module")).toBeDefined();
-    expect(screen.getByText("Port link established, 1Gbps full duplex")).toBeDefined();
-    expect(screen.getByText("Install module when shipment arrives on Monday")).toBeDefined();
+    expect(screen.getAllByText("Checked switch port and replaced patch cord").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText("Order replacement SFP module").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText(/Port link established, 1Gbps full duplex/i).length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText(/Install module when shipment arrives on Monday/i).length).toBeGreaterThanOrEqual(1);
   });
 
   it("UI-L4-05: Log Action Taken modal opens with focus trap, validates max datetime and required result on complete", async () => {
@@ -162,7 +162,7 @@ describe("Phase F2 / L4-P05: Actions Taken UI in Ticket Detail", () => {
     );
 
     expect(screen.getByText("Actions Taken")).toBeDefined();
-    expect(screen.getByText("Checked switch port and replaced patch cord")).toBeDefined();
+    expect(screen.getAllByText("Checked switch port and replaced patch cord").length).toBeGreaterThanOrEqual(1);
 
     // Mutation buttons must NOT exist in Requester view
     expect(screen.queryByRole("button", { name: /\+ Log Action/i })).toBeNull();
@@ -445,5 +445,51 @@ describe("Phase F2 / L4-P05: Actions Taken UI in Ticket Detail", () => {
     });
     expect(onActionSaved).toHaveBeenCalledTimes(1);
   });
+
+  it("UI-L4-15: Mobile (<768px) view renders Actions Taken as card list with all required fields", () => {
+    render(
+      <ActionsTakenSection
+        ticketId={101}
+        ticketStatus="IN_PROGRESS"
+        actions={mockActions}
+        currentUser={{ id: 12, name: "Alex IT", role: "IT_STAFF" }}
+        onActionSaved={onActionSaved}
+      />
+    );
+
+    // Verify mobile cards container exists with d-block d-md-none
+    const mobileCardsContainer = screen.getByTestId("actions-taken-mobile-cards");
+    expect(mobileCardsContainer).toBeInTheDocument();
+    expect(mobileCardsContainer).toHaveClass("d-block", "d-md-none");
+
+    // Check each card renders required fields
+    const card1 = screen.getByTestId("action-card-1");
+    expect(card1).toBeInTheDocument();
+    // 1. Date/Time
+    expect(within(card1).getByTestId("action-card-datetime-1")).toBeInTheDocument();
+    // 2. Status badge
+    expect(within(card1).getByTestId("action-status-badge-COMPLETED")).toBeInTheDocument();
+    // 3. Description
+    expect(within(card1).getByTestId("action-card-description-1")).toHaveTextContent("Checked switch port and replaced patch cord");
+    // 4. Result
+    expect(within(card1).getByTestId("action-card-result-1")).toHaveTextContent(/Port link established, 1Gbps full duplex/i);
+    // 5. Performed by / Assignee
+    expect(within(card1).getByTestId("action-card-actors-1")).toHaveTextContent("Alex IT");
+    // 6. Follow-up
+    expect(within(card1).getByTestId("action-card-followup-1")).toHaveTextContent(/IMG_0012\.JPG/i);
+
+    // Check card 2 (PENDING action)
+    const card2 = screen.getByTestId("action-card-2");
+    expect(card2).toBeInTheDocument();
+    expect(within(card2).getByTestId("action-status-badge-PENDING")).toBeInTheDocument();
+    expect(within(card2).getByTestId("action-card-description-2")).toHaveTextContent("Order replacement SFP module");
+    expect(within(card2).getByTestId("action-card-actors-2")).toHaveTextContent("Marcus IT");
+    expect(within(card2).getByTestId("action-card-followup-2")).toHaveTextContent(/Install module when shipment arrives/i);
+    // 7. Staff action buttons (Complete, Edit, Cancel)
+    expect(within(card2).getByTestId("mobile-complete-action-btn-2")).toBeInTheDocument();
+    expect(within(card2).getByTestId("mobile-edit-action-btn-2")).toBeInTheDocument();
+    expect(within(card2).getByTestId("mobile-cancel-action-btn-2")).toBeInTheDocument();
+  });
 });
+
 

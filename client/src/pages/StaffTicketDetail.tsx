@@ -170,7 +170,7 @@ export const StaffTicketDetail: React.FC<StaffTicketDetailProps> = ({ ticketId, 
       await loadData();
     } catch (err: any) {
       if (err.status === 409 || err.error === "CONFLICT") {
-        setConflictError(err.message || "This ticket was modified by another user. Please refresh.");
+        setConflictError(err.message || "The ticket was modified by another user. Please refresh and try again.");
       } else {
         setError(err.message || "Failed to update priority.");
       }
@@ -208,11 +208,12 @@ export const StaffTicketDetail: React.FC<StaffTicketDetailProps> = ({ ticketId, 
         err.status === 422 || err.error === "RESOLUTION_GATE_FAILED"
           ? err.message || "Ticket resolution requires at least one completed Action Taken and no pending actions."
           : err.status === 409 || err.error === "CONFLICT"
-          ? err.message || "This ticket was modified by another user. Please refresh."
+          ? err.message || "The ticket was modified by another user. Please refresh and try again."
           : err.message || "Failed to update status.";
 
       if (err.status === 409 || err.error === "CONFLICT") {
         setConflictError(errMsg);
+        setShowStatusConfirmModal(false);
       }
       setError(errMsg);
       setModalStatusError(errMsg);
@@ -446,8 +447,12 @@ export const StaffTicketDetail: React.FC<StaffTicketDetailProps> = ({ ticketId, 
                     <span className="badge bg-light text-dark p-2 w-100 border text-start mb-2">
                       Assigned: {ticket.ticketOwner.name}
                     </span>
+                    <label htmlFor="staff-reassign-owner-select" className="form-label small text-muted mb-1 d-block">
+                      Reassign Owner:
+                    </label>
                     <div className="input-group">
                       <select
+                        id="staff-reassign-owner-select"
                         className="form-select form-select-sm"
                         value={selectedOwnerId}
                         onChange={(e) => setSelectedOwnerId(e.target.value ? Number(e.target.value) : "")}
@@ -632,7 +637,11 @@ export const StaffTicketDetail: React.FC<StaffTicketDetailProps> = ({ ticketId, 
                 <form onSubmit={handlePostComment} className="pt-2 border-top">
                   {commentError && <div className="alert alert-danger py-1 small mb-2">{commentError}</div>}
                   <div className="mb-2">
+                    <label htmlFor="staff-public-comment-input" className="form-label fw-semibold small text-muted">
+                      Add a Public Comment
+                    </label>
                     <textarea
+                      id="staff-public-comment-input"
                       className="form-control form-control-sm"
                       rows={3}
                       placeholder="Write a public comment for the requester..."
@@ -696,7 +705,11 @@ export const StaffTicketDetail: React.FC<StaffTicketDetailProps> = ({ ticketId, 
                 <form onSubmit={handlePostNote} className="pt-2 border-top">
                   {noteError && <div className="alert alert-danger py-1 small mb-2">{noteError}</div>}
                   <div className="mb-2">
+                    <label htmlFor="staff-internal-note-input" className="form-label fw-semibold small text-muted">
+                      Add an Internal Note
+                    </label>
                     <textarea
+                      id="staff-internal-note-input"
                       className="form-control form-control-sm"
                       rows={3}
                       placeholder="Write a confidential internal note for the team..."

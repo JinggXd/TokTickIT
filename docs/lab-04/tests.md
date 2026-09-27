@@ -124,21 +124,22 @@ e2e/lab-04/
 | **UI-L4-06** | Component | AC-27 | Complete Action Taken modal requires result and calls complete handler | Result required, busy state handled | `client/tests/lab-04/ActionsTaken.test.tsx` | Passed |
 | **UI-L4-07** | Component | AC-28 | Cancel Action Taken modal renders prompt and confirm button | Confirmation prompt and cancel handler verified | `client/tests/lab-04/ActionsTaken.test.tsx` | Passed |
 | **UI-L4-08** | Component | AC-29 | Account switching refreshes dashboard without stale data | Fresh metrics rendered after login | `client/tests/lab-04/RequesterDashboard.test.tsx` | Planned |
-| **UI-L4-09** | Component | BR-12 | TicketWorkflow: Resolution gate error alert banner on modal when 0 actions | Renders 422 error banner with guidance | `client/tests/lab-04/TicketWorkflow.test.tsx` | Planned |
-| **UI-L4-10** | Component | BR-14 | TicketWorkflow: 409 conflict renders reload banner | Stale update alerts user to reload page | `client/tests/lab-04/TicketWorkflow.test.tsx` | Planned |
+| **UI-L4-09** | Component | BR-12 | TicketWorkflow: Resolution gate error alert banner on modal when 0 actions | Renders 422 error banner with guidance | `client/tests/lab-04/TicketWorkflow.test.tsx` | Passed |
+| **UI-L4-10** | Component | BR-14 | TicketWorkflow: 409 conflict renders reload banner | Stale update alerts user to reload page | `client/tests/lab-04/TicketWorkflow.test.tsx` | Passed |
 | **UI-L4-11** | Component | FR-07 | Requester view: read-only Actions Taken list, zero mutation buttons | Renders pending/completed/cancelled without edit controls | `client/tests/lab-04/ActionsTaken.test.tsx` | Passed |
 | **UI-L4-12** | Component | FR-08 | Requester view: confidentiality verified, internal notes are never rendered | Assert rendered HTML contains zero internal note text | `client/tests/lab-04/ActionsTaken.test.tsx` | Passed |
 | **UI-L4-13** | Component | BR-08, D11 | Action date/time input formatted in local browser timezone without UTC skew | Input initializes and enforces max in local timezone (not UTC -7h) | `client/tests/lab-04/ActionsTaken.test.tsx` | Passed |
 | **UI-L4-13b**| Component | BR-08, D11 | Fixed-clock assertion verifies local now and max = now + 5m boundary | Clock frozen, asserts exact local string format | `client/tests/lab-04/ActionsTaken.test.tsx` | Passed |
 | **UI-L4-14** | Component | UI-4 | Modal locks close button, Escape key, and form inputs during submission | In-flight submission guards prevent duplicate clicks | `client/tests/lab-04/ActionsTaken.test.tsx` | Passed |
+| **UI-L4-15** | Component | UI-spec:208| Mobile (<768px): Actions Taken renders responsive card list (not table) | Date/time, badges, description, result, assignee, follow-up, staff buttons | `client/tests/lab-04/ActionsTaken.test.tsx` | Passed |
 | **RESP-L4-01** | Responsive | AC-30 | Dashboards and Actions Taken render on Desktop/Tablet/Mobile | No horizontal scroll, no clipping | `e2e/lab-04/dashboards.spec.ts` | Planned |
-| **A11Y-L4-01** | A11y | AC-31 | Modal focus trap and visible focus indicators | Focus trapped in modal, esc closes, visible ring | `e2e/lab-04/actions-taken-flow.spec.ts` | Planned |
-| **E2E-L4-01** | E2E | AC-01, AC-07 | End-to-end action logging, assignment, and completion | Action flow fully traversable | `e2e/lab-04/actions-taken-flow.spec.ts` | Planned |
-| **E2E-L4-02** | E2E | AC-14, AC-16 | End-to-end ticket resolution gate enforcement | Blocked before action, allowed after | `e2e/lab-04/ticket-resolution.spec.ts` | Planned |
+| **A11Y-L4-01** | A11y | AC-31 | Modal focus trap and visible focus indicators | Focus trapped in modal, esc closes, visible ring | `e2e/lab-04/actions-taken-flow.spec.ts` | Passed |
+| **E2E-L4-01** | E2E | AC-01, AC-07 | End-to-end action logging, assignment, and completion | Action flow fully traversable on desktop, tablet, and mobile | `e2e/lab-04/actions-taken-flow.spec.ts` | Passed |
+| **E2E-L4-02** | E2E | AC-14, AC-16 | End-to-end ticket resolution gate enforcement | Blocked before action (422), allowed after action completed | `e2e/lab-04/ticket-resolution.spec.ts` | Passed |
 | **REG-L4-01** | Regression | AC-32 | Full Lab 1 & 2 regression test execution | All existing tests pass 100% | `server/tests/lab-02/`, `client/tests/lab-02/` | Planned |
 | **REG-L4-02** | Regression | AC-33 | Full Lab 3 regression test execution | All existing tests pass 100% | `server/tests/lab-03/`, `client/tests/lab-03/` | Planned |
 | **MIG-L4-01** | Migration | AC-34, AC-35 | Idempotent seed and schema migration preservation | Zero data loss, seed twice identical | `server/tests/lab-04/migration-preservation.test.ts`| Passed |
-| **MIG-L4-02** | Migration | D10 | Sandbox backup and restore recovery verification | pg_dump and pg_restore test successful | `server/tests/lab-04/migration-preservation.test.ts`| Planned |
+| **MIG-L4-02** | Migration | D10 | Sandbox backup and restore recovery verification | pg_dump and pg_restore test on test DB (deferred to Phase F4 L4-P11) | `server/tests/lab-04/migration-preservation.test.ts`| Deferred to F4 |
 | **PERF-L4-01** | Performance | DoD | Dashboard metrics performance smoke test on 500 tickets (p95 < 200ms) | 50 samples, p95 < 200ms | `server/tests/lab-04/performance-smoke.test.ts` | Planned |
 
 ---
@@ -151,10 +152,10 @@ Visual inspection screenshots for the Actions Taken panel in Ticket Detail have 
 |---|---|---|---|
 | `artifacts/lab-04/screenshots/actions-taken/staff-actions-taken-desktop-1280.png` | UI-L4-04 | Desktop (1280×720) | IT Staff Ticket Detail: Actions Taken section with timeline, Zen Green badges, and "+ Log Action" CTA |
 | `artifacts/lab-04/screenshots/actions-taken/staff-actions-taken-tablet-768.png` | UI-L4-04 | Tablet (768×1024) | IT Staff Ticket Detail: Actions Taken responsive tablet layout |
-| `artifacts/lab-04/screenshots/actions-taken/staff-actions-taken-mobile-375.png` | UI-L4-04 | Mobile (375×667) | IT Staff Ticket Detail: Actions Taken responsive mobile card layout with full-width buttons |
+| `artifacts/lab-04/screenshots/actions-taken/staff-actions-taken-mobile-375.png` | UI-L4-04, UI-L4-15 | Mobile (375×667) | IT Staff Ticket Detail: Actions Taken responsive mobile card list (`scrollWidth <= 375px`) |
 | `artifacts/lab-04/screenshots/actions-taken/requester-actions-taken-desktop-1280.png` | UI-L4-05, UI-L4-11, UI-L4-12 | Desktop (1280×720) | Requester Ticket Detail: Read-only Actions Taken list, zero mutation buttons, zero internal note leakage |
 | `artifacts/lab-04/screenshots/actions-taken/requester-actions-taken-tablet-768.png` | UI-L4-05, UI-L4-11, UI-L4-12 | Tablet (768×1024) | Requester Ticket Detail: Read-only responsive tablet view |
-| `artifacts/lab-04/screenshots/actions-taken/requester-actions-taken-mobile-375.png` | UI-L4-05, UI-L4-11, UI-L4-12 | Mobile (375×667) | Requester Ticket Detail: Read-only responsive mobile view |
+| `artifacts/lab-04/screenshots/actions-taken/requester-actions-taken-mobile-375.png` | UI-L4-05, UI-L4-11, UI-L4-12, UI-L4-15 | Mobile (375×667) | Requester Ticket Detail: Read-only responsive mobile card list (`scrollWidth <= 375px`) |
 | `artifacts/lab-04/screenshots/actions-taken/modal-log-action-desktop.png` | UI-L4-05, UI-L4-13 | Desktop (1280×720) | Log Action Taken modal: Status, assignee, local timezone datetime input, and follow-up fields |
 | `artifacts/lab-04/screenshots/actions-taken/modal-complete-action-desktop.png` | UI-L4-06 | Desktop (1280×720) | Complete Action Taken modal: Required Result textarea with validation and busy state |
 | `artifacts/lab-04/screenshots/actions-taken/modal-cancel-action-desktop.png` | UI-L4-07 | Desktop (1280×720) | Cancel Action Taken modal: Cancellation reason input and confirmation prompt |
@@ -165,8 +166,10 @@ Visual inspection screenshots for the Actions Taken panel in Ticket Detail have 
 
 Phase F2 (L4-P03–L4-P06) implementation and verification completed on branch `feature/actions-and-workflow-phase2-lab4`.
 - **Server Vitest suite:** 29 files, 324 passed, 0 failed, 0 skipped.
-- **Client Vitest suite:** 17 files, 96 passed, 0 failed, 0 skipped.
+- **Client Vitest suite:** 18 files, 99 passed, 0 failed, 0 skipped.
+- **Playwright E2E suite:** 114 passed across desktop, tablet, and mobile viewports (2.7m), 0 failed, 0 skipped.
 - **Builds:** Server TypeScript (`tsc`) 0 errors, Client Vite (`tsc && vite build`) 0 errors.
-- **Visual evidence:** All 9 screenshot artifacts archived in `artifacts/lab-04/screenshots/actions-taken/`.
-- **Terminal ticket lock coverage:** `API-L4-10a` and `API-L4-10b` comprehensively test `RESOLVED`, `CLOSED`, and `CANCELLED` tickets with 400 Bad Request (`BAD_REQUEST`) across action creation, editing, completion, and cancellation.
-- **F3–F5 status:** All remaining Dashboard, Regression, E2E, and Performance tests remain `Planned` pending their respective phases.
+- **Visual evidence:** All 9 screenshot artifacts archived in `artifacts/lab-04/screenshots/actions-taken/`, including retaken 375px mobile screenshots proving `document.documentElement.scrollWidth <= 375px`.
+- **Accessibility:** Associated `<label htmlFor="...">` added for page size dropdown (`StaffTicketQueue.tsx`), reassign owner dropdown, public comment textarea, and internal note textarea (`StaffTicketDetail.tsx`) per UI-spec 7.1.
+- **MIG-L4-02 Deferral:** Sandbox backup/restore recovery verification is deferred to Phase F4 (L4-P11) on disposable test DB (`toktickit_test_*`).
+- **F3–F5 status:** All remaining Dashboard, Regression, and Performance tests remain `Planned` pending their respective phases.

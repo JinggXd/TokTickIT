@@ -52,25 +52,26 @@
 - **Status:** **Verified (automated)**
 - **Dependencies:** L4-P01, L4-P02
 - **Scope:** Add `ActionTaken` model, relations, status enum, `version`, `clientRequestId`, `requestPayloadHash`, `@@unique([createdById, ticketId, clientRequestId])`, migration SQL, recovery documentation, and idempotent seed with 0, 1, and many actions per ticket.
-- **Gate:** Preserves legacy rows and attachment files; seed safe to run repeatedly. Verified by `server/tests/lab-04/migration-preservation.test.ts` (5/5 tests pass, commit `2657e54`).
+- **Gate:** Preserves legacy rows and attachment files; seed safe to run repeatedly. Verified by `server/tests/lab-04/migration-preservation.test.ts` (5/5 tests pass).
+- **MIG-L4-02 Note:** Sandbox backup and restore recovery verification (`MIG-L4-02`) is explicitly **deferred to Phase F4 (L4-P11)** regression testing on disposable test DB (`toktickit_test_*`) to isolate database dump/restore operations from feature branch cycles.
 
 #### L4-P04: Actions Taken REST API & Authorization
 - **Status:** **Verified (automated)**
 - **Dependencies:** L4-P03
 - **Scope:** Action Taken lifecycle endpoints (`GET list`, `POST create`, `PATCH edit/assign`, `POST complete`, `POST cancel`; soft-cancellation only, no DELETE endpoint), backend session actor enforcement (`createdById`, `performedById`), inactive assignee rejection (422 `INVALID_ASSIGNEE`), optimistic locking (`ActionTaken.version`), persistent idempotent retry (`clientRequestId` with UUIDv4, 201 created vs 200 replay scoped to `(createdById, ticketId, clientRequestId)`), parent ticket locking (`SELECT ... FOR UPDATE`), role isolation and confidentiality.
-- **Gate:** All positive and negative API tests pass (`API-L4-01` to `API-L4-17`, `API-L4-22`, `API-L4-24a` to `API-L4-24h`, `API-L4-30b`). Verified by `server/tests/lab-04/actions-taken.api.test.ts` (38/38 tests pass, commit `2657e54`).
+- **Gate:** All positive and negative API tests pass (`API-L4-01` to `API-L4-17`, `API-L4-22a-i`, `API-L4-24a` to `API-L4-24h`, `API-L4-30b`). Verified by `server/tests/lab-04/actions-taken.api.test.ts` (38/38 tests pass).
 
 #### L4-P05: Actions Taken UI in Ticket Detail
 - **Status:** **Verified (automated)**
 - **Dependencies:** L4-P04
-- **Scope:** Actions Taken panel in Ticket Detail (list/table, create modal/form, view/edit, complete/cancel actions), Requester read-only view, Staff/Admin controls, responsive layout, idempotent UUIDv4 reuse on network retry.
-- **Gate:** Component and flow tests pass (`UI-L4-04` to `UI-L4-07`, `UI-L4-11` to `UI-L4-14`, 12/12 pass in `ActionsTaken.test.tsx`, `ZenGreenTokens.test.tsx` 2/2 pass; 96/96 total client suite). Visual inspection screenshots captured and archived in `artifacts/lab-04/screenshots/actions-taken/` (9 screenshots across Desktop 1280px, Tablet 768px, Mobile 375px, and modals).
+- **Scope:** Actions Taken panel in Ticket Detail (desktop table & mobile `<768px` card list, create modal/form, view/edit, complete/cancel actions), Requester read-only view, Staff/Admin controls, responsive layout with zero horizontal overflow (`scrollWidth <= 375px`), idempotent UUIDv4 reuse on network retry, accessible form labels (UI-spec 7.1).
+- **Gate:** Component and flow tests pass (`UI-L4-04` to `UI-L4-07`, `UI-L4-11` to `UI-L4-15`, 13/13 pass in `ActionsTaken.test.tsx`, `ZenGreenTokens.test.tsx` 2/2 pass; 99/99 total client suite). Mobile card rendering verified (`UI-L4-15`). Visual inspection screenshots retaken at 375px and archived in `artifacts/lab-04/screenshots/actions-taken/` (zero horizontal overflow asserted). E2E lifecycle flow verified by `e2e/lab-04/actions-taken-flow.spec.ts` (`E2E-L4-01`, 3/3 viewports pass).
 
 #### L4-P06: Final Ticket Workflow & Resolution Gate
 - **Status:** **Verified (automated)**
 - **Dependencies:** L4-P04, L4-P05
-- **Scope:** Complete 8-status transition matrix (17 allowed, 47 rejected), backend resolution gate requiring completed action and 0 pending actions (422 `RESOLUTION_GATE_FAILED`), Requester advisory appears-resolved handling, optimistic concurrency protection (`Ticket.version` check with 409 `CONFLICT`), atomic transaction row locking.
-- **Gate:** Transition tests, bypass attempts rejected, legacy zero-action ticket resolution blocked with 422 (`API-L4-18` to `API-L4-21`, `API-L4-23a/b/c`, `API-L4-25a/b`, `API-L4-26`). Verified by `server/tests/lab-04/ticket-workflow.api.test.ts` (10/10 tests pass, commit `2657e54`).
+- **Scope:** Complete 8-status transition matrix (17 allowed, 47 rejected), backend resolution gate requiring completed action and 0 pending actions (422 `RESOLUTION_GATE_FAILED`), Requester advisory appears-resolved handling, optimistic concurrency protection (`Ticket.version` check with 409 `CONFLICT`), atomic transaction row locking, resolution gate alert banner and conflict reload banner on client.
+- **Gate:** Transition tests, bypass attempts rejected, legacy zero-action ticket resolution blocked with 422 (`API-L4-18` to `API-L4-21`, `API-L4-23a/b/c`, `API-L4-25a/b`, `API-L4-26` in `ticket-workflow.api.test.ts` 10/10 pass). Component workflow banners verified (`UI-L4-09`, `UI-L4-10` in `TicketWorkflow.test.tsx` 2/2 pass). End-to-end resolution gate enforcement verified by `e2e/lab-04/ticket-resolution.spec.ts` (`E2E-L4-02`, 3/3 viewports pass: blocked before action, succeeds after completing action). Full Playwright suite: 114/114 passed across desktop, tablet, and mobile.
 
 ---
 
@@ -107,8 +108,8 @@
 #### L4-P11: Full Regression Suite & Performance Smoke
 - **Status:** **Planned**
 - **Dependencies:** L4-P10
-- **Scope:** Full regression test across Labs 1, 2, 3, and 4 (unit, API, client, Playwright E2E). Performance smoke checks under standard data loads.
-- **Gate:** Zero failed tests, zero skipped tests, evidence captured with run times and commit SHAs.
+- **Scope:** Full regression test across Labs 1, 2, 3, and 4 (unit, API, client, Playwright E2E). Sandbox backup and restore recovery verification (`MIG-L4-02`, deferred from F2) on disposable test DB (`toktickit_test_*`). Performance smoke checks under standard data loads.
+- **Gate:** Zero failed tests, zero skipped tests, evidence captured with run times and commit SHAs. MIG-L4-02 backup/restore verified.
 
 #### L4-P12: Responsive, Accessibility, Visual Inspection & Documentation
 - **Status:** **Planned**

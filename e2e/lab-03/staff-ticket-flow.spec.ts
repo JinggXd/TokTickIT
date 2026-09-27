@@ -314,7 +314,7 @@ test.describe("E2E-11: Complete IT Staff triage workflow", () => {
     await page.getByRole("button", { name: /Save Action/i }).click();
 
     await expect(page.getByRole("dialog")).not.toBeVisible({ timeout: 6_000 });
-    await expect(page.getByText("Replaced damaged patch cable and tested network throughput")).toBeVisible({ timeout: 6_000 });
+    await expect(page.getByText("Replaced damaged patch cable and tested network throughput").filter({ visible: true })).toBeVisible({ timeout: 6_000 });
 
     const sel = page.getByTestId("staff-status-select");
     await expect(sel.locator("option[value='RESOLVED']")).toHaveCount(1);
