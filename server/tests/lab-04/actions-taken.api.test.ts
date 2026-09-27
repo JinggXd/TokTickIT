@@ -23,6 +23,8 @@ describe("Phase F2 / L4-P04: Actions Taken REST API & Authorization", () => {
 
   let testTicketOpen: any;
   let testTicketResolved: any;
+  let testTicketClosed: any;
+  let testTicketCancelled: any;
   let testTicketB: any;
 
   const createdTicketIds: number[] = [];
@@ -59,10 +61,14 @@ describe("Phase F2 / L4-P04: Actions Taken REST API & Authorization", () => {
     const category = await prisma.category.findFirstOrThrow();
     const system = await prisma.relatedSystem.findFirstOrThrow();
 
-    // Create disposable tickets for testing
+    // Create disposable tickets for testing with strictly unique ticket numbers
+    const testTs = Date.now();
+    let ticketSeq = 1;
+    const makeTicketNo = () => `TKT-2026-${testTs.toString().slice(-4)}${(ticketSeq++).toString().padStart(2, "0")}`;
+
     testTicketOpen = await prisma.ticket.create({
       data: {
-        ticketNo: `TKT-2026-${Date.now().toString().slice(-6)}`,
+        ticketNo: makeTicketNo(),
         summary: "Actions Taken Test Ticket Open",
         description: "Open ticket for testing actions API",
         categoryId: category.id,
@@ -87,7 +93,7 @@ describe("Phase F2 / L4-P04: Actions Taken REST API & Authorization", () => {
 
     testTicketResolved = await prisma.ticket.create({
       data: {
-        ticketNo: `TKT-2026-${(Date.now() + 1).toString().slice(-6)}`,
+        ticketNo: makeTicketNo(),
         summary: "Actions Taken Test Ticket Resolved",
         description: "Resolved ticket for testing terminal locks",
         categoryId: category.id,
@@ -103,9 +109,41 @@ describe("Phase F2 / L4-P04: Actions Taken REST API & Authorization", () => {
     });
     createdTicketIds.push(testTicketResolved.id);
 
+    testTicketClosed = await prisma.ticket.create({
+      data: {
+        ticketNo: makeTicketNo(),
+        summary: "Actions Taken Test Ticket Closed",
+        description: "Closed ticket for testing terminal locks",
+        categoryId: category.id,
+        relatedSystemId: system.id,
+        requesterId: requesterA.id,
+        requestedPriority: "MEDIUM",
+        itPriority: "MEDIUM",
+        currentStatus: "CLOSED",
+        ticketOwnerId: staffAlex.id,
+      },
+    });
+    createdTicketIds.push(testTicketClosed.id);
+
+    testTicketCancelled = await prisma.ticket.create({
+      data: {
+        ticketNo: makeTicketNo(),
+        summary: "Actions Taken Test Ticket Cancelled",
+        description: "Cancelled ticket for testing terminal locks",
+        categoryId: category.id,
+        relatedSystemId: system.id,
+        requesterId: requesterA.id,
+        requestedPriority: "LOW",
+        itPriority: "LOW",
+        currentStatus: "CANCELLED",
+        ticketOwnerId: staffAlex.id,
+      },
+    });
+    createdTicketIds.push(testTicketCancelled.id);
+
     testTicketB = await prisma.ticket.create({
       data: {
-        ticketNo: `TKT-2026-${(Date.now() + 2).toString().slice(-6)}`,
+        ticketNo: makeTicketNo(),
         summary: "Requester B Ticket",
         description: "Ticket owned by requester B",
         categoryId: category.id,
@@ -368,49 +406,58 @@ describe("Phase F2 / L4-P04: Actions Taken REST API & Authorization", () => {
   });
 
   it("API-L4-10a: Attempt creating action on a RESOLVED, CLOSED, or CANCELLED ticket returns 400", async () => {
-    const res = await request(app)
-      .post(`/api/tickets/${testTicketResolved.id}/actions`)
-      .set(headersAlex)
-      .send({
-        actionDescription: "Attempt to add action on resolved ticket",
-        status: "COMPLETED",
-        result: "Should fail",
-      });
-    expect(res.status).toBe(400);
-    expect(res.body.error).toBe("BAD_REQUEST");
+    const terminalTickets = [testTicketResolved, testTicketClosed, testTicketCancelled];
+    for (const ticket of terminalTickets) {
+      const res = await request(app)
+        .post(`/api/tickets/${ticket.id}/actions`)
+        .set(headersAlex)
+        .send({
+          actionDescription: `Attempt to add action on ${ticket.currentStatus} ticket`,
+          status: "COMPLETED",
+          result: "Should fail",
+        });
+      expect(res.status).toBe(400);
+      expect(res.body.error).toBe("BAD_REQUEST");
+    }
   });
 
-  it("API-L4-10b: Attempt editing, completing, or cancelling action on RESOLVED ticket returns 400", async () => {
-    // Manually insert an action directly under the resolved ticket to simulate pre-existing action
-    const action = await (prisma as any).actionTaken.create({
-      data: {
-        ticketId: testTicketResolved.id,
-        createdById: staffAlex.id,
-        actionDescription: "Existing action on resolved ticket",
-        status: "PENDING",
-        clientRequestId: "seed-test-" + Date.now(),
-        requestPayloadHash: "dummyhash",
-      },
-    });
-    createdActionIds.push(action.id);
+  it("API-L4-10b: Attempt editing, completing, or cancelling action on RESOLVED, CLOSED, or CANCELLED ticket returns 400", async () => {
+    const terminalTickets = [testTicketResolved, testTicketClosed, testTicketCancelled];
+    for (const ticket of terminalTickets) {
+      // Manually insert an action directly under the ticket to simulate pre-existing action
+      const action = await (prisma as any).actionTaken.create({
+        data: {
+          ticketId: ticket.id,
+          createdById: staffAlex.id,
+          actionDescription: `Existing action on ${ticket.currentStatus} ticket`,
+          status: "PENDING",
+          clientRequestId: `seed-test-${ticket.currentStatus}-${Date.now()}`,
+          requestPayloadHash: "dummyhash",
+        },
+      });
+      createdActionIds.push(action.id);
 
-    const patchRes = await request(app)
-      .patch(`/api/tickets/${testTicketResolved.id}/actions/${action.id}`)
-      .set(headersAlex)
-      .send({ actionDescription: "Updated desc", expectedVersion: 1 });
-    expect(patchRes.status).toBe(400);
+      const patchRes = await request(app)
+        .patch(`/api/tickets/${ticket.id}/actions/${action.id}`)
+        .set(headersAlex)
+        .send({ actionDescription: "Updated desc", expectedVersion: 1 });
+      expect(patchRes.status).toBe(400);
+      expect(patchRes.body.error).toBe("BAD_REQUEST");
 
-    const completeRes = await request(app)
-      .post(`/api/tickets/${testTicketResolved.id}/actions/${action.id}/complete`)
-      .set(headersAlex)
-      .send({ result: "Done", expectedVersion: 1 });
-    expect(completeRes.status).toBe(400);
+      const completeRes = await request(app)
+        .post(`/api/tickets/${ticket.id}/actions/${action.id}/complete`)
+        .set(headersAlex)
+        .send({ result: "Done", expectedVersion: 1 });
+      expect(completeRes.status).toBe(400);
+      expect(completeRes.body.error).toBe("BAD_REQUEST");
 
-    const cancelRes = await request(app)
-      .post(`/api/tickets/${testTicketResolved.id}/actions/${action.id}/cancel`)
-      .set(headersAlex)
-      .send({ expectedVersion: 1 });
-    expect(cancelRes.status).toBe(400);
+      const cancelRes = await request(app)
+        .post(`/api/tickets/${ticket.id}/actions/${action.id}/cancel`)
+        .set(headersAlex)
+        .send({ expectedVersion: 1 });
+      expect(cancelRes.status).toBe(400);
+      expect(cancelRes.body.error).toBe("BAD_REQUEST");
+    }
   });
 
   it("API-L4-11: Requester lists actions on owned ticket", async () => {
