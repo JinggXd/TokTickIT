@@ -70,13 +70,13 @@ To run the complete verification test suites against the isolated test database:
 # Set isolated test database environment
 $env:DATABASE_URL_TEST="postgresql://toktickit:toktickit@localhost:5433/toktickit_test?schema=public"
 
-# Run Server Tests (25 files, 263 tests)
+# Run Server Tests (29 files, 324 tests)
 npm run test:server
 
-# Run Client Tests (15 files, 82 tests)
+# Run Client Tests (17 files, 96 tests)
 npm run test:client
 
-# Run Full Playwright E2E across Desktop, Tablet, and Mobile (108 tests)
+# Run Full Playwright E2E across Desktop, Tablet, and Mobile (5 files, 108 tests)
 npm run test:e2e
 
 # Production Builds

@@ -309,6 +309,6 @@ Current checkout at inspection: feature/actions-and-workflow-phase2-lab4, HEAD 3
 - Server TypeScript (`tsc`): 0 errors
 - Client Vite (`tsc && vite build`): 0 errors
 - Client Vitest suite: 96 / 96 passed (17 files)
-- Server Vitest suite: 323 / 323 passed (including all 60 Lab 4 tests)
+- Server Vitest suite: 324 / 324 passed (including all 60 Lab 4 tests; expanded API-L4-10a/b coverage on CLOSED and CANCELLED terminal tickets)
 - Documentation: Created `docs/lab-04/what_i_have_done2.md` and `docs/lab-04/aiused2.md`
 

@@ -12,7 +12,7 @@
 | Phase | Description | Work Packages | Current Status | Acceptance Gate |
 |---|---|---|---|---|
 | **F1** | Baseline, Contracts, Decisions & Tests | L4-P00–L4-P02 | **In Progress** | Specifications & tests complete, D01–D13 addressed, test environment verified |
-| **F2** | Actions Taken & Ticket Workflow | L4-P03–L4-P06 | **Implemented-unverified** | DB migration, APIs, UI in Ticket Detail, and resolution gate passing |
+| **F2** | Actions Taken & Ticket Workflow | L4-P03–L4-P06 | **Verified (automated)** | DB migration, APIs, UI in Ticket Detail, and resolution gate passing (Server 324/324, Client 96/96, commit `2657e54`). Visual inspection artifacts archived in `artifacts/lab-04/screenshots/actions-taken/`. |
 | **F3** | Dashboards & Cross-Feature Integration | L4-P07–L4-P10 | **Planned** | Metrics accurate, drill-downs functional, role isolation & concurrency safe |
 | **F4** | Regression, Hardening & Visual Polish | L4-P11–L4-P12 | **Planned** | Zero regressions across Labs 1–4, responsive 3 viewports, accessibility verified |
 | **F5** | Peer Review, Release & Submission | L4-P13–L4-P14 | **Planned** | Staging PRs reviewed/merged, release to main verified, single submission PDF |
@@ -49,28 +49,28 @@
 ### Phase F2 — Actions Taken & Ticket Workflow
 
 #### L4-P03: Database Migration, Model & Idempotent Seed
-- **Status:** **Implemented-unverified**
+- **Status:** **Verified (automated)**
 - **Dependencies:** L4-P01, L4-P02
 - **Scope:** Add `ActionTaken` model, relations, status enum, `version`, `clientRequestId`, `requestPayloadHash`, `@@unique([createdById, ticketId, clientRequestId])`, migration SQL, recovery documentation, and idempotent seed with 0, 1, and many actions per ticket.
-- **Gate:** Preserves legacy rows and attachment files; seed safe to run repeatedly.
+- **Gate:** Preserves legacy rows and attachment files; seed safe to run repeatedly. Verified by `server/tests/lab-04/migration-preservation.test.ts` (5/5 tests pass, commit `2657e54`).
 
 #### L4-P04: Actions Taken REST API & Authorization
-- **Status:** **Implemented-unverified**
+- **Status:** **Verified (automated)**
 - **Dependencies:** L4-P03
 - **Scope:** Action Taken lifecycle endpoints (`GET list`, `POST create`, `PATCH edit/assign`, `POST complete`, `POST cancel`; soft-cancellation only, no DELETE endpoint), backend session actor enforcement (`createdById`, `performedById`), inactive assignee rejection (422 `INVALID_ASSIGNEE`), optimistic locking (`ActionTaken.version`), persistent idempotent retry (`clientRequestId` with UUIDv4, 201 created vs 200 replay scoped to `(createdById, ticketId, clientRequestId)`), parent ticket locking (`SELECT ... FOR UPDATE`), role isolation and confidentiality.
-- **Gate:** All positive and negative API tests pass (`API-L4-01` to `API-L4-17`, `API-L4-22`, `API-L4-24a` to `API-L4-24h`).
+- **Gate:** All positive and negative API tests pass (`API-L4-01` to `API-L4-17`, `API-L4-22`, `API-L4-24a` to `API-L4-24h`, `API-L4-30b`). Verified by `server/tests/lab-04/actions-taken.api.test.ts` (38/38 tests pass, commit `2657e54`).
 
 #### L4-P05: Actions Taken UI in Ticket Detail
-- **Status:** **Implemented-unverified**
+- **Status:** **Verified (automated)**
 - **Dependencies:** L4-P04
 - **Scope:** Actions Taken panel in Ticket Detail (list/table, create modal/form, view/edit, complete/cancel actions), Requester read-only view, Staff/Admin controls, responsive layout, idempotent UUIDv4 reuse on network retry.
-- **Gate:** Component and flow tests pass; visual inspection verified (`UI-L4-04` to `UI-L4-07`, `UI-L4-11`, `UI-L4-12`).
+- **Gate:** Component and flow tests pass (`UI-L4-04` to `UI-L4-07`, `UI-L4-11` to `UI-L4-14`, 12/12 pass in `ActionsTaken.test.tsx`, `ZenGreenTokens.test.tsx` 2/2 pass; 96/96 total client suite). Visual inspection screenshots captured and archived in `artifacts/lab-04/screenshots/actions-taken/` (9 screenshots across Desktop 1280px, Tablet 768px, Mobile 375px, and modals).
 
 #### L4-P06: Final Ticket Workflow & Resolution Gate
-- **Status:** **Implemented-unverified**
+- **Status:** **Verified (automated)**
 - **Dependencies:** L4-P04, L4-P05
 - **Scope:** Complete 8-status transition matrix (17 allowed, 47 rejected), backend resolution gate requiring completed action and 0 pending actions (422 `RESOLUTION_GATE_FAILED`), Requester advisory appears-resolved handling, optimistic concurrency protection (`Ticket.version` check with 409 `CONFLICT`), atomic transaction row locking.
-- **Gate:** Transition tests, bypass attempts rejected, legacy zero-action ticket resolution blocked with 422 (`API-L4-18` to `API-L4-21`, `API-L4-23a/b/c`, `API-L4-25a/b`, `API-L4-26`).
+- **Gate:** Transition tests, bypass attempts rejected, legacy zero-action ticket resolution blocked with 422 (`API-L4-18` to `API-L4-21`, `API-L4-23a/b/c`, `API-L4-25a/b`, `API-L4-26`). Verified by `server/tests/lab-04/ticket-workflow.api.test.ts` (10/10 tests pass, commit `2657e54`).
 
 ---
 
