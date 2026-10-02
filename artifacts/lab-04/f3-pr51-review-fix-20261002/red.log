@@ -1,0 +1,23 @@
+Condensed Vitest red output; repetitive DOM dumps omitted.
+ RUN  v2.1.9 D:/toktickit/tmp/f3-pr51-fix/client
+ ❯ tests/lab-04/AppShellAccessibility.test.tsx (3 tests | 3 failed) 126ms
+   × F3 review fix: shell keyboard navigation (AC-31) > REQUESTER brand is a focusable home link with native modified-click behavior 83ms
+     → Unable to find an accessible element with the role "link" and name `/TokTickIT/`
+   × F3 review fix: shell keyboard navigation (AC-31) > IT_STAFF brand is a focusable home link with native modified-click behavior 20ms
+     → Unable to find an accessible element with the role "link" and name `/TokTickIT/`
+   × F3 review fix: shell keyboard navigation (AC-31) > ADMINISTRATOR brand is a focusable home link with native modified-click behavior 22ms
+     → Unable to find an accessible element with the role "link" and name `/TokTickIT/`
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  tests/lab-04/AppShellAccessibility.test.tsx > F3 review fix: shell keyboard navigation (AC-31) > REQUESTER brand is a focusable home link with native modified-click behavior
+TestingLibraryElementError: Unable to find an accessible element with the role "link" and name `/TokTickIT/`
+ ❯ tests/lab-04/AppShellAccessibility.test.tsx:17:26
+ FAIL  tests/lab-04/AppShellAccessibility.test.tsx > F3 review fix: shell keyboard navigation (AC-31) > IT_STAFF brand is a focusable home link with native modified-click behavior
+TestingLibraryElementError: Unable to find an accessible element with the role "link" and name `/TokTickIT/`
+ ❯ tests/lab-04/AppShellAccessibility.test.tsx:17:26
+ FAIL  tests/lab-04/AppShellAccessibility.test.tsx > F3 review fix: shell keyboard navigation (AC-31) > ADMINISTRATOR brand is a focusable home link with native modified-click behavior
+TestingLibraryElementError: Unable to find an accessible element with the role "link" and name `/TokTickIT/`
+ ❯ tests/lab-04/AppShellAccessibility.test.tsx:17:26
+ Test Files  1 failed (1)
+      Tests  3 failed (3)
+   Start at  17:47:53
+   Duration  1.30s (transform 91ms, setup 110ms, collect 166ms, tests 126ms, environment 538ms, prepare 132ms)

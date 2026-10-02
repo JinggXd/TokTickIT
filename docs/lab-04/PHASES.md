@@ -13,7 +13,7 @@
 |---|---|---|---|---|
 | **F1** | Baseline, Contracts, Decisions & Tests | L4-P00–L4-P02 | **In Progress** | Specifications & tests complete, D01–D13 addressed, test environment verified |
 | **F2** | Actions Taken & Ticket Workflow | L4-P03–L4-P06 | **Merged; review follow-ups assigned to F3** | PR #49 merged into lab4-staging at `8bbd1aa` on 2026-10-02. Four local corrections and two additional findings are tracked in F3-CARRYOVER.md; local test results do not certify the merged version. |
-| **F3** | Dashboards & Cross-Feature Integration | L4-P07–L4-P10 | **Verified (automated); awaiting peer review/integration** | All six follow-ups integrated. Server 345/345, client 112/112, Playwright 129/129, builds passed on 2026-10-02. Issue #50 / Draft PR #51; evidence in F3-REVIEW.md. Development linking requires a signed-in GitHub browser; reviewer approval/merge remain pending. |
+| **F3** | Dashboards & Cross-Feature Integration | L4-P07–L4-P10 | **Verified (automated); keyboard correction awaiting peer review/integration** | All six F2 follow-ups integrated; keyboard home-link correction included. Server 345/345, client 115/115, Playwright 132/132, builds passed on 2026-10-02. Issue #50 / Ready-for-review PR #51; updated evidence in F3-REVIEW.md. Prior approval predates the correction; reviewer must check the new commit. Explicit Development-panel linking remains unverified; no merge performed. |
 | **F4** | Regression, Hardening & Visual Polish | L4-P11–L4-P12 | **Planned** | Zero regressions across Labs 1–4, responsive 3 viewports, accessibility verified |
 | **F5** | Peer Review, Release & Submission | L4-P13–L4-P14 | **Planned** | Staging PRs reviewed/merged, release to main verified, single submission PDF |
 
