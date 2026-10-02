@@ -3,7 +3,7 @@
 **Date:** 2026-09-25  
 **Document Version:** 1.2.0 (Synchronized following F1-Review Round 2 Findings)  
 **Baseline:** `main` at `baad45e09272d665bc0cf765236c456edcf0eff7`  
-**Lab 4 Staging Branch:** `lab4-staging` at `8bbd1aa9c975183279c43fe64d47330f9bd94293` (verified 2026-10-02)
+**Lab 4 Staging Branch:** `lab4-staging` at `1ee7786cda440c03f830ca2a271d45ce9eb45864` (F3 PR #51 merge verified 2026-10-02)
 
 ---
 
@@ -11,10 +11,10 @@
 
 | Phase | Description | Work Packages | Current Status | Acceptance Gate |
 |---|---|---|---|---|
-| **F1** | Baseline, Contracts, Decisions & Tests | L4-P00–L4-P02 | **In Progress** | Specifications & tests complete, D01–D13 addressed, test environment verified |
+| **F1** | Baseline, Contracts, Decisions & Tests | L4-P00–L4-P02 | **Merged; decision-status reconciliation pending** | PR #47 approved and merged by yuminnini on 2026-09-26, verified via GitHub on 2026-10-02. Proposed labels and later F3 clarifications remain separate acceptance records; see requirements-audit-F2-F3-F4.md. |
 | **F2** | Actions Taken & Ticket Workflow | L4-P03–L4-P06 | **Merged; review follow-ups assigned to F3** | PR #49 merged into lab4-staging at `8bbd1aa` on 2026-10-02. Four local corrections and two additional findings are tracked in F3-CARRYOVER.md; local test results do not certify the merged version. |
-| **F3** | Dashboards & Cross-Feature Integration | L4-P07–L4-P10 | **Verified (automated); keyboard correction awaiting peer review/integration** | All six F2 follow-ups integrated; keyboard home-link correction included. Server 345/345, client 115/115, Playwright 132/132, builds passed on 2026-10-02. Issue #50 / Ready-for-review PR #51; updated evidence in F3-REVIEW.md. Prior approval predates the correction; reviewer must check the new commit. Explicit Development-panel linking remains unverified; no merge performed. |
-| **F4** | Regression, Hardening & Visual Polish | L4-P11–L4-P12 | **Planned** | Zero regressions across Labs 1–4, responsive 3 viewports, accessibility verified |
+| **F3** | Dashboards & Cross-Feature Integration | L4-P07–L4-P10 | **Merged** | PR #51 merged into lab4-staging at `1ee7786` on 2026-10-02, including keyboard correction. Full reviewed evidence: server 345, client 115, Playwright 132; both builds passed. |
+| **F4** | Regression, Hardening & Visual Polish | L4-P11–L4-P12 | **Recorded checks verified; audit findings and peer/integration gates open** | Server 353/353, client 115/115, full Playwright 132/132 at recovery checkpoint; builds, recovery/performance/33 captures recorded. Current audit finds raw Actions 500 messages and incomplete Edit/contrast evidence. Issue #52 / Draft PR [#53](https://github.com/JinggXd/TokTickIT/pull/53) has no closing Issue link or review. See requirements-audit-F2-F3-F4.md. |
 | **F5** | Peer Review, Release & Submission | L4-P13–L4-P14 | **Planned** | Staging PRs reviewed/merged, release to main verified, single submission PDF |
 
 ---
@@ -108,16 +108,16 @@
 ### Phase F4 — Regression & Final Polish
 
 #### L4-P11: Full Regression Suite & Performance Smoke
-- **Status:** **Planned**
+- **Status:** **Verified (2026-10-02); awaiting peer review/integration**
 - **Dependencies:** L4-P10
 - **Scope:** Full regression test across Labs 1, 2, 3, and 4 (unit, API, client, Playwright E2E). Sandbox backup and restore recovery verification (`MIG-L4-02`, deferred from F2) on disposable test DB (`toktickit_test_*`). Performance smoke checks under standard data loads.
 - **Gate:** Zero failed tests, zero skipped tests, evidence captured with run times and commit SHAs. MIG-L4-02 backup/restore verified.
 
 #### L4-P12: Responsive, Accessibility, Visual Inspection & Documentation
-- **Status:** **Planned**
+- **Status:** **Partial — recorded visual/keyboard checks pass; Edit/contrast evidence remains open (2026-10-02)**
 - **Dependencies:** L4-P11
 - **Scope:** Visual inspection across Desktop (1280px), Tablet (768px), and Mobile (375px). Accessibility (a11y) verification, screenshot captures, README update, `visual-checklist.md`.
-- **Gate:** Product Definition of Done satisfied; clean visual screenshots archived.
+- **Gate:** 33 inspected captures archived with README/traceability updated; complete Edit-modal checks and AA contrast measurements before certifying all-screen AC-30/31/FR-19. Current raw Actions 500 finding is also open. Specification §10 final PDF remains F5/L4-P14; overall Product Definition of Done is open. See requirements-audit-F2-F3-F4.md and F4-REVIEW.md.
 
 ---
 

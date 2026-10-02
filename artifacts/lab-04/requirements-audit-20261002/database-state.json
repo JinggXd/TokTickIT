@@ -1,0 +1,17 @@
+{
+  "checkedAt": "2026-10-02T16:22:04.391Z",
+  "readOnly": true,
+  "database": "toktickit",
+  "users": 11,
+  "activeUsers": 10,
+  "mustChangePasswordTrue": 11,
+  "mustChangePasswordFalse": 0,
+  "initialPasswordMatches": 11,
+  "initialPasswordBypass": 0,
+  "activeInitialPasswordBypass": 0,
+  "roleCounts": {
+    "REQUESTER": 5,
+    "IT_STAFF": 5,
+    "ADMINISTRATOR": 1
+  }
+}

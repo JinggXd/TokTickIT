@@ -1,0 +1,109 @@
+{
+  "sourceDatabase": "toktickit_test_f2_review_1790784843569",
+  "restoredDatabase": "toktickit_test_restore_1790953346295_ae34e520",
+  "retainedForInspection": true,
+  "databaseMatched": true,
+  "filesMatched": true,
+  "tables": [
+    {
+      "name": "ActionTaken",
+      "count": 29,
+      "sha256": "8d91731381893e069b8a79040e940a76e296cb04095a8809d28a0db7e9e983f5"
+    },
+    {
+      "name": "Attachment",
+      "count": 2,
+      "sha256": "444ec5412ab1182354eb02626a81890c2971ff1eae91db7337f30c7e92aef710"
+    },
+    {
+      "name": "Category",
+      "count": 6,
+      "sha256": "98f715f6f261c957bdc80f3f213519764bc053052c0e580cd60fc662b404b4ea"
+    },
+    {
+      "name": "InternalNote",
+      "count": 6,
+      "sha256": "3604d2ee0d9afec53f8327ae1a943b3df4c29f171ca1fde099099005bbd41af7"
+    },
+    {
+      "name": "PublicComment",
+      "count": 6,
+      "sha256": "17a02e5c931b95cf753e8753bf518090fbf39f6e57442aa08b1c52ca8c3b1142"
+    },
+    {
+      "name": "RelatedSystem",
+      "count": 9,
+      "sha256": "17d586a9686c0ec4ff76fc94b530ded94e2e9ba1f2ecf74ed1c970fc01805d75"
+    },
+    {
+      "name": "RequesterUser",
+      "count": 17,
+      "sha256": "41355a955e10c3ae5923fbc8613be65c45be7ffedd4df71fa46eb7ba982e6685"
+    },
+    {
+      "name": "Session",
+      "count": 41,
+      "sha256": "be2b573c9f9b11f3373c77b661253cd56c9b4271b84b7c5bb412b41de01b8566"
+    },
+    {
+      "name": "Ticket",
+      "count": 33,
+      "sha256": "49b6f4373cb3e7db3cdfade124e71eac8a23ad0e3960b8baa92559d9b1ca8ea4"
+    },
+    {
+      "name": "_prisma_migrations",
+      "count": 5,
+      "sha256": "ab551f9dbfafa130fc00a98f490180097b835bd815505c02165704063e004d77"
+    }
+  ],
+  "schemaSha256": "b1ee889a9a89fd7e9d5f78da85ea707c04437f4b9f0db4b4732c6e7b8a1c20e1",
+  "sequencesSha256": "9907719900bf596f2acb7672096b6cff33d623997089ffb17cc4d451e2b6de3c",
+  "files": [
+    {
+      "path": "1790953316252-b4c78a-diagnostic_log.pdf",
+      "sha256": "82594c41fdcb92df009edd76bafbf133b31289f39704132076ccda901f70feba"
+    },
+    {
+      "path": "1790953316276-04e8e7-image_2.png",
+      "sha256": "218ad85a233eff829618a6865ab681222b734c62d35a32b3eabd5c37d8945f86"
+    },
+    {
+      "path": "1790953316292-3c7829-image_3.png",
+      "sha256": "218ad85a233eff829618a6865ab681222b734c62d35a32b3eabd5c37d8945f86"
+    },
+    {
+      "path": "1790953316307-8f7a52-image_4.png",
+      "sha256": "218ad85a233eff829618a6865ab681222b734c62d35a32b3eabd5c37d8945f86"
+    },
+    {
+      "path": "1790953316322-214a56-image_5.png",
+      "sha256": "218ad85a233eff829618a6865ab681222b734c62d35a32b3eabd5c37d8945f86"
+    },
+    {
+      "path": "1790953316373-07dd09-concurrent_a.png",
+      "sha256": "218ad85a233eff829618a6865ab681222b734c62d35a32b3eabd5c37d8945f86"
+    },
+    {
+      "path": "1790953342757-652a6f-sample.pdf",
+      "sha256": "2ab94463e399ce58a21df28c88b429dd6c64637faadd1de7d8d44f10e4132415"
+    },
+    {
+      "path": "1790953342801-0c0f38-secret.pdf",
+      "sha256": "2ab94463e399ce58a21df28c88b429dd6c64637faadd1de7d8d44f10e4132415"
+    },
+    {
+      "path": "recovery-080af4d8-ae25-4ffe-96ea-7e55b31a483d-active.txt",
+      "sha256": "91c375e70eb7b93339fb13b2c95634b39ffe9d5e50df152541f974ac774b13d9"
+    },
+    {
+      "path": "recovery-080af4d8-ae25-4ffe-96ea-7e55b31a483d-removed.txt",
+      "sha256": "d4b44602d0b90c752340c06d2790e9cb96fd66e914d7f5422f387a01f9be7c34"
+    }
+  ],
+  "dumpSha256": "03d6b2cca7c5db90e5c39a5bd25ec2c1c666a14311cd1eac1db885d314d0a5b1",
+  "dumpVersion": "pg_dump (PostgreSQL) 18.1",
+  "restoreVersion": "pg_restore (PostgreSQL) 18.1",
+  "serverVersion": 160014,
+  "restoreMethod": "pg_restore SQL + psql --single-transaction; omitted unsupported SET transaction_timeout=0",
+  "durationMs": 838
+}

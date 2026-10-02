@@ -23,6 +23,29 @@ function screenshotPath(testInfo: TestInfo, filename: string): string {
   return path.join(dir, filename);
 }
 
+async function verifyModalKeyboard(page: Page) {
+  const dialog = page.getByRole("dialog");
+  const buttons = dialog.getByRole("button");
+  await buttons.last().focus();
+  await page.keyboard.press("Tab");
+  await expect(buttons.first()).toBeFocused();
+  await page.keyboard.press("Shift+Tab");
+  await expect(buttons.last()).toBeFocused();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+}
+
+async function captureActionsPanel(page: Page, testInfo: TestInfo, filename: string) {
+  const destination = screenshotPath(testInfo, filename);
+  if (await page.evaluate(() => window.innerWidth < 768)) {
+    // Capture from the page top so the sticky mobile header cannot cover the panel.
+    await page.evaluate(() => window.scrollTo(0, 0));
+    await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0);
+    await page.screenshot({ path: destination, fullPage: true });
+  } else {
+    await page.getByTestId("actions-taken-section").screenshot({ path: destination });
+  }
+}
+
 const createdUserIds: number[] = [];
 const createdTicketIds: number[] = [];
 
@@ -129,16 +152,21 @@ test.describe("Phase F2 / L4-P05: Actions Taken Lifecycle Flow (E2E-L4-01)", () 
 
     await expect(page.getByRole("dialog")).toBeVisible({ timeout: 6_000 });
     await expect(page.getByText("Log New Action")).toBeVisible();
+    await expect(page.getByRole("dialog").getByRole("button").first()).toBeFocused();
 
     // Fill action as PENDING with assignee and follow-up
     await page.locator("label[for='mode-pending']").click();
     await page.locator("#log-action-desc").fill("Investigating core switch uplink flap");
     const assigneeSelect = page.locator("#log-action-assignee");
-    if (await assigneeSelect.isVisible()) {
-      await assigneeSelect.selectOption(String(staffId)).catch(() => {});
-    }
+    await expect(assigneeSelect).toBeVisible();
+    await assigneeSelect.selectOption(String(staffId));
+    await expect(assigneeSelect).toHaveValue(String(staffId));
     await page.locator("#log-action-followup").check();
     await page.getByPlaceholder("Specify follow-up requirement or deadline...").fill("Verify fiber optics transceiver after 24h");
+    await page.getByRole("dialog").getByRole("button").first().focus();
+    await page.screenshot({ path: screenshotPath(testInfo, "f4-modal-log-action-top.png") });
+    await verifyModalKeyboard(page);
+    await page.screenshot({ path: screenshotPath(testInfo, "f4-modal-log-action.png") });
 
     // Submit modal
     await page.getByRole("button", { name: /Save Action/i }).click();
@@ -163,9 +191,12 @@ test.describe("Phase F2 / L4-P05: Actions Taken Lifecycle Flow (E2E-L4-01)", () 
     // Complete modal opens
     await expect(page.getByRole("dialog")).toBeVisible({ timeout: 6_000 });
     await expect(page.getByText("Complete Action Taken")).toBeVisible();
+    await expect(page.getByRole("dialog").getByRole("button").first()).toBeFocused();
 
     // Fill result details
     await page.locator("#complete-result").fill("Cleaned LC fiber connector; zero CRC errors recorded");
+    await verifyModalKeyboard(page);
+    await page.screenshot({ path: screenshotPath(testInfo, "f4-modal-complete-action.png") });
     await page.getByRole("button", { name: /Mark Completed/i }).click();
 
     await expect(page.getByRole("dialog")).not.toBeVisible({ timeout: 6_000 });
@@ -175,7 +206,25 @@ test.describe("Phase F2 / L4-P05: Actions Taken Lifecycle Flow (E2E-L4-01)", () 
     await expect(completedBadge).toBeVisible({ timeout: 6_000 });
     await expect(page.getByText("Cleaned LC fiber connector; zero CRC errors recorded").filter({ visible: true })).toBeVisible();
 
-    await page.screenshot({ path: screenshotPath(testInfo, "e2e-l4-01-staff-completed.png") });
+    await captureActionsPanel(page, testInfo, "e2e-l4-01-staff-completed.png");
+
+    // Cancellation is verified through the UI with the current action version.
+    await logBtn.click();
+    await page.locator("label[for='mode-pending']").click();
+    await page.locator("#log-action-desc").fill("Spare cable order no longer needed");
+    await page.getByRole("button", { name: /Save Action/i }).click();
+    await expect(page.getByRole("dialog")).not.toBeVisible();
+    await actionsSection.getByRole("button", { name: "Cancel", exact: true }).filter({ visible: true }).last().click();
+    await expect(page.getByRole("dialog")).toBeVisible();
+    await expect(page.getByRole("dialog").getByRole("button").first()).toBeFocused();
+    await verifyModalKeyboard(page);
+    await page.screenshot({ path: screenshotPath(testInfo, "f4-modal-cancel-action.png") });
+    await page.keyboard.press("Escape");
+    await expect(page.getByRole("dialog")).not.toBeVisible();
+    await actionsSection.getByRole("button", { name: "Cancel", exact: true }).filter({ visible: true }).last().click();
+    await page.getByRole("dialog").getByRole("button", { name: /Confirm Cancel/i }).click();
+    await expect(page.getByRole("dialog")).not.toBeVisible();
+    await expect(actionsSection.getByText("Cancelled", { exact: false }).filter({ visible: true })).toBeVisible();
 
     // 4. Switch to Requester view and verify read-only behavior
     await loginAs(page, REQUESTER_EMAIL);
@@ -191,6 +240,6 @@ test.describe("Phase F2 / L4-P05: Actions Taken Lifecycle Flow (E2E-L4-01)", () 
     await expect(page.getByRole("button", { name: /^Complete$/i })).not.toBeVisible();
     await expect(page.getByRole("button", { name: /^Cancel$/i })).not.toBeVisible();
 
-    await page.screenshot({ path: screenshotPath(testInfo, "e2e-l4-01-requester-readonly.png") });
+    await captureActionsPanel(page, testInfo, "e2e-l4-01-requester-readonly.png");
   });
 });
