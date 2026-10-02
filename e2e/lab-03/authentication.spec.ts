@@ -95,8 +95,8 @@ test.describe("Phase F2 / P06 E2E Authentication & Navigation (E2E-01 to E2E-05)
     await page.locator('[data-testid="login-password-input"]').fill(user.plaintextPassword);
     await page.locator('[data-testid="login-submit-button"]').click();
 
-    // Expect redirect to /my-tickets and landing view
-    await page.waitForURL("**/my-tickets");
+    // Lab 4 landing page is the role dashboard; existing navigation remains available.
+    await page.waitForURL("**/dashboard");
     await expect(page.locator('[data-testid="user-profile-badge"]')).toBeVisible();
     await expect(page.locator('[data-testid="user-profile-name"]')).toBeVisible();
     await expect(page.locator('[data-testid="user-profile-name"]')).toHaveText(user.name);
@@ -165,7 +165,7 @@ test.describe("Phase F2 / P06 E2E Authentication & Navigation (E2E-01 to E2E-05)
     );
 
     // Lands on role landing view
-    await page.waitForURL("**/my-tickets", { timeout: 10000 });
+    await page.waitForURL("**/dashboard", { timeout: 10000 });
     await expect(
       page.locator('[data-testid="nav-my-tickets"], [data-testid="nav-my-tickets-mobile"]').filter({ visible: true }),
     ).toBeVisible();
@@ -194,7 +194,7 @@ test.describe("Phase F2 / P06 E2E Authentication & Navigation (E2E-01 to E2E-05)
     await page.locator('[data-testid="login-password-input"]').fill(user.plaintextPassword);
     await page.locator('[data-testid="login-submit-button"]').click();
 
-    await page.waitForURL("**/my-tickets");
+    await page.waitForURL("**/dashboard");
     await expect(page.locator('[data-testid="user-profile-badge"]')).toBeVisible();
 
     // Logout
@@ -263,13 +263,13 @@ test.describe("Phase F2 / P06 E2E Authentication & Navigation (E2E-01 to E2E-05)
     const staff = await createTestUser({ role: "IT_STAFF", name: "Grace Staff" });
     const admin = await createTestUser({ role: "ADMINISTRATOR", name: "Heidi Admin" });
 
-    // 1. Requester flow -> lands on /my-tickets
+    // 1. Requester flow -> lands on /dashboard
     await page.goto("/login");
     await page.locator('[data-testid="login-email-input"]').fill(requester.email);
     await page.locator('[data-testid="login-password-input"]').fill(requester.plaintextPassword);
     await page.locator('[data-testid="login-submit-button"]').click();
 
-    await page.waitForURL("**/my-tickets");
+    await page.waitForURL("**/dashboard");
     await expect(page.locator('[data-testid="user-role-badge"]')).toHaveText("Requester");
     await expect(
       page.locator('[data-testid="nav-my-tickets"], [data-testid="nav-my-tickets-mobile"]').filter({ visible: true }),
@@ -281,17 +281,17 @@ test.describe("Phase F2 / P06 E2E Authentication & Navigation (E2E-01 to E2E-05)
     await page.locator('[data-testid="sign-out-button"]').click();
     await page.waitForURL("**/login");
 
-    // 2. IT Staff flow -> lands on /staff/queue
+    // 2. IT Staff flow -> lands on /staff/dashboard
     await page.locator('[data-testid="login-email-input"]').fill(staff.email);
     await page.locator('[data-testid="login-password-input"]').fill(staff.plaintextPassword);
     await page.locator('[data-testid="login-submit-button"]').click();
 
-    await page.waitForURL("**/staff/queue");
+    await page.waitForURL("**/staff/dashboard");
     await expect(page.locator('[data-testid="user-role-badge"]')).toHaveText("IT Staff");
     await expect(
       page.locator('[data-testid="nav-staff-queue"], [data-testid="nav-staff-queue-mobile"]').filter({ visible: true }),
     ).toBeVisible();
-    await expect(page.getByRole("heading", { name: /IT Staff (?:Ticket Queue|Portal)/i })).toBeVisible();
+    await expect(page.getByTestId("dashboard-page")).toBeVisible();
     await expect(page.locator('[data-testid="nav-my-tickets"]')).toHaveCount(0);
     await expect(page.locator('[data-testid="nav-admin-users"]')).toHaveCount(0);
 
@@ -299,19 +299,19 @@ test.describe("Phase F2 / P06 E2E Authentication & Navigation (E2E-01 to E2E-05)
     await page.locator('[data-testid="sign-out-button"]').click();
     await page.waitForURL("**/login");
 
-    // 3. Administrator flow -> lands on /admin/users
+    // 3. Administrator flow -> lands on /admin/dashboard
     await page.locator('[data-testid="login-email-input"]').fill(admin.email);
     await page.locator('[data-testid="login-password-input"]').fill(admin.plaintextPassword);
     await page.locator('[data-testid="login-submit-button"]').click();
 
-    await page.waitForURL("**/admin/users");
+    await page.waitForURL("**/admin/dashboard");
     await expect(page.locator('[data-testid="user-role-badge"]')).toHaveText("Administrator");
     await expect(
       page.locator('[data-testid="nav-admin-users"], [data-testid="nav-admin-users-mobile"]').filter({ visible: true }),
     ).toBeVisible();
-    await expect(page.getByRole("heading", { name: /(?:Administrator Portal|User Management)/i })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "User Directory Summary" })).toBeVisible();
     await expect(page.locator('[data-testid="nav-my-tickets"]')).toHaveCount(0);
-    await expect(page.locator('[data-testid="nav-staff-queue"]')).toHaveCount(0);
+    await expect(page.locator('[data-testid="nav-staff-queue"], [data-testid="nav-staff-queue-mobile"]').filter({ visible: true })).toBeVisible();
 
     await page.screenshot({ path: getScreenshotPath(testInfo, "e2e-05-role-admin.png") });
     await page.locator('[data-testid="sign-out-button"]').click();

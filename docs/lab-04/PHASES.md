@@ -3,7 +3,7 @@
 **Date:** 2026-09-25  
 **Document Version:** 1.2.0 (Synchronized following F1-Review Round 2 Findings)  
 **Baseline:** `main` at `baad45e09272d665bc0cf765236c456edcf0eff7`  
-**Lab 4 Staging Branch:** `lab4-staging` (creation recorded in implementation-log.md; remote state not reverified in this cleanup)
+**Lab 4 Staging Branch:** `lab4-staging` at `8bbd1aa9c975183279c43fe64d47330f9bd94293` (verified 2026-10-02)
 
 ---
 
@@ -12,8 +12,8 @@
 | Phase | Description | Work Packages | Current Status | Acceptance Gate |
 |---|---|---|---|---|
 | **F1** | Baseline, Contracts, Decisions & Tests | L4-P00–L4-P02 | **In Progress** | Specifications & tests complete, D01–D13 addressed, test environment verified |
-| **F2** | Actions Taken & Ticket Workflow | L4-P03–L4-P06 | **Verified (automated)** | DB migration, APIs, UI in Ticket Detail, and resolution gate passing (Server 324/324, Client 96/96, commit `2657e54`). Visual inspection artifacts archived in `artifacts/lab-04/screenshots/actions-taken/`. |
-| **F3** | Dashboards & Cross-Feature Integration | L4-P07–L4-P10 | **Planned** | Metrics accurate, drill-downs functional, role isolation & concurrency safe |
+| **F2** | Actions Taken & Ticket Workflow | L4-P03–L4-P06 | **Merged; review follow-ups assigned to F3** | PR #49 merged into lab4-staging at `8bbd1aa` on 2026-10-02. Four local corrections and two additional findings are tracked in F3-CARRYOVER.md; local test results do not certify the merged version. |
+| **F3** | Dashboards & Cross-Feature Integration | L4-P07–L4-P10 | **Verified (automated); keyboard correction awaiting peer review/integration** | All six F2 follow-ups integrated; keyboard home-link correction included. Server 345/345, client 115/115, Playwright 132/132, builds passed on 2026-10-02. Issue #50 / Ready-for-review PR #51; updated evidence in F3-REVIEW.md. Prior approval predates the correction; reviewer must check the new commit. Explicit Development-panel linking remains unverified; no merge performed. |
 | **F4** | Regression, Hardening & Visual Polish | L4-P11–L4-P12 | **Planned** | Zero regressions across Labs 1–4, responsive 3 viewports, accessibility verified |
 | **F5** | Peer Review, Release & Submission | L4-P13–L4-P14 | **Planned** | Staging PRs reviewed/merged, release to main verified, single submission PDF |
 
@@ -77,29 +77,31 @@
 
 ### Phase F3 — Dashboards & Cross-Feature Integration
 
+**User scope update — 2026-10-02:** Include all six F2 review follow-ups in F3. Prepare the existing four local fixes and implement the datetime/UUID fixes at F3 startup; track acceptance under L4-P10 without changing the existing work-package dependencies. See `F3-CARRYOVER.md` for current implementation status, test IDs, and integration gates.
+
 #### L4-P07: Dashboard Backend API & Authoritative Metrics
-- **Status:** **Planned**
+- **Status:** **Verified (automated, 2026-10-02)**
 - **Dependencies:** L4-P03, L4-P04, L4-P06
 - **Scope:** Endpoints `GET /api/dashboard/requester`, `GET /api/dashboard/staff`, `GET /api/dashboard/admin` returning concise aggregated statistics, recent ticket items, and my recent actions (`performedById === currentUser.id`). API filter deltas for list endpoints: `GET /api/tickets?recent=7d` and `statusGroup=open`; `GET /api/staff/tickets?statusGroup=open/active` with read access extended to `ADMINISTRATOR`.
 - **Gate:** API tests pass; metric counts match independent SQL database queries (`API-L4-27` to `API-L4-33a/b`).
 
 #### L4-P08: Requester Dashboard UI
-- **Status:** **Planned**
+- **Status:** **Verified (automated, 2026-10-02)**
 - **Dependencies:** L4-P07
 - **Scope:** Requester Dashboard view with 4 metric cards, recent tickets list, drill-down navigation to My Tickets (`/my-tickets?statusGroup=open`, `status=WAITING_FOR_REQUESTER`, `recent=7d`, `status=RESOLVED&recent=7d`), empty/loading/error states.
 - **Gate:** Component and E2E tests pass for Requester role (`UI-L4-01`, `UI-L4-08`).
 
 #### L4-P09: IT Staff & Administrator Dashboard UI
-- **Status:** **Planned**
+- **Status:** **Verified (automated, 2026-10-02)**
 - **Dependencies:** L4-P07
 - **Scope:** Staff Dashboard with operational metrics, current-user actions taken, recent/urgent tickets list, drill-downs to Queue (`/staff/queue?owner=unassigned&statusGroup=open`, `owner=me&statusGroup=active`, `statusGroup=open`, `status=WAITING_FOR_REQUESTER`). Admin user-account counts and links to `/admin/tickets/:id`.
 - **Gate:** Component and E2E tests pass for Staff and Admin roles (`UI-L4-02`, `UI-L4-03`).
 
 #### L4-P10: Cross-Feature Integration, Security & Concurrency
-- **Status:** **Planned**
+- **Status:** **Verified (automated, 2026-10-02)**
 - **Dependencies:** L4-P05, L4-P06, L4-P08, L4-P09
-- **Scope:** Multi-role cross testing, session isolation, concurrent updates, network retry protection, form data preservation on failure.
-- **Gate:** Security, concurrency, and E2E flows passing with zero private data leakage (`UNIT-L4-01/02`, `STYLE-L4-01/02`).
+- **Scope:** Multi-role cross testing, session isolation, concurrent updates, network retry protection, form data preservation on failure, and all six review corrections in `F3-CARRYOVER.md`.
+- **Gate:** Security, concurrency, and E2E flows passing with zero private data leakage (`UNIT-L4-01/02`, `STYLE-L4-01/02`); carry-over checks `API-L4-22j–22m`, `UNIT-L4-01b`, `UI-L4-06b`, `UI-L4-16–18` verified on the integrated F3 branch.
 
 ---
 

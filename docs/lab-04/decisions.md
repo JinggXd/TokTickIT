@@ -143,9 +143,9 @@
      - `myAssignedTickets`: count where `ticketOwnerId === currentUser.id` and `currentStatus` not in (`CLOSED`, `CANCELLED`). Drill-down URL: `/staff/queue?owner=me&statusGroup=active`.
      - `openQueueTickets`: count where `currentStatus` in (`NEW`, `OPEN`, `IN_PROGRESS`, `WAITING_FOR_REQUESTER`, `REOPENED`). Drill-down URL: `/staff/queue?statusGroup=open`.
      - `ticketsWaitingForRequester`: count where `currentStatus === 'WAITING_FOR_REQUESTER'`. Drill-down URL: `/staff/queue?status=WAITING_FOR_REQUESTER`.
-     - `myActionsTakenCount`: count where `performedById === currentUser.id` and `status === 'COMPLETED'`.
+     - `myActionsTakenCount`: count where `performedById === currentUser.id` and `status === 'COMPLETED'`. Informational summary alongside the limited performer feed; no all-actions page/API is defined in F3. Ticket-count cards retain exact list-filter parity.
      - `ticketsByStatus`: counts object for all 8 statuses.
-     - `ticketsByPriority`: counts object for `HIGH`, `MEDIUM`, `LOW` on active tickets.
+     - `ticketsByPriority`: counts object for `HIGH`, `MEDIUM`, `LOW` on open tickets (`NEW`, `OPEN`, `IN_PROGRESS`, `WAITING_FOR_REQUESTER`, `REOPENED`). Sum equals `openQueueTickets`; resolved/closed/cancelled tickets remain represented in `ticketsByStatus`.
   4. **List & Ordering Definitions:**
      - `recentOrUrgentTickets`: Tickets where `currentStatus` in active statuses, prioritized by `itPriority === 'HIGH' DESC`, then `updatedAt DESC`, then `id DESC`, limit 5.
      - `myRecentActions`: Actions where **`performedById === currentUser.id`**, sorted `actionDateTime DESC, id DESC`, limit 5 (strictly matching §14 Part 5 "current-user Actions Taken").

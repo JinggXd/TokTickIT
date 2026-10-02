@@ -4,6 +4,16 @@ export function validateActionDateTime(rawDate: any): { valid: boolean; date?: D
   if (rawDate === undefined || rawDate === null || rawDate === "") {
     return { valid: true, date: new Date() };
   }
+  const iso = typeof rawDate === "string" && rawDate.match(
+    /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(?::(\d{2})(?:\.\d+)?)?(?:Z|[+-]\d{2}:\d{2})$/,
+  );
+  if (!iso) return { valid: false, error: "Invalid actionDateTime format. Expected an ISO datetime with timezone." };
+  const [year, month, day, hour, minute, second] = iso.slice(1).map(Number);
+  const leap = year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0);
+  const days = [31, leap ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+  if (month < 1 || month > 12 || day < 1 || day > days[month - 1] || hour > 23 || minute > 59 || (second || 0) > 59) {
+    return { valid: false, error: "Invalid actionDateTime format." };
+  }
   const date = new Date(rawDate);
   if (isNaN(date.getTime())) {
     return { valid: false, error: "Invalid actionDateTime format." };

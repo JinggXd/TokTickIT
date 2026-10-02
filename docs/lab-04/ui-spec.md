@@ -81,7 +81,7 @@ Consistent with `client/src/components/Badges.tsx`:
 
 ### 3.2 IT Staff Dashboard (`/staff/dashboard`)
 - **Header:** "Welcome back, {Staff Name}!" with subtitle "Here's what's happening in your queue today" + `Refresh` button.
-- **5 Metric Cards (1-to-1 Mapping to Shared API Filters):**
+- **5 Metric Cards (the first four map to shared ticket-list API filters):**
   1. **Unassigned Tickets:**
      - Value: `metrics.unassignedTickets`
      - Drill-down: Click navigates to `/staff/queue?owner=unassigned&statusGroup=open`
@@ -96,15 +96,16 @@ Consistent with `client/src/components/Badges.tsx`:
      - Drill-down: Click navigates to `/staff/queue?status=WAITING_FOR_REQUESTER`
   5. **My Actions Taken:**
      - Value: `metrics.myActionsTakenCount` (Actions with `status === 'COMPLETED'` performed by current user).
+     - Informational summary with the recent performer feed below. No all-actions drill-down URL/API is specified for F3; the feed limit of five is independent of the lifetime completed count.
 - **Status & Priority Summary Strip:**
-  - Clean pill counts for all 8 ticket statuses and 3 priorities.
+  - Clean pill counts for all 8 ticket statuses across the queue. The 3 IT priority counts apply to open tickets (D05); their sum equals Total Open Queue.
 - **Two-Column Content Area:**
   - **Left Column (Recent & Urgent Tickets):**
     - Top 5 active tickets prioritizing `itPriority === HIGH` followed by `updatedAt DESC`.
     - Clicking a ticket navigates to `/staff/tickets/:id`.
     - "View all in Queue" link -> `/staff/queue`.
   - **Right Column (My Recent Actions Taken Feed):**
-    - Feed of up to 5 actions performed by current user (`actionDateTime`, ticket number link, description, outcome).
+    - Feed of up to 5 actions performed by current user (`actionDateTime`, ticket number link, description, status). Matches API §4.3's concise projection; outcome/result is available in the linked Ticket Detail.
 
 ---
 

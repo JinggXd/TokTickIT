@@ -145,6 +145,13 @@ Depends: L4-P04; UI integration ใช้ L4-P05
 - Gate: workflow API/component/E2E ผ่าน พร้อม regression ของ operations เดิม
 - หาก API/UI diff ใหญ่ ให้แยก Issues/PRs ภายใต้ L4-P06 ไม่รวมเพื่อรักษาจำนวน package
 
+### F3 — งานรีวิวที่รวมเพิ่มตามคำสั่งผู้ใช้ (2026-10-02)
+
+- อ่าน `F3-CARRYOVER.md` ก่อนเริ่ม implementation ของ F3 และรวมทั้ง 6 จุดใน scope ของ F3
+- นำ 4 จุดที่แก้ใน working tree แล้วไป integrate โดยรักษา local changes; เพิ่มเทสต์และแก้ 2 จุดวันที่/UUID fallback ตาม Red/Green
+- ติดตามเกณฑ์ปิดงานใน L4-P10 โดยคง dependencies ของ L4-P07–L4-P10 เดิม; ปิด F3 ได้เมื่อ Dashboard และทั้ง 6 จุดผ่านการตรวจบนชุดที่รวมจริง
+- PR #49 merge เข้า lab4-staging แล้ว แต่ไม่รวม 4 local fixes; อย่าใช้ผลเทสต์ของ local fixes ยืนยัน staging หรือสองจุดที่ยังไม่แก้
+
 ### F3 / L4-P07 — Dashboard backend และ metric verification
 
 Depends: L4-P03, L4-P04, L4-P06

@@ -654,6 +654,78 @@ describe("Phase F2 / L4-P04: Actions Taken REST API & Authorization", () => {
       createdActionIds.push(testActionId);
     });
 
+    it("API-L4-22j: all action mutations reject coerced JSON versions without changing records", async () => {
+      const created = await request(app).post(`/api/tickets/${testTicketOpen.id}/actions`)
+        .set(headersAlex).send({ actionDescription: "Strict version validation", status: "PENDING" });
+      expect(created.status).toBe(201);
+      const actionId = created.body.action.id;
+      createdActionIds.push(actionId);
+      const beforeTicket = await prisma.ticket.findUniqueOrThrow({ where: { id: testTicketOpen.id } });
+      for (const expectedVersion of [true, false, [1], "1", {}, 1.5]) {
+        for (const operation of ["patch", "complete", "cancel"]) {
+          const base = `/api/tickets/${testTicketOpen.id}/actions/${actionId}`;
+          const req = operation === "patch" ? request(app).patch(base) : request(app).post(`${base}/${operation}`);
+          const response = await req.set(headersAlex).send({ expectedVersion, result: "Done", actionDescription: "Changed" });
+          expect(response.status, `${operation}: ${JSON.stringify(expectedVersion)}`).toBe(400);
+          expect(response.body.error).toBe("VALIDATION_FAILED");
+        }
+      }
+      const action = await prisma.actionTaken.findUniqueOrThrow({ where: { id: actionId } });
+      expect(action.version).toBe(1);
+      expect(action.status).toBe("PENDING");
+      expect(action.actionDescription).toBe("Strict version validation");
+      expect((await prisma.ticket.findUniqueOrThrow({ where: { id: testTicketOpen.id } })).version).toBe(beforeTicket.version);
+    });
+
+    it("API-L4-22k: create and PATCH reject non-boolean follow-up flags without mutations", async () => {
+      const created = await request(app).post(`/api/tickets/${testTicketOpen.id}/actions`)
+        .set(headersAlex).send({ actionDescription: "Strict boolean validation", status: "PENDING" });
+      expect(created.status).toBe(201);
+      const actionId = created.body.action.id;
+      createdActionIds.push(actionId);
+      const beforeCount = await prisma.actionTaken.count({ where: { ticketId: testTicketOpen.id } });
+      const beforeTicket = await prisma.ticket.findUniqueOrThrow({ where: { id: testTicketOpen.id } });
+      for (const followUpRequired of ["false", "true", 0, 1, null, [], {}]) {
+        const payload = { actionDescription: "Must not save", status: "PENDING", followUpRequired, followUpNote: "Follow up" };
+        const post = await request(app).post(`/api/tickets/${testTicketOpen.id}/actions`).set(headersAlex).send(payload);
+        expect(post.status).toBe(400);
+        expect(post.body.error).toBe("VALIDATION_FAILED");
+        const patch = await request(app).patch(`/api/tickets/${testTicketOpen.id}/actions/${actionId}`)
+          .set(headersAlex).send({ expectedVersion: 1, followUpRequired, followUpNote: "Follow up" });
+        expect(patch.status).toBe(400);
+        expect(patch.body.error).toBe("VALIDATION_FAILED");
+      }
+      expect(await prisma.actionTaken.count({ where: { ticketId: testTicketOpen.id } })).toBe(beforeCount);
+      expect((await prisma.actionTaken.findUniqueOrThrow({ where: { id: actionId } })).version).toBe(1);
+      expect((await prisma.ticket.findUniqueOrThrow({ where: { id: testTicketOpen.id } })).version).toBe(beforeTicket.version);
+    });
+
+    it("API-L4-22m: malformed datetime types/formats never create records", async () => {
+      const beforeCount = await prisma.actionTaken.count({ where: { ticketId: testTicketOpen.id } });
+      const before = await prisma.ticket.findUniqueOrThrow({ where: { id: testTicketOpen.id } });
+      for (const actionDateTime of [true, false, 0, [], {}, "2026-09-25", "2026-02-30T10:00:00Z"]) {
+        const res = await request(app).post(`/api/tickets/${testTicketOpen.id}/actions`).set(headersAlex)
+          .send({ actionDescription: "Invalid datetime", status: "PENDING", actionDateTime });
+        expect(res.status).toBe(400);
+        expect(res.body.error).toBe("VALIDATION_FAILED");
+      }
+      expect(await prisma.actionTaken.count({ where: { ticketId: testTicketOpen.id } })).toBe(beforeCount);
+      expect((await prisma.ticket.findUniqueOrThrow({ where: { id: testTicketOpen.id } })).version).toBe(before.version);
+    });
+
+    it("API-L4-22l: valid If-Match remains supported and completing with null clears notes", async () => {
+      const created = await request(app).post(`/api/tickets/${testTicketOpen.id}/actions`)
+        .set(headersAlex).send({ actionDescription: "Clear notes", status: "PENDING", attachmentNotes: "old.txt", followUpRequired: false });
+      expect(created.status).toBe(201);
+      const actionId = created.body.action.id;
+      createdActionIds.push(actionId);
+      const res = await request(app).post(`/api/tickets/${testTicketOpen.id}/actions/${actionId}/complete`)
+        .set(headersAlex).set("If-Match", "1").send({ result: "Completed", attachmentNotes: null });
+      expect(res.status).toBe(200);
+      expect(res.body.action.attachmentNotes).toBeNull();
+      expect((await prisma.actionTaken.findUniqueOrThrow({ where: { id: actionId } })).attachmentNotes).toBeNull();
+    });
+
     it("API-L4-22b: PATCH returns 400 VALIDATION_FAILED when expectedVersion is missing or non-positive", async () => {
       // 1. Missing expectedVersion
       const resMissing = await request(app)

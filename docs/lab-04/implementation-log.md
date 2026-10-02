@@ -346,4 +346,58 @@ Current checkout at inspection: feature/actions-and-workflow-phase2-lab4, HEAD 3
    - Server Vitest suite: 29 files, 324 passed (100%).
    - Playwright E2E suite: 114 passed across Desktop, Tablet, and Mobile viewports (2.7m runtime, 0 failed, 0 skipped).
 
+### F2 code-review corrections — 2026-09-30 (Issue #48 / PR #49)
+
+- Complete Action now sends explicit `attachmentNotes: null` when the user clears existing notes; client API typing matches the nullable API contract.
+- Action mutation JSON `expectedVersion` must be a positive integer number. Boolean, array, object, numeric-string, and fractional values return 400 without modifying action/ticket versions. Valid numeric `If-Match` headers remain supported.
+- Create/PATCH require a boolean `followUpRequired` when supplied; omitted create flags still default to false.
+- Eligible-assignee lookup failures are visible with Retry. Assignment dropdowns and pending-action saves are blocked while the list is unavailable; successful Retry restores choices.
+- Action saves show the green success banner, including after the ticket detail reload completes.
+- Regression tests added: API-L4-22j–22l, UI-L4-06b, UI-L4-16, UI-L4-17 (create and complete).
+- Red evidence: new client regressions failed in 4 cases and new API regressions failed in 2 cases for the expected pre-fix behavior.
+- Green evidence: server 29 files / 327 passed; client 18 files / 103 passed; no failed or skipped Vitest tests. Server and client builds passed.
+- Database safety: created a fresh local disposable database `toktickit_test_f2_review_1790784843569`, applied migrations, seeded, verified `current_database()`, and used isolated run-specific uploads. Development database was not used for tests.
+- Browser verification remains unconfirmed for this correction: Chromium launch was blocked by sandbox `spawn EPERM`. The attempted full browser run could not exercise application flows. Automatic approval review rejected the elevated retry, citing the earlier code-only/no-more-tests instruction. Earlier Playwright evidence above is historical and does not verify these corrections.
+- Local diagnostics: `tmp/f2-fixes-{client-red,server-red,client-full,server-full,e2e}.log`; disposable database metadata in `tmp/f2-fixes-environment.json` (no credentials).
+
+### F2 browser-verification follow-up — 2026-10-01
+
+- User explicitly authorized continuing Playwright after the earlier approval rejection. Elevated browser execution was approved.
+- Full Playwright suite: **114 passed, 0 failed, 0 skipped**, across Desktop (1280px), Tablet (768px), and Mobile (375px), in 3.7 minutes. Process exit code 0; `.last-run.json` reports `passed` with no failed tests.
+- E2E-L4-01 (action lifecycle and requester read-only view) and E2E-L4-02 (resolution gate) passed on all three viewports. Existing Lab 2/3 regression flows passed in the same run.
+- Used the same verified disposable database `toktickit_test_f2_review_1790784843569`, isolated API port 3001/client port 5174, and upload run ID `f2-fixes-1790841869802`. The temporary Playwright configuration used the freshly compiled server to avoid the sandbox's tsx/userInfo error; project source configuration was not altered.
+- Inspected the desktop completion screenshot and confirmed the green `Action Taken saved successfully.` banner appears after completion.
+- Evidence: `tmp/f2-fixes-e2e-approved.log`, `tmp/f2-fixes-playwright-results/.last-run.json`, and `artifacts/lab-03/screenshots/f2-fixes-1790841869802/` (the shared harness stores all screenshot runs under lab-03).
+- This successful run supersedes the browser-verification limitation in the preceding entry. The four review corrections have passing API/component regressions and the full browser regression suite; peer review and merge remain separate.
+
+### F2 merge and F3 scope assignment — 2026-10-02
+
+- Verified PR #49 merge commit `8bbd1aa9c975183279c43fe64d47330f9bd94293` on `lab4-staging`, with feature head `3e735a0` as a parent. Main remains `baad45e0`.
+- Read the merged code and confirmed the four local review corrections were not included. Two additional code-review findings remain: action datetime coercion to 1970 and an invalid UUID fallback.
+- User explicitly assigned all six follow-ups to F3. Added `F3-CARRYOVER.md` and synchronized PHASES, Gemini pipeline, Issue draft for L4-P10, and test plan. Existing local implementations/tests are preserved; no new product changes or tests were executed in this documentation update.
+- F3 remains Planned. Gate: integrate the four local fixes, implement/test the two remaining fixes, complete Dashboard packages, and verify the integrated branch before closing F3. Existing work-package dependencies remain unchanged.
+
+### F3 implementation and integrated verification — 2026-10-02
+
+- User requested F3 implementation including all six F2 review follow-ups. Created `codex/lab4-f3-dashboard` from verified F2 staging merge `8bbd1aa`, preserving every local/unrelated change. Tracking: [Issue #50](https://github.com/JinggXd/TokTickIT/issues/50).
+- Commits: `0d8b574` six carried-over fixes; `096d358` Dashboard API/shared filters; `7505bcc` role Dashboard UI/navigation; `88cb104` browser integration/regression tests. Logical packages L4-P07–P10 are documented in F3-REVIEW.md; common Dashboard components serve all roles in one coordinated phase branch.
+- APIs: session-scoped Requester metrics; Staff/Admin queue and performer metrics; safe top-five projections; stable ordering; all status keys/zero counts; priority strip scoped to open tickets per D05. Repeatable-read transactions give each summary a consistent database snapshot. Shared `recent=7d` and `statusGroup=open/active` filters match every ticket-count card. Admin queue read access is extended without enabling Staff workflow mutations.
+- UI: role home dashboards, four Requester and four Staff ticket-count links, personal work summary/feed, Admin user summary and existing Admin detail route. URL query changes, browser Back/reload, clear-filter and account switch behavior are covered; loading/empty/error/Retry states included. Mobile navigation wraps all controls; Zen Green palette and keyboard focus preserved.
+- Six carry-over fixes verified: nullable cleared completion notes; strict JSON version/boolean; visible assignee Error/Retry and assignment guard; persistent success banner; ISO datetime/calendar/type validation; secure UUIDv4 fallback with retry key/payload preservation.
+- Clarifications documented before final verification: no all-actions endpoint/page was specified, so My Actions Taken remains the completed-work summary plus existing feed; feed uses exact API description/status/date projection; Priority counts use D05's open ticket set. F1 decision records are not marked Accepted on the strength of implementation tests.
+- Red evidence confirmed before implementation for date/UUID, absent Dashboard routes/components/navigation, plus an explicit priority-scope regression. Final full results: server **345/345** (31 files), client **112/112** (20 files), Playwright **129/129** (3.3m) on Desktop/Tablet/Mobile, builds both passed, no failed/skipped tests. Earlier broad browser attempt had stale Admin nav expectations and a harness screenshot-root mismatch; the final complete run supersedes it.
+- Safety: reused/reverified disposable local test DB `toktickit_test_f2_review_1790784843569`; isolated run-specific uploads and application ports, no production/shared data. Freshly compiled server used for browser launch due to tsx sandbox userInfo limitation. No dependency, migration, destructive DB command or merge added.
+- Permanent evidence: `artifacts/lab-04/f3-evidence-20261002/verification.md`, final logs/last-run result/source hashes; nine dashboard screenshots in `artifacts/lab-04/screenshots/f3-20261002/`.
+- F3 is **Verified (automated), awaiting peer review/integration**. Explicit Development-panel link and reviewer approval/merge remain required. F4 MIG-L4-02 backup/restore and performance smoke not run; F5 release/submission remain planned.
+- Published the feature branch and created [Draft PR #51](https://github.com/JinggXd/TokTickIT/pull/51) targeting `lab4-staging`, attached to this chat. GitHub reports `mergeable: true`. Inspected the actual PR page: browser signed out; Development panel displays the closing-issues label but **None yet**, with no gear available. Issue #50 is referenced in PR prose only; explicit linking is not claimed complete. PR stays draft pending that gate and peer review. No reviewer message/request and no merge performed.
+
+### F3 keyboard review correction — 2026-10-02
+
+- User authorized fixing the F3 review finding and updating PR #51. GitHub confirmed PR #51 was Open, Ready for review, with unchanged head `89d1313` before the correction. The user's screenshot records approval of that earlier version; it does not approve new commits or prove a merge.
+- Created a separate checkout on `codex/lab4-f3-dashboard` to preserve all in-progress F4 changes. Added three role component regressions first; all failed because the clickable brand span was not a native focusable link.
+- Source checkpoint `70f3808ae53552795f81b74df77f92828d7b2555` replaces the span with an anchor pointing to the role's dashboard, preserves modified clicks, and adds a visible 3px outline using `--zg-surface`. No new business rule or dependency was introduced.
+- Added A11Y-L4-02: Requester/Staff/Admin component checks and browser home/card Enter navigation with visible focus at Desktop 1280, Tablet 768 and Mobile 375. Full regression: server **345/345**, client **115/115**, Playwright **132/132**, both builds passed; zero failed/skipped in final runs.
+- Verified the same disposable local database `toktickit_test_f2_review_1790784843569` before each sequential database suite, with run-specific uploads and isolated API/client servers. New proof: `artifacts/lab-04/f3-pr51-review-fix-20261002/verification.md`, logs, browser result and source hashes.
+- The previous approval predates the correction. Explicit Development-panel Issue #50 linking remains unverified, and the reviewer must inspect the new commit before merging. F1 decision acceptance, F4 recovery/performance and F5 release/submission are separate. No merge or reviewer message was performed.
+
 

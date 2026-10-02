@@ -1,5 +1,6 @@
 import express, { Request, Response } from "express";
 import { getPrisma } from "../prisma.js";
+import { OPEN_STATUSES, ACTIVE_STATUSES } from "../utils/dashboardFilters.js";
 import { requireAuth, requirePasswordChanged, requireRole } from "../middleware/sessionAuth.js";
 import {
   ALL_STATUSES,
@@ -16,6 +17,7 @@ const ALLOWED_QUERY_KEYS = new Set([
   "requestedPriority",
   "itPriority",
   "status",
+  "statusGroup",
   "owner",
   "sortBy",
   "sortOrder",
@@ -56,7 +58,7 @@ staffRouter.get(
   "/tickets",
   requireAuth,
   requirePasswordChanged,
-  requireRole("IT_STAFF"),
+  requireRole("IT_STAFF", "ADMINISTRATOR"),
   async (req: Request, res: Response): Promise<void> => {
     try {
       const details: Record<string, string> = {};
@@ -74,6 +76,7 @@ staffRouter.get(
         requestedPriority,
         itPriority,
         status,
+        statusGroup,
         owner,
         sortBy = "updatedAt",
         sortOrder = "desc",
@@ -115,6 +118,7 @@ staffRouter.get(
       if (status && !ALL_STATUSES.includes(status as TicketStatus)) {
         details.status = "Invalid query parameter";
       }
+      if (statusGroup !== undefined && statusGroup !== "open" && statusGroup !== "active") details.statusGroup = "Invalid query parameter";
 
       // Validate categoryId
       let catIdNum: number | undefined;
@@ -178,6 +182,7 @@ staffRouter.get(
       if (status) {
         where.currentStatus = status;
       }
+      if (statusGroup) where.AND = [{ currentStatus: { in: statusGroup === "open" ? OPEN_STATUSES : ACTIVE_STATUSES } }];
 
       if (targetOwnerId !== undefined) {
         where.ticketOwnerId = targetOwnerId;

@@ -16,6 +16,12 @@ vi.mock("../../src/api.js", () => ({
   updateItPriority: vi.fn(),
   updateTicketStatus: vi.fn(),
   fetchActionsTaken: vi.fn(),
+  createActionTaken: vi.fn(),
+  completeActionTaken: vi.fn(),
+}));
+
+vi.mock("../../src/context/AuthContext.js", () => ({
+  useAuth: () => ({ user: { id: 20, name: "Bob Staff", role: "IT_STAFF" } }),
 }));
 
 import { StaffTicketDetail } from "../../src/pages/StaffTicketDetail.js";
@@ -133,5 +139,49 @@ describe("Phase F2 / L4-P06: Ticket Workflow UI Tests (UI-L4-09, UI-L4-10)", () 
     await waitFor(() => {
       expect(api.fetchStaffTicketDetail).toHaveBeenCalledTimes(2);
     });
+  });
+
+  it("UI-L4-16: assignee lookup failure is visible, blocks assignment, and Retry restores choices", async () => {
+    vi.mocked(api.fetchTicketOwners).mockRejectedValueOnce(new Error("Lookup unavailable"));
+    render(<StaffTicketDetail ticketId={42} onBack={vi.fn()} />);
+    const alert = await screen.findByTestId("staff-owners-error");
+    expect(alert).toHaveTextContent("Lookup unavailable");
+    expect(screen.getByTestId("staff-reassign-owner-select")).toBeDisabled();
+    fireEvent.click(screen.getByRole("button", { name: /\+ Log Action/i }));
+    fireEvent.click(screen.getByLabelText(/^Pending Task$/i));
+    expect(screen.getByLabelText(/Assignee \(Optional\)/i)).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Save Action" })).toBeDisabled();
+    fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
+    fireEvent.click(screen.getByRole("button", { name: "Retry assignee list" }));
+    await waitFor(() => expect(screen.queryByTestId("staff-owners-error")).not.toBeInTheDocument());
+    expect(screen.getByTestId("staff-reassign-owner-select")).not.toBeDisabled();
+    fireEvent.click(screen.getByRole("button", { name: /\+ Log Action/i }));
+    fireEvent.click(screen.getByLabelText(/^Pending Task$/i));
+    expect(screen.getByLabelText(/Assignee \(Optional\)/i)).not.toBeDisabled();
+    expect(screen.getByRole("option", { name: "Bob Staff" })).toBeInTheDocument();
+  });
+
+  it.each(["create", "complete"])("UI-L4-17: %s success remains visible after ticket reload", async (operation) => {
+    const action: any = { id: 9, ticketId: 42, status: "PENDING", version: 1,
+      actionDateTime: "2026-09-25T10:00:00Z", actionDescription: "Inspect database",
+      result: null, assignee: null, performedBy: null, followUpRequired: false };
+    vi.mocked(api.fetchActionsTaken).mockResolvedValue({ ticketId: 42, actions: [action] });
+    vi.mocked(api.createActionTaken).mockResolvedValueOnce({ ticketId: 42, action });
+    vi.mocked(api.completeActionTaken).mockResolvedValueOnce({ ticketId: 42, action });
+    render(<StaffTicketDetail ticketId={42} onBack={vi.fn()} />);
+    await screen.findByTestId("complete-action-btn-9");
+    if (operation === "create") {
+      fireEvent.click(screen.getByRole("button", { name: /\+ Log Action/i }));
+      fireEvent.change(screen.getByLabelText(/Action Description/i), { target: { value: "Checked connections" } });
+      fireEvent.change(screen.getByLabelText(/Result \/ Resolution Details/i), { target: { value: "Healthy" } });
+      fireEvent.click(screen.getByRole("button", { name: "Save Action" }));
+    } else {
+      fireEvent.click(screen.getByTestId("complete-action-btn-9"));
+      fireEvent.change(screen.getByLabelText(/Result/i), { target: { value: "Healthy" } });
+      fireEvent.click(screen.getByRole("button", { name: "Mark Completed" }));
+    }
+    await screen.findByText("Action Taken saved successfully.");
+    await waitFor(() => expect(api.fetchStaffTicketDetail).toHaveBeenCalledTimes(2));
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
 });

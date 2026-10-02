@@ -59,7 +59,13 @@ function parseExpectedVersion(
       error: "expectedVersion is required (must be a positive integer).",
     };
   }
-  const num = typeof raw === "number" ? raw : Number(raw);
+  // JSON versions must be numbers; only the HTTP header uses a string.
+  const fromBody = body?.expectedVersion !== undefined;
+  if ((fromBody && typeof raw !== "number") ||
+      (!fromBody && (typeof raw !== "string" || !/^[1-9]\d*$/.test(raw)))) {
+    return { valid: false, error: "expectedVersion must be a positive integer." };
+  }
+  const num = fromBody ? raw : Number(raw);
   if (!Number.isInteger(num) || num <= 0) {
     return {
       valid: false,
@@ -238,7 +244,11 @@ actionsRouter.post(
       }
     }
 
-    const followUpRequired = Boolean(req.body.followUpRequired);
+    if (req.body.followUpRequired !== undefined && typeof req.body.followUpRequired !== "boolean") {
+      res.status(400).json({ error: "VALIDATION_FAILED", message: "followUpRequired must be a boolean." });
+      return;
+    }
+    const followUpRequired = req.body.followUpRequired ?? false;
     let followUpNote: string | null = null;
     if (followUpRequired) {
       if (
@@ -588,7 +598,10 @@ actionsRouter.patch(
         }
 
         if (req.body.followUpRequired !== undefined) {
-          const followUpRequired = Boolean(req.body.followUpRequired);
+          if (typeof req.body.followUpRequired !== "boolean") {
+            throw { status: 400, error: "VALIDATION_FAILED", message: "followUpRequired must be a boolean." };
+          }
+          const followUpRequired = req.body.followUpRequired;
           dataToUpdate.followUpRequired = followUpRequired;
           if (followUpRequired) {
             if (req.body.followUpNote !== undefined) {

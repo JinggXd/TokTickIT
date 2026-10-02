@@ -1,0 +1,152 @@
+Verified disposable database: toktickit_test_f2_review_1790784843569
+
+[WebServer] (node:79116) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 132 tests using 1 worker
+
+(node:81692) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+[1/132] [desktop] › e2e\lab-02\requester-ticket-flow.spec.ts:236:3 › Phase 7 — Responsive Layout Tests (RESP-01, RESP-02, RESP-03 per tests.md) › RESP-01: My Tickets at <768px replaces table with card list, buttons full width, and has zero horizontal scroll
+[2/132] [desktop] › e2e\lab-02\requester-ticket-flow.spec.ts:291:3 › Phase 7 — Responsive Layout Tests (RESP-01, RESP-02, RESP-03 per tests.md) › RESP-02: Create Ticket at 768–991px shows two-column classification fields while Summary/Description remain full width, and My Tickets shows compact table
+[3/132] [desktop] › e2e\lab-02\requester-ticket-flow.spec.ts:354:3 › Phase 7 — Responsive Layout Tests (RESP-01, RESP-02, RESP-03 per tests.md) › RESP-03: All three screens at ≥992px center content with max width 1200px, no clipped text, and handle long content
+[4/132] [desktop] › e2e\lab-02\requester-ticket-flow.spec.ts:436:3 › Phase 7 — Visual Inspection Screenshot Captures (Project-Isolated) › Capture 3 screenshots for current viewport project (desktop, tablet, or mobile)
+[5/132] [desktop] › e2e\lab-02\requester-ticket-flow.spec.ts:467:3 › Phase 8 — End-to-End Integration Flows (E2E-01, E2E-02, E2E-03 per tests.md) › E2E-01: Full happy path — sign in, verify read-only fields, create ticket with attachment, find in My Tickets, sign out and switch account
+[6/132] [desktop] › e2e\lab-02\requester-ticket-flow.spec.ts:589:3 › Phase 8 — End-to-End Integration Flows (E2E-01, E2E-02, E2E-03 per tests.md) › E2E-02: Simulated backend failure during ticket submission retains form values
+[7/132] [desktop] › e2e\lab-02\requester-ticket-flow.spec.ts:656:3 › Phase 8 — End-to-End Integration Flows (E2E-01, E2E-02, E2E-03 per tests.md) › E2E-03: Negative security flows — cross-requester direct URL (403) and removed attachment direct download (410)
+[8/132] [desktop] › e2e\lab-03\authentication.spec.ts:87:3 › Phase F2 / P06 E2E Authentication & Navigation (E2E-01 to E2E-05) › E2E-01: Valid login, permitted role landing page, logout flow
+[9/132] [desktop] › e2e\lab-03\authentication.spec.ts:128:3 › Phase F2 / P06 E2E Authentication & Navigation (E2E-01 to E2E-05) › E2E-02: Forced initial password change flow
+[10/132] [desktop] › e2e\lab-03\authentication.spec.ts:189:3 › Phase F2 / P06 E2E Authentication & Navigation (E2E-01 to E2E-05) › E2E-03: Invalidate session on logout and verify back navigation blocked
+[11/132] [desktop] › e2e\lab-03\authentication.spec.ts:224:3 › Phase F2 / P06 E2E Authentication & Navigation (E2E-01 to E2E-05) › E2E-04: Login error flows (wrong password, inactive account, client validation)
+[12/132] [desktop] › e2e\lab-03\authentication.spec.ts:261:3 › Phase F2 / P06 E2E Authentication & Navigation (E2E-01 to E2E-05) › E2E-05: Role-based navigation routing (Requester, Staff, Admin)
+[13/132] [desktop] › e2e\lab-03\staff-ticket-flow.spec.ts:119:3 › E2E-09: Staff Queue search and filter › Queue renders and search narrows results
+[14/132] [desktop] › e2e\lab-03\staff-ticket-flow.spec.ts:138:3 › E2E-09: Staff Queue search and filter › Status filter NEW shows queue
+[15/132] [desktop] › e2e\lab-03\staff-ticket-flow.spec.ts:153:3 › E2E-09: Staff Queue search and filter › Non-matching search shows no-results state
+[16/132] [desktop] › e2e\lab-03\staff-ticket-flow.spec.ts:162:3 › E2E-09: Staff Queue search and filter › Clear filters resets search
+[17/132] [desktop] › e2e\lab-03\staff-ticket-flow.spec.ts:176:3 › E2E-11: Complete IT Staff triage workflow › Navigate to ticket detail via queue row
+[18/132] [desktop] › e2e\lab-03\staff-ticket-flow.spec.ts:196:3 › E2E-11: Complete IT Staff triage workflow › Claim unassigned ticket
+[19/132] [desktop] › e2e\lab-03\staff-ticket-flow.spec.ts:208:3 › E2E-11: Complete IT Staff triage workflow › Update IT Priority to HIGH
+[20/132] [desktop] › e2e\lab-03\staff-ticket-flow.spec.ts:221:3 › E2E-11: Complete IT Staff triage workflow › Transition NEW → OPEN
+[21/132] [desktop] › e2e\lab-03\staff-ticket-flow.spec.ts:237:3 › E2E-11: Complete IT Staff triage workflow › Post public comment
+[22/132] [desktop] › e2e\lab-03\staff-ticket-flow.spec.ts:248:3 › E2E-11: Complete IT Staff triage workflow › Post internal note
+[23/132] [desktop] › e2e\lab-03\staff-ticket-flow.spec.ts:259:3 › E2E-11: Complete IT Staff triage workflow › Transition OPEN → IN_PROGRESS
+[24/132] [desktop] › e2e\lab-03\staff-ticket-flow.spec.ts:276:3 › E2E-11: Complete IT Staff triage workflow › Switch to Requester view: verify IN_PROGRESS, public comments visible, internal notes hidden, flag appears resolved
+[25/132] [desktop] › e2e\lab-03\staff-ticket-flow.spec.ts:303:3 › E2E-11: Complete IT Staff triage workflow › Transition IN_PROGRESS → RESOLVED via confirmation modal
+[26/132] [desktop] › e2e\lab-03\staff-ticket-flow.spec.ts:339:3 › E2E-11: Complete IT Staff triage workflow › Switch to Requester view: verify RESOLVED status and confidentiality
+[27/132] [desktop] › e2e\lab-03\staff-ticket-flow.spec.ts:352:3 › E2E-11: Complete IT Staff triage workflow › Transition RESOLVED → CLOSED via confirmation modal
+[28/132] [desktop] › e2e\lab-03\staff-ticket-flow.spec.ts:375:3 › E2E-11: Complete IT Staff triage workflow › Switch to Requester view: verify CLOSED status and terminal restrictions
+[29/132] [desktop] › e2e\lab-03\staff-ticket-flow.spec.ts:394:3 › E2E-15: Back navigation and admin read-only › Back button returns to queue
+[30/132] [desktop] › e2e\lab-03\staff-ticket-flow.spec.ts:404:3 › E2E-15: Back navigation and admin read-only › Admin read-only view of ticket detail (AC-28, AC-37, E2E-15)
+[31/132] [desktop] › e2e\lab-03\user-administration.spec.ts:104:3 › Phase F4 / P11 & P12: User Administration E2E Verification › E2E-16: Admin list directory, search, and role filter
+[32/132] [desktop] › e2e\lab-03\user-administration.spec.ts:127:3 › Phase F4 / P11 & P12: User Administration E2E Verification › E2E-12: Admin provisions new user account and verifies forced password change
+[33/132] [desktop] › e2e\lab-03\user-administration.spec.ts:184:3 › Phase F4 / P11 & P12: User Administration E2E Verification › E2E-13: Admin resets user password and verifies session invalidation
+[34/132] [desktop] › e2e\lab-03\user-administration.spec.ts:244:3 › Phase F4 / P11 & P12: User Administration E2E Verification › E2E-14: Admin self-deactivation guard
+[35/132] [desktop] › e2e\lab-03\user-administration.spec.ts:264:3 › Phase F4 / P11 & P12: User Administration E2E Verification › E2E-16: Edit user name and role
+[36/132] [desktop] › e2e\lab-03\worker-env.spec.ts:5:3 › HARNESS-01 Playwright worker environment propagation › worker process inherits all test environment variables from Playwright config
+[37/132] [desktop] › e2e\lab-04\actions-taken-flow.spec.ts:116:3 › Phase F2 / L4-P05: Actions Taken Lifecycle Flow (E2E-L4-01) › E2E-L4-01: Log pending action, assign staff, complete with result, and verify requester read-only view
+[38/132] [desktop] › e2e\lab-04\dashboards.spec.ts:47:64 › F3 REQUESTER: card/list parity, URL reload/Back, detail links and responsive layout
+[39/132] [desktop] › e2e\lab-04\dashboards.spec.ts:47:64 › F3 IT_STAFF: card/list parity, URL reload/Back, detail links and responsive layout
+[40/132] [desktop] › e2e\lab-04\dashboards.spec.ts:47:64 › F3 ADMINISTRATOR: card/list parity, URL reload/Back, detail links and responsive layout
+[41/132] [desktop] › e2e\lab-04\dashboards.spec.ts:82:1 › F3 review fix: all roles keyboard home/card navigation and visible focus
+[42/132] [desktop] › e2e\lab-04\dashboards.spec.ts:104:1 › F3 empty account, zero-result drill-down, Clear Filters and account switching
+[43/132] [desktop] › e2e\lab-04\dashboards.spec.ts:114:1 › F3 network failure hides metrics, Retry restores real dashboard
+[44/132] [desktop] › e2e\lab-04\ticket-resolution.spec.ts:114:3 › Phase F2 / L4-P06: Resolution Gate Enforcement (E2E-L4-02) › E2E-L4-02: Ticket cannot be resolved without completed Action Taken; resolution succeeds after completing action
+
+(node:120204) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+[45/132] [tablet] › e2e\lab-02\requester-ticket-flow.spec.ts:236:3 › Phase 7 — Responsive Layout Tests (RESP-01, RESP-02, RESP-03 per tests.md) › RESP-01: My Tickets at <768px replaces table with card list, buttons full width, and has zero horizontal scroll
+[46/132] [tablet] › e2e\lab-02\requester-ticket-flow.spec.ts:291:3 › Phase 7 — Responsive Layout Tests (RESP-01, RESP-02, RESP-03 per tests.md) › RESP-02: Create Ticket at 768–991px shows two-column classification fields while Summary/Description remain full width, and My Tickets shows compact table
+[47/132] [tablet] › e2e\lab-02\requester-ticket-flow.spec.ts:354:3 › Phase 7 — Responsive Layout Tests (RESP-01, RESP-02, RESP-03 per tests.md) › RESP-03: All three screens at ≥992px center content with max width 1200px, no clipped text, and handle long content
+[48/132] [tablet] › e2e\lab-02\requester-ticket-flow.spec.ts:436:3 › Phase 7 — Visual Inspection Screenshot Captures (Project-Isolated) › Capture 3 screenshots for current viewport project (desktop, tablet, or mobile)
+[49/132] [tablet] › e2e\lab-02\requester-ticket-flow.spec.ts:467:3 › Phase 8 — End-to-End Integration Flows (E2E-01, E2E-02, E2E-03 per tests.md) › E2E-01: Full happy path — sign in, verify read-only fields, create ticket with attachment, find in My Tickets, sign out and switch account
+[50/132] [tablet] › e2e\lab-02\requester-ticket-flow.spec.ts:589:3 › Phase 8 — End-to-End Integration Flows (E2E-01, E2E-02, E2E-03 per tests.md) › E2E-02: Simulated backend failure during ticket submission retains form values
+[51/132] [tablet] › e2e\lab-02\requester-ticket-flow.spec.ts:656:3 › Phase 8 — End-to-End Integration Flows (E2E-01, E2E-02, E2E-03 per tests.md) › E2E-03: Negative security flows — cross-requester direct URL (403) and removed attachment direct download (410)
+[52/132] [tablet] › e2e\lab-03\authentication.spec.ts:87:3 › Phase F2 / P06 E2E Authentication & Navigation (E2E-01 to E2E-05) › E2E-01: Valid login, permitted role landing page, logout flow
+[53/132] [tablet] › e2e\lab-03\authentication.spec.ts:128:3 › Phase F2 / P06 E2E Authentication & Navigation (E2E-01 to E2E-05) › E2E-02: Forced initial password change flow
+[54/132] [tablet] › e2e\lab-03\authentication.spec.ts:189:3 › Phase F2 / P06 E2E Authentication & Navigation (E2E-01 to E2E-05) › E2E-03: Invalidate session on logout and verify back navigation blocked
+[55/132] [tablet] › e2e\lab-03\authentication.spec.ts:224:3 › Phase F2 / P06 E2E Authentication & Navigation (E2E-01 to E2E-05) › E2E-04: Login error flows (wrong password, inactive account, client validation)
+[56/132] [tablet] › e2e\lab-03\authentication.spec.ts:261:3 › Phase F2 / P06 E2E Authentication & Navigation (E2E-01 to E2E-05) › E2E-05: Role-based navigation routing (Requester, Staff, Admin)
+[57/132] [tablet] › e2e\lab-03\staff-ticket-flow.spec.ts:119:3 › E2E-09: Staff Queue search and filter › Queue renders and search narrows results
+[58/132] [tablet] › e2e\lab-03\staff-ticket-flow.spec.ts:138:3 › E2E-09: Staff Queue search and filter › Status filter NEW shows queue
+[59/132] [tablet] › e2e\lab-03\staff-ticket-flow.spec.ts:153:3 › E2E-09: Staff Queue search and filter › Non-matching search shows no-results state
+[60/132] [tablet] › e2e\lab-03\staff-ticket-flow.spec.ts:162:3 › E2E-09: Staff Queue search and filter › Clear filters resets search
+[61/132] [tablet] › e2e\lab-03\staff-ticket-flow.spec.ts:176:3 › E2E-11: Complete IT Staff triage workflow › Navigate to ticket detail via queue row
+[62/132] [tablet] › e2e\lab-03\staff-ticket-flow.spec.ts:196:3 › E2E-11: Complete IT Staff triage workflow › Claim unassigned ticket
+[63/132] [tablet] › e2e\lab-03\staff-ticket-flow.spec.ts:208:3 › E2E-11: Complete IT Staff triage workflow › Update IT Priority to HIGH
+[64/132] [tablet] › e2e\lab-03\staff-ticket-flow.spec.ts:221:3 › E2E-11: Complete IT Staff triage workflow › Transition NEW → OPEN
+[65/132] [tablet] › e2e\lab-03\staff-ticket-flow.spec.ts:237:3 › E2E-11: Complete IT Staff triage workflow › Post public comment
+[66/132] [tablet] › e2e\lab-03\staff-ticket-flow.spec.ts:248:3 › E2E-11: Complete IT Staff triage workflow › Post internal note
+[67/132] [tablet] › e2e\lab-03\staff-ticket-flow.spec.ts:259:3 › E2E-11: Complete IT Staff triage workflow › Transition OPEN → IN_PROGRESS
+[68/132] [tablet] › e2e\lab-03\staff-ticket-flow.spec.ts:276:3 › E2E-11: Complete IT Staff triage workflow › Switch to Requester view: verify IN_PROGRESS, public comments visible, internal notes hidden, flag appears resolved
+[69/132] [tablet] › e2e\lab-03\staff-ticket-flow.spec.ts:303:3 › E2E-11: Complete IT Staff triage workflow › Transition IN_PROGRESS → RESOLVED via confirmation modal
+[70/132] [tablet] › e2e\lab-03\staff-ticket-flow.spec.ts:339:3 › E2E-11: Complete IT Staff triage workflow › Switch to Requester view: verify RESOLVED status and confidentiality
+[71/132] [tablet] › e2e\lab-03\staff-ticket-flow.spec.ts:352:3 › E2E-11: Complete IT Staff triage workflow › Transition RESOLVED → CLOSED via confirmation modal
+[72/132] [tablet] › e2e\lab-03\staff-ticket-flow.spec.ts:375:3 › E2E-11: Complete IT Staff triage workflow › Switch to Requester view: verify CLOSED status and terminal restrictions
+[73/132] [tablet] › e2e\lab-03\staff-ticket-flow.spec.ts:394:3 › E2E-15: Back navigation and admin read-only › Back button returns to queue
+[74/132] [tablet] › e2e\lab-03\staff-ticket-flow.spec.ts:404:3 › E2E-15: Back navigation and admin read-only › Admin read-only view of ticket detail (AC-28, AC-37, E2E-15)
+[75/132] [tablet] › e2e\lab-03\user-administration.spec.ts:104:3 › Phase F4 / P11 & P12: User Administration E2E Verification › E2E-16: Admin list directory, search, and role filter
+[76/132] [tablet] › e2e\lab-03\user-administration.spec.ts:127:3 › Phase F4 / P11 & P12: User Administration E2E Verification › E2E-12: Admin provisions new user account and verifies forced password change
+[77/132] [tablet] › e2e\lab-03\user-administration.spec.ts:184:3 › Phase F4 / P11 & P12: User Administration E2E Verification › E2E-13: Admin resets user password and verifies session invalidation
+[78/132] [tablet] › e2e\lab-03\user-administration.spec.ts:244:3 › Phase F4 / P11 & P12: User Administration E2E Verification › E2E-14: Admin self-deactivation guard
+[79/132] [tablet] › e2e\lab-03\user-administration.spec.ts:264:3 › Phase F4 / P11 & P12: User Administration E2E Verification › E2E-16: Edit user name and role
+[80/132] [tablet] › e2e\lab-03\worker-env.spec.ts:5:3 › HARNESS-01 Playwright worker environment propagation › worker process inherits all test environment variables from Playwright config
+[81/132] [tablet] › e2e\lab-04\actions-taken-flow.spec.ts:116:3 › Phase F2 / L4-P05: Actions Taken Lifecycle Flow (E2E-L4-01) › E2E-L4-01: Log pending action, assign staff, complete with result, and verify requester read-only view
+[82/132] [tablet] › e2e\lab-04\dashboards.spec.ts:47:64 › F3 REQUESTER: card/list parity, URL reload/Back, detail links and responsive layout
+[83/132] [tablet] › e2e\lab-04\dashboards.spec.ts:47:64 › F3 IT_STAFF: card/list parity, URL reload/Back, detail links and responsive layout
+[84/132] [tablet] › e2e\lab-04\dashboards.spec.ts:47:64 › F3 ADMINISTRATOR: card/list parity, URL reload/Back, detail links and responsive layout
+[85/132] [tablet] › e2e\lab-04\dashboards.spec.ts:82:1 › F3 review fix: all roles keyboard home/card navigation and visible focus
+[86/132] [tablet] › e2e\lab-04\dashboards.spec.ts:104:1 › F3 empty account, zero-result drill-down, Clear Filters and account switching
+[87/132] [tablet] › e2e\lab-04\dashboards.spec.ts:114:1 › F3 network failure hides metrics, Retry restores real dashboard
+[88/132] [tablet] › e2e\lab-04\ticket-resolution.spec.ts:114:3 › Phase F2 / L4-P06: Resolution Gate Enforcement (E2E-L4-02) › E2E-L4-02: Ticket cannot be resolved without completed Action Taken; resolution succeeds after completing action
+
+(node:39812) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+[89/132] [mobile] › e2e\lab-02\requester-ticket-flow.spec.ts:236:3 › Phase 7 — Responsive Layout Tests (RESP-01, RESP-02, RESP-03 per tests.md) › RESP-01: My Tickets at <768px replaces table with card list, buttons full width, and has zero horizontal scroll
+[90/132] [mobile] › e2e\lab-02\requester-ticket-flow.spec.ts:291:3 › Phase 7 — Responsive Layout Tests (RESP-01, RESP-02, RESP-03 per tests.md) › RESP-02: Create Ticket at 768–991px shows two-column classification fields while Summary/Description remain full width, and My Tickets shows compact table
+[91/132] [mobile] › e2e\lab-02\requester-ticket-flow.spec.ts:354:3 › Phase 7 — Responsive Layout Tests (RESP-01, RESP-02, RESP-03 per tests.md) › RESP-03: All three screens at ≥992px center content with max width 1200px, no clipped text, and handle long content
+[92/132] [mobile] › e2e\lab-02\requester-ticket-flow.spec.ts:436:3 › Phase 7 — Visual Inspection Screenshot Captures (Project-Isolated) › Capture 3 screenshots for current viewport project (desktop, tablet, or mobile)
+[93/132] [mobile] › e2e\lab-02\requester-ticket-flow.spec.ts:467:3 › Phase 8 — End-to-End Integration Flows (E2E-01, E2E-02, E2E-03 per tests.md) › E2E-01: Full happy path — sign in, verify read-only fields, create ticket with attachment, find in My Tickets, sign out and switch account
+[94/132] [mobile] › e2e\lab-02\requester-ticket-flow.spec.ts:589:3 › Phase 8 — End-to-End Integration Flows (E2E-01, E2E-02, E2E-03 per tests.md) › E2E-02: Simulated backend failure during ticket submission retains form values
+[95/132] [mobile] › e2e\lab-02\requester-ticket-flow.spec.ts:656:3 › Phase 8 — End-to-End Integration Flows (E2E-01, E2E-02, E2E-03 per tests.md) › E2E-03: Negative security flows — cross-requester direct URL (403) and removed attachment direct download (410)
+[96/132] [mobile] › e2e\lab-03\authentication.spec.ts:87:3 › Phase F2 / P06 E2E Authentication & Navigation (E2E-01 to E2E-05) › E2E-01: Valid login, permitted role landing page, logout flow
+[97/132] [mobile] › e2e\lab-03\authentication.spec.ts:128:3 › Phase F2 / P06 E2E Authentication & Navigation (E2E-01 to E2E-05) › E2E-02: Forced initial password change flow
+[98/132] [mobile] › e2e\lab-03\authentication.spec.ts:189:3 › Phase F2 / P06 E2E Authentication & Navigation (E2E-01 to E2E-05) › E2E-03: Invalidate session on logout and verify back navigation blocked
+[99/132] [mobile] › e2e\lab-03\authentication.spec.ts:224:3 › Phase F2 / P06 E2E Authentication & Navigation (E2E-01 to E2E-05) › E2E-04: Login error flows (wrong password, inactive account, client validation)
+[100/132] [mobile] › e2e\lab-03\authentication.spec.ts:261:3 › Phase F2 / P06 E2E Authentication & Navigation (E2E-01 to E2E-05) › E2E-05: Role-based navigation routing (Requester, Staff, Admin)
+[101/132] [mobile] › e2e\lab-03\staff-ticket-flow.spec.ts:119:3 › E2E-09: Staff Queue search and filter › Queue renders and search narrows results
+[102/132] [mobile] › e2e\lab-03\staff-ticket-flow.spec.ts:138:3 › E2E-09: Staff Queue search and filter › Status filter NEW shows queue
+[103/132] [mobile] › e2e\lab-03\staff-ticket-flow.spec.ts:153:3 › E2E-09: Staff Queue search and filter › Non-matching search shows no-results state
+[104/132] [mobile] › e2e\lab-03\staff-ticket-flow.spec.ts:162:3 › E2E-09: Staff Queue search and filter › Clear filters resets search
+[105/132] [mobile] › e2e\lab-03\staff-ticket-flow.spec.ts:176:3 › E2E-11: Complete IT Staff triage workflow › Navigate to ticket detail via queue row
+[106/132] [mobile] › e2e\lab-03\staff-ticket-flow.spec.ts:196:3 › E2E-11: Complete IT Staff triage workflow › Claim unassigned ticket
+[107/132] [mobile] › e2e\lab-03\staff-ticket-flow.spec.ts:208:3 › E2E-11: Complete IT Staff triage workflow › Update IT Priority to HIGH
+[108/132] [mobile] › e2e\lab-03\staff-ticket-flow.spec.ts:221:3 › E2E-11: Complete IT Staff triage workflow › Transition NEW → OPEN
+[109/132] [mobile] › e2e\lab-03\staff-ticket-flow.spec.ts:237:3 › E2E-11: Complete IT Staff triage workflow › Post public comment
+[110/132] [mobile] › e2e\lab-03\staff-ticket-flow.spec.ts:248:3 › E2E-11: Complete IT Staff triage workflow › Post internal note
+[111/132] [mobile] › e2e\lab-03\staff-ticket-flow.spec.ts:259:3 › E2E-11: Complete IT Staff triage workflow › Transition OPEN → IN_PROGRESS
+[112/132] [mobile] › e2e\lab-03\staff-ticket-flow.spec.ts:276:3 › E2E-11: Complete IT Staff triage workflow › Switch to Requester view: verify IN_PROGRESS, public comments visible, internal notes hidden, flag appears resolved
+[113/132] [mobile] › e2e\lab-03\staff-ticket-flow.spec.ts:303:3 › E2E-11: Complete IT Staff triage workflow › Transition IN_PROGRESS → RESOLVED via confirmation modal
+[114/132] [mobile] › e2e\lab-03\staff-ticket-flow.spec.ts:339:3 › E2E-11: Complete IT Staff triage workflow › Switch to Requester view: verify RESOLVED status and confidentiality
+[115/132] [mobile] › e2e\lab-03\staff-ticket-flow.spec.ts:352:3 › E2E-11: Complete IT Staff triage workflow › Transition RESOLVED → CLOSED via confirmation modal
+[116/132] [mobile] › e2e\lab-03\staff-ticket-flow.spec.ts:375:3 › E2E-11: Complete IT Staff triage workflow › Switch to Requester view: verify CLOSED status and terminal restrictions
+[117/132] [mobile] › e2e\lab-03\staff-ticket-flow.spec.ts:394:3 › E2E-15: Back navigation and admin read-only › Back button returns to queue
+[118/132] [mobile] › e2e\lab-03\staff-ticket-flow.spec.ts:404:3 › E2E-15: Back navigation and admin read-only › Admin read-only view of ticket detail (AC-28, AC-37, E2E-15)
+[119/132] [mobile] › e2e\lab-03\user-administration.spec.ts:104:3 › Phase F4 / P11 & P12: User Administration E2E Verification › E2E-16: Admin list directory, search, and role filter
+[120/132] [mobile] › e2e\lab-03\user-administration.spec.ts:127:3 › Phase F4 / P11 & P12: User Administration E2E Verification › E2E-12: Admin provisions new user account and verifies forced password change
+[121/132] [mobile] › e2e\lab-03\user-administration.spec.ts:184:3 › Phase F4 / P11 & P12: User Administration E2E Verification › E2E-13: Admin resets user password and verifies session invalidation
+[122/132] [mobile] › e2e\lab-03\user-administration.spec.ts:244:3 › Phase F4 / P11 & P12: User Administration E2E Verification › E2E-14: Admin self-deactivation guard
+[123/132] [mobile] › e2e\lab-03\user-administration.spec.ts:264:3 › Phase F4 / P11 & P12: User Administration E2E Verification › E2E-16: Edit user name and role
+[124/132] [mobile] › e2e\lab-03\worker-env.spec.ts:5:3 › HARNESS-01 Playwright worker environment propagation › worker process inherits all test environment variables from Playwright config
+[125/132] [mobile] › e2e\lab-04\actions-taken-flow.spec.ts:116:3 › Phase F2 / L4-P05: Actions Taken Lifecycle Flow (E2E-L4-01) › E2E-L4-01: Log pending action, assign staff, complete with result, and verify requester read-only view
+[126/132] [mobile] › e2e\lab-04\dashboards.spec.ts:47:64 › F3 REQUESTER: card/list parity, URL reload/Back, detail links and responsive layout
+[127/132] [mobile] › e2e\lab-04\dashboards.spec.ts:47:64 › F3 IT_STAFF: card/list parity, URL reload/Back, detail links and responsive layout
+[128/132] [mobile] › e2e\lab-04\dashboards.spec.ts:47:64 › F3 ADMINISTRATOR: card/list parity, URL reload/Back, detail links and responsive layout
+[129/132] [mobile] › e2e\lab-04\dashboards.spec.ts:82:1 › F3 review fix: all roles keyboard home/card navigation and visible focus
+[130/132] [mobile] › e2e\lab-04\dashboards.spec.ts:104:1 › F3 empty account, zero-result drill-down, Clear Filters and account switching
+[131/132] [mobile] › e2e\lab-04\dashboards.spec.ts:114:1 › F3 network failure hides metrics, Retry restores real dashboard
+[132/132] [mobile] › e2e\lab-04\ticket-resolution.spec.ts:114:3 › Phase F2 / L4-P06: Resolution Gate Enforcement (E2E-L4-02) › E2E-L4-02: Ticket cannot be resolved without completed Action Taken; resolution succeeds after completing action
+  132 passed (3.7m)

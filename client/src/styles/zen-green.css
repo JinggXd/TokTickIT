@@ -26,6 +26,29 @@ body {
   padding: 0;
 }
 
+/* Lab 4 dashboards use the shared Zen Green palette and visible keyboard focus. */
+.dashboard a {
+  color: var(--zg-primary);
+}
+.dashboard .card {
+  background-color: var(--zg-surface);
+  border-color: var(--zg-border);
+}
+.dashboard a.card {
+  color: var(--zg-text-primary);
+}
+.dashboard a.card:hover {
+  background-color: var(--zg-pale-green);
+}
+.dashboard a:focus-visible, .dashboard button:focus-visible {
+  outline: 3px solid var(--zg-primary);
+  outline-offset: 3px;
+  box-shadow: 0 0 0 4px rgba(0, 107, 60, 0.25);
+}
+.dashboard .btn {
+  min-height: 44px;
+}
+
 /* Zen Green Bootstrap Overrides */
 .navbar-zen {
   background-color: var(--zg-primary) !important;
@@ -37,6 +60,12 @@ body {
   color: #FFFFFF !important;
   font-weight: 700;
   font-size: 1.25rem;
+}
+
+.navbar-zen .navbar-brand:focus-visible {
+  outline: 3px solid var(--zg-surface);
+  outline-offset: 3px;
+  border-radius: 4px;
 }
 
 .nav-link-zen {

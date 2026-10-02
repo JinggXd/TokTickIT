@@ -173,9 +173,9 @@ test.describe("Phase F4 / P11 & P12: User Administration E2E Verification", () =
     await page.getByTestId("confirm-password-input").fill(permanentPass);
     await page.getByTestId("update-password-submit-button").click();
 
-    // Verify lands on permitted role view (/staff/queue)
-    await page.waitForURL("**/staff/queue", { timeout: 15_000 });
-    await expect(page.getByTestId("staff-ticket-queue-page")).toBeVisible();
+    // Verify lands on Lab 4 Staff dashboard
+    await page.waitForURL("**/staff/dashboard", { timeout: 15_000 });
+    await expect(page.getByTestId("dashboard-page")).toBeVisible();
 
     await page.screenshot({ path: screenshotPath(testInfo, "e2e12-new-user-landing.png") });
     await signOut(page);
@@ -186,8 +186,8 @@ test.describe("Phase F4 / P11 & P12: User Administration E2E Verification", () =
     const targetContext = await browser.newContext();
     const targetPage = await targetContext.newPage();
     await loginAs(targetPage, TARGET_EMAIL, PASS);
-    await expect(targetPage).toHaveURL(/\/my-tickets/);
-    await expect(targetPage.getByTestId("my-tickets-page")).toBeVisible();
+    await expect(targetPage).toHaveURL(/\/dashboard/);
+    await expect(targetPage.getByTestId("dashboard-page")).toBeVisible();
     await targetPage.screenshot({ path: screenshotPath(testInfo, "e2e13-target-session-active.png") });
 
     // Directly query test API server (port 3001) to verify session is 200 before reset (AC-47)

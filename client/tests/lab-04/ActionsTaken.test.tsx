@@ -130,6 +130,53 @@ describe("Phase F2 / L4-P05: Actions Taken UI in Ticket Detail", () => {
     expect(screen.getByRole("button", { name: /Mark Completed/i })).toBeDefined();
   });
 
+  it("UI-L4-06b: completing an action explicitly clears deleted attachment notes", async () => {
+    vi.mocked(api.completeActionTaken).mockResolvedValueOnce({ ticketId: 101, action: mockActions[0] });
+    render(<ActionsTakenSection ticketId={101} ticketStatus="IN_PROGRESS"
+      actions={[{ ...mockActions[1], attachmentNotes: "old-log.txt" }]}
+      currentUser={{ id: 12, name: "Alex IT", role: "IT_STAFF" }} onActionSaved={onActionSaved} />);
+    fireEvent.click(screen.getByTestId("complete-action-btn-2"));
+    const dialog = screen.getByRole("dialog");
+    const notes = within(dialog).getByLabelText(/Attachment Notes/i);
+    expect(notes).toHaveValue("old-log.txt");
+    fireEvent.change(notes, { target: { value: "   " } });
+    fireEvent.change(within(dialog).getByLabelText(/Result/i), { target: { value: "Work completed" } });
+    fireEvent.click(within(dialog).getByRole("button", { name: /Mark Completed/i }));
+    await waitFor(() => expect(api.completeActionTaken).toHaveBeenCalledWith(101, 2, {
+      result: "Work completed", expectedVersion: 1, attachmentNotes: null,
+    }));
+    expect(onActionSaved).toHaveBeenCalledTimes(1);
+  });
+
+  it("UI-L4-18: UUID fallback generates valid keys and preserves key/data on retry", async () => {
+    const originalCrypto = globalThis.crypto;
+    vi.stubGlobal("crypto", { getRandomValues: originalCrypto.getRandomValues.bind(originalCrypto) });
+    vi.mocked(api.createActionTaken).mockRejectedValueOnce(new Error("Network interrupted"))
+      .mockResolvedValue({ ticketId: 101, action: mockActions[0] });
+    try {
+      render(<ActionsTakenSection ticketId={101} ticketStatus="IN_PROGRESS" actions={[]}
+        currentUser={{ id: 12, name: "Alex IT", role: "IT_STAFF" }} onActionSaved={onActionSaved} />);
+      const submit = () => {
+        fireEvent.change(screen.getByLabelText(/Action Description/i), { target: { value: "Checked switch" } });
+        fireEvent.change(screen.getByLabelText(/Result \/ Resolution Details/i), { target: { value: "Healthy" } });
+        fireEvent.click(screen.getByRole("button", { name: "Save Action" }));
+      };
+      fireEvent.click(screen.getByRole("button", { name: /\+ Log Action/i }));
+      submit();
+      await screen.findByText("Network interrupted");
+      const first = vi.mocked(api.createActionTaken).mock.calls[0];
+      expect(first[2]).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i);
+      expect(screen.getByLabelText(/Action Description/i)).toHaveValue("Checked switch");
+      fireEvent.click(screen.getByRole("button", { name: "Save Action" }));
+      await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+      expect(vi.mocked(api.createActionTaken).mock.calls[1]).toEqual(first);
+      fireEvent.click(screen.getByRole("button", { name: /\+ Log Action/i }));
+      submit();
+      await waitFor(() => expect(api.createActionTaken).toHaveBeenCalledTimes(3));
+      expect(vi.mocked(api.createActionTaken).mock.calls[2][2]).not.toBe(first[2]);
+    } finally { vi.unstubAllGlobals(); }
+  });
+
   it("UI-L4-07: Cancel Action Taken modal renders prompt and confirm button", () => {
     render(
       <ActionsTakenSection

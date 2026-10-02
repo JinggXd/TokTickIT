@@ -10,10 +10,12 @@ import {
 import { StatusBadge, PriorityBadge } from "../components/Badges.js";
 
 interface StaffTicketQueueProps {
+  queryString?: string;
+  onClearQuery?: () => void;
   onSelectTicket?: (ticketId: number) => void;
 }
 
-export const StaffTicketQueue: React.FC<StaffTicketQueueProps> = ({ onSelectTicket }) => {
+export const StaffTicketQueue: React.FC<StaffTicketQueueProps> = ({ onSelectTicket, queryString = "", onClearQuery }) => {
   // Reference data
   const [categories, setCategories] = useState<Category[]>([]);
   const [ticketOwners, setTicketOwners] = useState<TicketOwner[]>([]);
@@ -24,8 +26,9 @@ export const StaffTicketQueue: React.FC<StaffTicketQueueProps> = ({ onSelectTick
   const [selectedCategory, setSelectedCategory] = useState("ALL");
   const [selectedReqPriority, setSelectedReqPriority] = useState("ALL");
   const [selectedItPriority, setSelectedItPriority] = useState("ALL");
-  const [selectedStatus, setSelectedStatus] = useState("ALL");
-  const [selectedOwner, setSelectedOwner] = useState("ALL");
+  const [selectedStatus, setSelectedStatus] = useState(() => new URLSearchParams(queryString).get("status") || "ALL");
+  const [selectedOwner, setSelectedOwner] = useState(() => new URLSearchParams(queryString).get("owner") || "ALL");
+  const [statusGroup, setStatusGroup] = useState(() => new URLSearchParams(queryString).get("statusGroup") || "");
   const [sortBy, setSortBy] = useState("updatedAt");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
   const [currentPage, setCurrentPage] = useState(1);
@@ -84,6 +87,7 @@ export const StaffTicketQueue: React.FC<StaffTicketQueueProps> = ({ onSelectTick
         requestedPriority: selectedReqPriority !== "ALL" ? selectedReqPriority : undefined,
         itPriority: selectedItPriority !== "ALL" ? selectedItPriority : undefined,
         status: selectedStatus !== "ALL" ? selectedStatus : undefined,
+        statusGroup: statusGroup || undefined,
         owner: selectedOwner !== "ALL" ? selectedOwner : undefined,
         sortBy,
         sortOrder,
@@ -111,6 +115,7 @@ export const StaffTicketQueue: React.FC<StaffTicketQueueProps> = ({ onSelectTick
     selectedReqPriority,
     selectedItPriority,
     selectedStatus,
+    statusGroup,
     selectedOwner,
     sortBy,
     sortOrder,
@@ -133,6 +138,8 @@ export const StaffTicketQueue: React.FC<StaffTicketQueueProps> = ({ onSelectTick
   };
 
   const handleClearFilters = () => {
+    setStatusGroup("");
+    onClearQuery?.();
     setSearchInput("");
     setSearchTerm("");
     setSelectedCategory("ALL");
@@ -149,7 +156,7 @@ export const StaffTicketQueue: React.FC<StaffTicketQueueProps> = ({ onSelectTick
       selectedReqPriority !== "ALL" ||
       selectedItPriority !== "ALL" ||
       selectedStatus !== "ALL" ||
-      selectedOwner !== "ALL",
+      selectedOwner !== "ALL" || statusGroup,
   );
 
   return (
@@ -163,6 +170,7 @@ export const StaffTicketQueue: React.FC<StaffTicketQueueProps> = ({ onSelectTick
       </div>
 
       {/* Filter Toolbar Card */}
+      {statusGroup && <p className="small text-muted" role="status">Dashboard filter: {statusGroup === "open" ? "Open tickets" : statusGroup === "active" ? "Active tickets (including resolved)" : statusGroup}</p>}
       <div className="card shadow-sm border-0 mb-4" style={{ backgroundColor: "#F8FAF8" }}>
         <div className="card-body p-3">
           <div className="row g-2 align-items-end">

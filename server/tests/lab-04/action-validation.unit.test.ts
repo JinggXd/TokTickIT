@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import { validateActionDateTime, isValidUUIDv4, normalizeActionPayload, computeRequestPayloadHash } from "../../src/utils/actionValidation.js";
 
 describe("Phase F2 / L4-P04: Action Validation Unit Tests (UNIT-L4-01, UNIT-L4-02)", () => {
@@ -33,6 +33,21 @@ describe("Phase F2 / L4-P04: Action Validation Unit Tests (UNIT-L4-01, UNIT-L4-0
       const result = validateActionDateTime("invalid-date-string");
       expect(result.valid).toBe(false);
       expect(result.error).toMatch(/invalid/i);
+    });
+  });
+
+  describe("UNIT-L4-01b: ISO datetime types and exact skew boundary", () => {
+    it.each([true, false, 0, [], {}, "2026-09-25", "09/25/2026", "2026-02-30T10:00:00Z"])("rejects invalid datetime %j", (value) => {
+      expect(validateActionDateTime(value).valid).toBe(false);
+    });
+    it("accepts ISO offsets and the exact five-minute boundary", () => {
+      vi.useFakeTimers();
+      vi.setSystemTime(new Date("2026-10-02T05:00:00Z"));
+      try {
+        expect(validateActionDateTime(undefined).date?.toISOString()).toBe("2026-10-02T05:00:00.000Z");
+        expect(validateActionDateTime("2026-10-02T12:05:00+07:00").valid).toBe(true);
+        expect(validateActionDateTime("2026-10-02T05:05:00.001Z").valid).toBe(false);
+      } finally { vi.useRealTimers(); }
     });
   });
 
