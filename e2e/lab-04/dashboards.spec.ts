@@ -79,6 +79,28 @@ for (const role of ["REQUESTER", "IT_STAFF", "ADMINISTRATOR"]) test(`F3 ${role}:
   }
 });
 
+test("F3 review fix: all roles keyboard home/card navigation and visible focus", async ({ page }) => {
+  for (const role of ["REQUESTER", "IT_STAFF", "ADMINISTRATOR"]) {
+    await page.context().clearCookies();
+    await login(page, role);
+    const home = role === "REQUESTER" ? "/dashboard" : role === "IT_STAFF" ? "/staff/dashboard" : "/admin/dashboard";
+    const brand = page.getByRole("link", { name: /TokTickIT/ });
+    await expect(brand).toHaveAttribute("href", home);
+    await page.keyboard.press("Tab");
+    await brand.focus(); await expect(brand).toBeFocused();
+    expect(await brand.evaluate(element => parseFloat(getComputedStyle(element).outlineWidth))).toBeGreaterThanOrEqual(3);
+    await page.keyboard.press("Enter"); await expect(page).toHaveURL(new RegExp(`${home}$`));
+    const card = page.getByTestId("dashboard-metric-0");
+    const href = (await card.getAttribute("href"))!;
+    await card.focus(); await expect(card).toBeFocused();
+    expect(await card.evaluate(element => parseFloat(getComputedStyle(element).outlineWidth))).toBeGreaterThanOrEqual(3);
+    await page.keyboard.press("Enter");
+    await expect(page).toHaveURL(new RegExp(href.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "$"));
+    await noOverflow(page);
+    await brand.focus(); await page.keyboard.press("Enter"); await expect(page).toHaveURL(new RegExp(`${home}$`));
+  }
+});
+
 test("F3 empty account, zero-result drill-down, Clear Filters and account switching", async ({ page }) => {
   await login(page, "REQUESTER"); await page.getByTestId("sign-out-button").click(); await page.waitForURL("**/login");
   await login(page, "EMPTY"); await expect(page.getByText("No recent tickets yet.")).toBeVisible();

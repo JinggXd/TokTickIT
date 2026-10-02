@@ -38,6 +38,7 @@ export const AppShell: React.FC<AppShellProps> = ({
 
   const isRequesterNav = (user && user.role === "REQUESTER") || (!user && !!currentRequester);
   const dashboardTab = user?.role === "IT_STAFF" ? "staff-dashboard" : user?.role === "ADMINISTRATOR" ? "admin-dashboard" : "dashboard";
+  const homePath = user ? user.role === "IT_STAFF" ? "/staff/dashboard" : user.role === "ADMINISTRATOR" ? "/admin/dashboard" : "/dashboard" : currentRequester ? "/my-tickets" : "/login";
 
   return (
     <div className="min-vh-100 d-flex flex-column" style={{ backgroundColor: "var(--zg-canvas)" }}>
@@ -46,10 +47,14 @@ export const AppShell: React.FC<AppShellProps> = ({
         <div className="container-fluid d-flex justify-content-between align-items-center p-0 flex-wrap gap-2">
           {/* Brand Logo & Desktop Navigation */}
           <div className="d-flex align-items-center gap-3">
-            <span
+            <a
+              href={homePath}
               className="navbar-brand d-flex align-items-center gap-2 mb-0 text-white cursor-pointer text-decoration-none"
               style={{ cursor: "pointer" }}
-              onClick={() => {
+              onClick={(event) => {
+                if (event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
+                if (!user && !currentRequester) return;
+                event.preventDefault();
                 if (user) onTabChange(dashboardTab);
                 else if (currentRequester) onTabChange("my-tickets");
               }}
@@ -57,7 +62,7 @@ export const AppShell: React.FC<AppShellProps> = ({
             >
               <span style={{ fontSize: "1.3rem" }}>🎫</span>
               <span className="fw-bold">TokTickIT</span>
-            </span>
+            </a>
 
             {/* Desktop navigation links based on Role */}
             {(user || currentRequester) && (
