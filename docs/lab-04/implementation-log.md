@@ -273,3 +273,77 @@ Current checkout at inspection: feature/actions-and-workflow-phase2-lab4, HEAD 3
    - **Finding:** In `api-spec.md` §2.3, the validation error precedence list specified 404 (mismatched/non-existent action) before 400 (terminal ticket lock), whereas transaction step 2 checked terminal status before step 3 checked nested action.
    - **Resolution:** Reordered transaction steps in `api-spec.md` (§2.3, §2.4, §2.5) and `server/src/routes/actions.ts` (PATCH, complete, cancel) so that the nested action lookup occurs immediately after row-locking the parent ticket. If the action does not exist or does not belong to the ticket, `404 Not Found` is returned immediately before evaluating terminal ticket lock (`400 Bad Request`).
    - **Test Evidence:** Added `API-L4-14b` in `actions-taken.api.test.ts` testing PATCH, complete, and cancel on a resolved ticket with mismatched actionId and non-existent actionId; all assert `404 Not Found` (33/33 tests passing).
+
+---
+
+## 12. Phase F2 Implementation, Hardening & PR #49 Open (2026-09-26)
+
+**Date:** 2026-09-26T19:07:00+07:00  
+**Feature Branch:** `feature/actions-and-workflow-phase2-lab4`  
+**Base Branch:** `lab4-staging`  
+**GitHub Issue:** [#48](https://github.com/JinggXd/TokTickIT/issues/48) (`Phase F2 (P03–P06): Actions Taken, Workflow State Machine & Resolution Gate`)  
+**Pull Request:** [#49](https://github.com/JinggXd/TokTickIT/pull/49) (`feat(f2): implement Actions Taken, workflow state machine & resolution gate (P03-P06)`)  
+**Development Panel Link:** Verified linked via `closingIssuesReferences` (`Resolves #48`).  
+
+### Scope & Work Packages Completed:
+1. **L4-P03: Schema Migration & Idempotent Seed:**
+   - ActionTaken model created with status enum (`PENDING`, `COMPLETED`, `CANCELLED`), actor references (`createdById`, `performedById`, `assigneeId`), version tracking, and clientRequestId idempotency.
+   - Preserved all baseline Lab 1-3 data without regression.
+2. **L4-P04: Actions Taken REST API:**
+   - Endpoints: `POST /api/tickets/:id/actions`, `PUT/PATCH /api/tickets/:id/actions/:actionId`, `POST /api/actions/:id/complete`, `POST /api/actions/:id/cancel`.
+   - Concurrency locking using `SELECT ... FOR UPDATE` and version bumping on parent ticket.
+3. **L4-P05: Actions Taken UI:**
+   - Timeline display on Staff, Admin, and Requester views (100% confidentiality of internal notes).
+   - Form modal dialogs with validation, optimistic submit-locking, Escape/close guards, and local timezone handling.
+4. **L4-P06: Workflow State Machine & Resolution Gate:**
+   - 64-transition matrix enforced; BR-12 Resolution Gate blocks transition to `RESOLVED` unless >= 1 `COMPLETED` action exists and 0 `PENDING` actions remain.
+
+### Hardening & Peer Review Fixes Completed:
+- **E2E Triage Workflow (`staff-ticket-flow.spec.ts`):** Added Action Taken logging step prior to ticket resolution to fulfill BR-12; updated alert assertions to `.alert-success` and verified absence of `.alert-danger`.
+- **Complete Action API (`actions.ts`):** Validated string types on `result` and `attachmentNotes`, returning `400 VALIDATION_FAILED` instead of unhandled 500 TypeError. Added `API-L4-07b`.
+- **Actions Taken UI Submissions (`ActionsTakenSection.tsx`):** Added `isSubmittingRef`, disabled inputs during submit, locked Escape key and close buttons during network in-flight (`UI-L4-14`).
+- **Staff Owner Loading (`StaffTicketDetail.tsx`):** Fixed staff owner fetching for Admin read-only view.
+- **Migration & Concurrency Verification:** Ran real SQL migration preservation test (`MIG-L4-01b`) and concurrency race tests under multi-worker setup.
+
+### Verification Status:
+- Server TypeScript (`tsc`): 0 errors
+- Client Vite (`tsc && vite build`): 0 errors
+- Client Vitest suite: 96 / 96 passed (17 files)
+- Server Vitest suite: 324 / 324 passed (including all 60 Lab 4 tests; expanded API-L4-10a/b coverage on CLOSED and CANCELLED terminal tickets)
+- Documentation: Created `docs/lab-04/what_i_have_done2.md` and `docs/lab-04/aiused2.md`
+
+---
+
+## 13. Phase F2 Completion, Mobile Card List, Workflow Tests & E2E Verification (2026-09-27)
+
+**Date:** 2026-09-27T23:00:00+07:00  
+**Feature Branch:** `feature/actions-and-workflow-phase2-lab4`  
+**Base Branch:** `lab4-staging`  
+**GitHub Issue:** [#48](https://github.com/JinggXd/TokTickIT/issues/48)  
+**Pull Request:** [#49](https://github.com/JinggXd/TokTickIT/pull/49)  
+
+### Deliverables & Key Changes:
+1. **Mobile (<768px) Card List View (UI-spec line 208, UI-L4-15):**
+   - In `client/src/components/ActionsTakenSection.tsx`, converted Actions Taken from a simple table into a responsive view: desktop table (`d-none d-md-block table-responsive`) and mobile card list (`d-block d-md-none p-3`, `data-testid="actions-taken-mobile-cards"`).
+   - Each mobile card displays: Date/Time, Status badge (`PENDING`, `COMPLETED`, `CANCELLED`), Description, Result, Performed by / Assignee, Follow-up indicator, and Staff action controls (`Complete`, `Edit`, `Cancel`).
+   - Added component test `UI-L4-15` in `client/tests/lab-04/ActionsTaken.test.tsx` (13/13 tests pass).
+   - Retaken 375px screenshots for Staff and Requester, asserting `document.documentElement.scrollWidth <= 375px` (0 horizontal overflow).
+2. **Ticket Workflow Client Tests (UI-L4-09, UI-L4-10):**
+   - Created `client/tests/lab-04/TicketWorkflow.test.tsx`:
+     - `UI-L4-09`: 422 `RESOLUTION_GATE_FAILED` resolution gate error banner rendered inside status confirmation modal when attempting to resolve a ticket with 0 completed actions.
+     - `UI-L4-10`: 409 `CONFLICT` stale version conflict banner instructing user to reload page, with interactive Refresh button.
+3. **End-to-End Specs (E2E-L4-01, E2E-L4-02):**
+   - Created `e2e/lab-04/actions-taken-flow.spec.ts` (`E2E-L4-01`): Full action lifecycle from Staff log pending action -> assign staff -> complete with result -> Requester read-only view with zero mutation controls.
+   - Created `e2e/lab-04/ticket-resolution.spec.ts` (`E2E-L4-02`): Resolution gate enforcement showing resolution attempt blocked with 422 banner when ticket has no completed action, and succeeding once a completed action is logged.
+   - Both specs pass across Desktop (1280px), Tablet (768px), and Mobile (375px) viewports (6/6 tests pass).
+4. **Accessibility Hardening (UI-spec 7.1):**
+   - Added `<label htmlFor="queue-page-size">` for page size dropdown in `StaffTicketQueue.tsx`.
+   - Added `<label htmlFor="staff-reassign-owner-select">`, `<label htmlFor="staff-public-comment-input">`, and `<label htmlFor="staff-internal-note-input">` in `StaffTicketDetail.tsx`.
+5. **MIG-L4-02 Deferral:**
+   - Sandbox backup/restore recovery verification (`MIG-L4-02`) is explicitly deferred to Phase F4 (L4-P11) on disposable test DB (`toktickit_test_*`). Documented in `PHASES.md` and `tests.md`.
+6. **Full Test Suite Verification:**
+   - Client Vitest suite: 18 files, 99 passed (100%).
+   - Server Vitest suite: 29 files, 324 passed (100%).
+   - Playwright E2E suite: 114 passed across Desktop, Tablet, and Mobile viewports (2.7m runtime, 0 failed, 0 skipped).
+
+
