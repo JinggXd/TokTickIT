@@ -31,3 +31,8 @@ The full suite ran at the integrated checkpoint. Subsequent edits only change th
 An intermediate capture run exposed a race with the existing modal's deferred initial focus on Tablet. The test now waits for that focus before filling the modal; no assertion was removed or retried silently. Earlier evidence attempts detected concurrent source writes during recovery and native-tool/sandbox compatibility issues. Final successful runs retain the source-unchanged guard and all recovery comparisons.
 
 Completed F4 planned checks: REG-L4-01/02, MIG-L4-02, PERF-L4-01, RESP-L4-01, A11Y-L4-01, plus inherited A11Y-L4-02 and E2E-L4-01/02/03. Peer approval, explicit Development-panel Issue link, reviewer merge and F5 release/submission are separate gates. F1 decision acceptance is not inferred from these results.
+
+
+## Superseding recovery review correction
+
+The subsequent review identified an unverified Attachment-to-file relationship in this original proof. It is fixed and fully reverified at `bde66e99e6bfeece12835a4beef85badcc0df6ba`: server 353/353, client 115/115, full Playwright 132/132, both builds passed. Missing active/soft-removed references and incorrect sizes now reject. Use the [latest correction evidence](../f4-pr53-review-fix-20261002/verification.md) for current recovery certification and performance samples.

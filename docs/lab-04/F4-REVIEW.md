@@ -17,7 +17,7 @@ Pull request: [Draft PR #53](https://github.com/JinggXd/TokTickIT/pull/53), targ
 
 The source is `toktickit_test_f2_review_1790784843569` on localhost:5433, previously created solely for review tests. The safe runner rechecks its recorded allowlist and `current_database()` before execution. Recovery independently verifies source/destination identities and a fresh empty destination. No existing database is dropped or overwritten.
 
-`pg_dump` uses an exported repeatable-read snapshot. A custom archive is restored with PostgreSQL native tools, then every public table's complete row hash/count, column/constraint/index/enum definitions and sequence state are compared. Both active and soft-removed attachment fixtures pass actual backup-copy and restore-copy SHA-256 comparisons. The source is checked again to detect concurrent writers. Final results are in `artifacts/lab-04/f4-evidence-20261002/recovery.json`.
+`pg_dump` uses an exported repeatable-read snapshot. A custom archive is restored with PostgreSQL native tools, then every public table's complete row hash/count, column/constraint/index/enum definitions and sequence state are compared. Both active and soft-removed attachment fixtures pass actual backup-copy and restore-copy SHA-256 comparisons. The source is checked again to detect concurrent writers. Latest corrected results are in `artifacts/lab-04/f4-pr53-review-fix-20261002/recovery.json`. Active and soft-removed Attachment references and recorded file sizes are checked in the source and restored manifests using the dump snapshot; a missing file fails certification. The source file manifest is also checked again for concurrent changes.
 
 This machine has PostgreSQL 18.1 tools and a 16.14 server. The restore list omits only creation of the already-present empty public schema. For this version combination, `pg_restore` generates SQL and `psql --single-transaction` executes it after removal of only the unsupported `SET transaction_timeout = 0`. Object/data entries remain present and all comparison assertions remain mandatory. Owner/ACL/global-role recovery is outside this proof.
 
@@ -25,9 +25,9 @@ The newly created restore database is retained for inspection. Archive/SQL/uploa
 
 ## Performance proof — PERF-L4-01
 
-The fixture adds exactly 500 tickets and 1,000 actions; existing test rows remain, so the total load is at least this size. Each Staff/Requester endpoint receives five warm-ups and 50 sequential Supertest HTTP samples, requiring status 200 and a metrics response. p95 uses the nearest-rank sample at `ceil(50 × 0.95) - 1`; all 50 samples are retained in `performance.json`.
+The fixture adds exactly 500 tickets and 1,000 actions; existing test rows remain, so the total load is at least this size. Each Staff/Requester endpoint receives five warm-ups and 50 sequential Supertest HTTP samples, requiring status 200 and a metrics response. p95 uses the nearest-rank sample at `ceil(50 × 0.95) - 1`; all 50 samples are retained in `artifacts/lab-04/f4-pr53-review-fix-20261002/performance.json`.
 
-Final p95: Staff **14.21ms**, Requester **10.34ms**, both below **200ms**. These measurements include session and database work on this local test machine. They do not measure a remote network, concurrent production load or browser rendering. Fixtures/sessions are removed only for the uniquely created test users.
+Latest p95 after the review correction: Staff **54.63ms**, Requester **14.59ms**, both below **200ms**. These measurements include session and database work on this local test machine. They do not measure a remote network, concurrent production load or browser rendering. Fixtures/sessions are removed only for the uniquely created test users.
 
 ## Regression and visual proof
 
@@ -40,3 +40,8 @@ Database suites run sequentially with isolated uploads and API/client ports 3001
 PHASES previously required the entire Product Definition of Done at P12, while specification §10 includes a submission PDF assigned to F5/P14. The phase gate is clarified to cover F4 technical/visual checks; the overall release/submission DoD remains open for F5. D01–D13 decision acceptance is a separate F1 record and is not inferred from tests.
 
 F3 PR #51 is merged. F4 requires peer review, explicit Development-panel linking of Issue #52 and reviewer merge into `lab4-staging`. Release to `main` and the final submission PDF remain F5 work.
+
+
+## PR #53 review correction
+
+The recovery finding is fixed at `bde66e99e6bfeece12835a4beef85badcc0df6ba`: three new source regressions fail before the fix, and all five recovery scenarios plus safety pass afterward. Full server **353/353**, client **115/115**, Playwright **132/132**, both builds passed at this checkpoint. See [latest verification](../../artifacts/lab-04/f4-pr53-review-fix-20261002/verification.md). Earlier source checkpoints above are historical; the correction evidence supersedes their recovery certification.

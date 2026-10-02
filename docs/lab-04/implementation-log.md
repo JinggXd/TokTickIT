@@ -414,3 +414,12 @@ Current checkout at inspection: feature/actions-and-workflow-phase2-lab4, HEAD 3
 - All 33 selected Desktop/Tablet/Mobile captures opened and inspected; mobile full-page action captures replace sticky-header-obscured panel captures. See visual-checklist.md and artifacts/lab-04/f4-evidence-20261002/verification.md. No claimed Red/Green implementation history is invented for this verification-only package.
 - Gate clarification recorded in F4-REVIEW.md: P12 closes technical/visual checks; specification §10 submission PDF and whole release DoD remain F5/P14. D01–D13 acceptance remains a separate F1 record. F4 implementation/verification is ready for peer review; explicit Development-panel linking of Issue #52 and reviewer merge remain pending.
 - Published the F4 branch and opened [Draft PR #53](https://github.com/JinggXd/TokTickIT/pull/53) into `lab4-staging`, attached to this chat. Issue #52 is referenced in prose; explicit Development-panel linking remains unverified. PR stays draft pending that gate and peer review. No merge or reviewer message/request was performed.
+
+
+### F4 PR #53 recovery reference correction — 2026-10-02
+
+- User authorized fixing the review finding. Added four negative recovery cases first; confirmed three expected Red failures (missing active/soft-removed file and incorrect byte size incorrectly resolved) with positive and lost-restored-copy cases passing.
+- Commit `bde66e99e6bfeece12835a4beef85badcc0df6ba` reads all Attachment stored names/sizes from the same repeatable-read snapshot used by pg_dump, checks source/restored manifests and rechecks source upload hashes. Active and soft-removed records are both included. No new dependency or application behavior change.
+- Green targeted recovery/safety 6/6, full server 353/353 (34 files), client 115/115 (21 files), Playwright 132/132 across all viewports, both builds passed; no failed/skipped tests in final runs. Sequential disposable DB suites and isolated uploads/ports preserved. Fault injection is limited to one uniquely created restored file and its spy is restored in finally.
+- Latest recovery matched 162 rows / 10 tables / 10 files, with 2 Attachment references verified. Staff/Requester p95 54.63/14.59ms. Latest proof: `artifacts/lab-04/f4-pr53-review-fix-20261002/verification.md`; earlier evidence remains historical.
+- PR #53 remains draft pending explicit Issue #52 Development-panel link and peer review/reviewer merge. No merge or reviewer message performed.
