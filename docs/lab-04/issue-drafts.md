@@ -165,12 +165,13 @@
 - **Labels:** `phase:f3`, `type:integration`, `scope:security`
 - **Dependencies:** L4-P05, L4-P06, L4-P08, L4-P09
 - **Scope:**
+  - Include all six F2 review follow-ups assigned to F3 by the user on 2026-10-02; implementation status and acceptance gates are in `F3-CARRYOVER.md`. Prepare these corrections at F3 startup and verify them before closing L4-P10.
   - Multi-role session switching without state bleed.
   - Concurrency conflict handling and safe failure feedback.
   - Confidentiality verification: zero Internal Notes leakage in Actions Taken or Requester views.
   - Unit tests for action datetime clock skew and UUIDv4 idempotency keys.
   - Style token tests for Zen Green custom properties and badge mappings.
-- **Planned Test IDs / Evidence:** `UNIT-L4-01`, `UNIT-L4-02`, `STYLE-L4-01`, `STYLE-L4-02`; full cross-role E2E suites passing.
+- **Planned Test IDs / Evidence:** `UNIT-L4-01`, `UNIT-L4-02`, `STYLE-L4-01`, `STYLE-L4-02`, plus carry-over `UNIT-L4-01b`, `API-L4-22j–22m`, `UI-L4-06b`, `UI-L4-16–18`; full cross-role E2E suites passing on the integrated F3 branch.
 - **PR Gate:** Peer review approved, Issue linked via Development panel, merged into `lab4-staging`.
 
 ---

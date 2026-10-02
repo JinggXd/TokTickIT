@@ -526,7 +526,7 @@ To guarantee 1-to-1 parity between dashboard counts and drill-down pages:
     "ticketsByStatus": {
       "NEW": 3,
       "OPEN": 4,
-      "IN_PROGRESS": 6,
+      "IN_PROGRESS": 4,
       "WAITING_FOR_REQUESTER": 2,
       "RESOLVED": 10,
       "CLOSED": 8,
@@ -570,6 +570,8 @@ To guarantee 1-to-1 parity between dashboard counts and drill-down pages:
   5. `myActionsTakenCount`: count where `performedById === currentUser.id` and `status === 'COMPLETED'`.
   6. `myRecentActions`: actions where `performedById === currentUser.id`, sorted `actionDateTime DESC, id DESC`, limit 5.
   7. `recentOrUrgentTickets`: top 5 active tickets prioritizing `itPriority === HIGH DESC`, then `updatedAt DESC`, then `id DESC`.
+  8. `ticketsByStatus`: all queue tickets grouped by all eight statuses, including zero counts. `ticketsByPriority`: open tickets grouped by IT priority, matching D05; its sum equals `openQueueTickets`.
+  9. `myActionsTakenCount` is a lifetime completed-work summary beside the limited performer feed. F3 defines four ticket-count drill-downs; it does not introduce an all-actions endpoint/page.
 
 ---
 
