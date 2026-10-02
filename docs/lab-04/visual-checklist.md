@@ -17,4 +17,4 @@ Browser assertions verify document scrollWidth ≤ innerWidth, Log/Complete/Canc
 
 Selected captures: nine dashboards, six role action views, twelve modal views and six resolution views. Mobile action views are full-page captures; Desktop/Tablet action views are complete panel captures. No screenshot masks or product styling overrides were used. Superseded viewport-only or sticky-header-occluded captures are excluded. Final affected flow passed 3/3 after waiting for actual initial focus rather than racing the existing deferred focus effect.
 
-Technical verification is complete. Peer review and explicit Development-panel Issue #52 linking remain required before reviewer merge. Final submission PDF and release verification belong to F5.
+The checks listed above are complete within their recorded scope. [Current requirement audit](requirements-audit-F2-F3-F4.md) leaves Edit-modal keyboard/visual coverage and full WCAG AA contrast measurements open; this is not complete AC-30/31/FR-19 certification. Peer review and explicit Development-panel Issue #52 linking remain required before reviewer merge. Final submission PDF and release verification belong to F5.

@@ -1,0 +1,10 @@
+# Read-only requirement audit and documentation verification — 2026-10-02
+
+Audit baseline HEAD: `94f85c8dd631b04d9fe8f35d9610b616f61fbe99`; product source remains identical to full-suite checkpoint `bde66e99e6bfeece12835a4beef85badcc0df6ba`. New edits are Markdown and aggregate evidence only.
+
+- [Database state](database-state.json): explicit read-only transaction against configured development database `toktickit`. Password comparison performed in memory; only aggregate counts retained. No account, password, session or database mutation. 11 users, all mustChangePassword=true, active initial-password bypass=0.
+- [GitHub state](github-state.json): read-only PR/review/branch queries. F1/F2/F3 merge events verified; F4 draft/no reviews/no closing Issue reference; main still Lab 3 baseline. Snapshot is time-bound, not a live-status guarantee.
+- [Safe-error reproduction](safe-error-reproduction.json): compiled GET actions route, Prisma method mocked to throw a synthetic diagnostic; no database connection. Actual 500 response exposes that diagnostic. Other four catches use the same raw message by source inspection; no claim of exercising those four handlers here.
+- [Document checks](document-checks.json): UTF-8 text checked for 15 documents, local links/source paths in newly authored reports checked, all 35 AC rows present exactly once, latest recorded source/log hashes matched. `git diff --check` also passes. No product AC is certified by these documentation checks.
+
+Existing full-suite/build/recovery/performance results are reused from [F4 fix evidence](../f4-pr53-review-fix-20261002/verification.md), not rerun in this audit. [Audit and open findings](../../../docs/lab-04/requirements-audit-F2-F3-F4.md). Scripts used for read-only inspection are local temporary helpers, not product files or new dependencies. No PR merge or reviewer message performed.

@@ -1,5 +1,14 @@
 # TokTickIT Lab 4 — Implementation & Audit Log
 
+## Latest requirement and phase-document audit — 2026-10-02
+
+- User requested an all-requirement check and AI Use/What I Have Done for F2/F3/F4 with phase suffixes. Read the 11-page handout, visually inspected pages 9–11, cross-checked contracts/source/test assertions and reused latest raw suite evidence at bde66e9; no product source changes or full-suite rerun in this documentation audit.
+- Added six phase files, canonical ai-use.md (nine selected prompts, model-provenance limits and clearly marked human-finalization reflection draft), reviewer.md and requirements-audit-F2-F3-F4.md. Corrected AC-26/27/28 mapping; planned safe-error/Edit/contrast follow-up tests are explicitly not implemented/run.
+- Read-only development transaction: toktickit has 11 accounts, all mustChangePassword=true, initial-password bypass=0. No credentials/hashes/user rows exposed and no writes/resets/session changes.
+- Read-only GitHub verification: F1/F2/F3 peer merges confirmed; PR #53 still draft/no reviews/closingIssuesReferences=[]; main still Lab 3 baseline. F3 approval event references an earlier commit than final merged head; recorded without inventing a latest-head approval.
+- Actual Actions safe-failure defect: five catches return raw err.message. In-process compiled GET-handler fault injection reproduced a 500 leaking a synthetic diagnostic, without DB connection. Saved aggregate DB/GitHub/reproduction JSON in artifacts/lab-04/requirements-audit-20261002/.
+- Scope limits: recorded suites pass 353 server /115 client /132 browser, builds pass; that does not close unexpected 500, complete Edit/AA contrast, decision-status reconciliation, peer/link/merge, final-main tests, Kanban or PDF gates. Historical author/model claims below are preserved as prior records, not verified runtime identity for this Codex audit.
+
 **Author / Agent:** AI Coding Agent (Gemini 3.8 Flash High)  
 **Repository:** `d:/toktickit`  
 **Base Commit SHA:** `baad45e09272d665bc0cf765236c456edcf0eff7` (`Merge pull request #45 from JinggXd/lab3-staging`)  

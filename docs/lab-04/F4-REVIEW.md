@@ -1,5 +1,7 @@
 # F4 review packet — L4-P11–P12
 
+**2026-10-02 requirement-audit update:** The recorded test runs still pass, but this is not full F4 closure. [Current audit](requirements-audit-F2-F3-F4.md) identifies raw unexpected Actions API 500 messages, incomplete Edit-modal/AA-contrast evidence, and pending peer review/Development-link/integration. Canonical AI Use and reviewer records plus phase-suffixed reports are added. No product source changed in this documentation audit; the full runs below are reused evidence.
+
 Date: 2026-10-02. Branch: `codex/lab4-f4-verification`. Tracking: [Issue #52](https://github.com/JinggXd/TokTickIT/issues/52). Base: `lab4-staging` at `1ee7786cda440c03f830ca2a271d45ce9eb45864`, the reviewed merge of F3 PR #51 including its keyboard correction. Full-suite source checkpoint: `e8185c7b73100f723acd8ff78a9b40379aaec4f6`. Final affected-flow checkpoint: `fd842950e738479386272962284d5887e574c818` (capture and initial-focus test changes only; 3/3 passed).
 
 F4 adds executable database/attachment recovery verification, Dashboard performance checks with the prescribed dataset and sample protocol, and browser modal keyboard/cancellation checks. README, test traceability and visual evidence describe how to repeat and assess verification. Product/API behavior remains the merged F3 baseline.

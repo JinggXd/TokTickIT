@@ -4,6 +4,8 @@
 **Status:** PROPOSED TEST PLAN (Sprint 4 F1 / L4-P02)  
 **Standard Compliance:** CPE 334 Lab 4 Handout (`SE-Lab-4.pdf`, §10, §14 Part 3), `GEMINI-PIPELINE.md`, `F1-REVIEW-ROUND2.md`
 
+**Audit update (2026-10-02):** Plan/result history below is retained. Current [35-AC audit](requirements-audit-F2-F3-F4.md) corrects UI mapping and discloses safe-500 and Edit/contrast gaps; AC-30/31 full scope and overall release DoD are not certified merely by the passing rows.
+
 ---
 
 ## 1. Test Harness & Safety Protocols
@@ -32,12 +34,15 @@ server/tests/lab-04/
 ├── requester-dashboard.api.test.ts
 ├── staff-dashboard.api.test.ts
 ├── migration-preservation.test.ts
+├── database-recovery.test.ts
+├── recovery-safety.unit.test.ts
 └── performance-smoke.test.ts
 
 client/tests/lab-04/
 ├── ZenGreenTokens.test.tsx
 ├── Dashboard.test.tsx
 ├── DashboardRouting.test.tsx
+├── AppShellAccessibility.test.tsx
 ├── ActionsTaken.test.tsx
 └── TicketWorkflow.test.tsx
 
@@ -50,6 +55,8 @@ e2e/lab-04/
 ---
 
 ## 2. Comprehensive Acceptance Criteria to Test Mapping Matrix
+
+One-row-per-AC mapping and current coverage limits: [requirement audit §3](requirements-audit-F2-F3-F4.md). Passed rows certify their assertions at the recorded checkpoint, not all clauses of AC-30/31 or full WCAG AA. Documentation corrections do not create product test results.
 
 | Test ID | Level / Type | Target AC / FR | Description / Scenario | Expected Result | Automated Test File | Status |
 |---|---|---|---|---|---|---|
@@ -124,19 +131,19 @@ e2e/lab-04/
 | **UI-L4-04** | Component | AC-25 | Actions Taken list in Ticket Detail displays items and badges in order | Chronological display, badges match Zen Green tokens | `client/tests/lab-04/ActionsTaken.test.tsx` | Passed |
 | **UI-L4-04b**| Component | UI-4 | Actions Taken renders loading state and error state with retry button | Accessible loading spinner and retry CTA | `client/tests/lab-04/ActionsTaken.test.tsx` | Passed |
 | **UI-L4-04c**| Component | UI-4 | Admin sees Log Action and Controls; Staff performer sees Edit on completed | Role-based action controls verified | `client/tests/lab-04/ActionsTaken.test.tsx` | Passed |
-| **UI-L4-05** | Component | AC-26 | Log Action Taken modal opens with focus trap, validates max datetime and result | Validates max datetime and required result on complete | `client/tests/lab-04/ActionsTaken.test.tsx` | Passed |
+| **UI-L4-05** | Component | FR-01, AC-05/06 (client validation) | Log Action Taken modal opens with focus trap, validates max datetime and result | Validates max datetime and required result on complete | `client/tests/lab-04/ActionsTaken.test.tsx` | Passed |
 | **UI-L4-05b**| Component | A11Y | Focus trap cycles focus inside modal dialog on Tab and Shift+Tab | Accessible modal navigation without leaving dialog | `client/tests/lab-04/ActionsTaken.test.tsx` | Passed |
-| **UI-L4-06** | Component | AC-27 | Complete Action Taken modal requires result and calls complete handler | Result required, busy state handled | `client/tests/lab-04/ActionsTaken.test.tsx` | Passed |
+| **UI-L4-06** | Component | FR-04, AC-07 (UI handler) | Complete Action Taken modal requires result and calls complete handler | Result required, busy state handled | `client/tests/lab-04/ActionsTaken.test.tsx` | Passed |
 | **UI-L4-06b** | Component | FR-04, API-2.4 | Clear existing attachment notes in Complete modal | Sends explicit null with result and expectedVersion | `client/tests/lab-04/ActionsTaken.test.tsx` | Passed |
-| **UI-L4-07** | Component | AC-28 | Cancel Action Taken modal renders prompt and confirm button | Confirmation prompt and cancel handler verified | `client/tests/lab-04/ActionsTaken.test.tsx` | Passed |
+| **UI-L4-07** | Component | FR-04, AC-08 (UI handler) | Cancel Action Taken modal renders prompt and confirm button | Confirmation prompt and cancel handler verified | `client/tests/lab-04/ActionsTaken.test.tsx` | Passed |
 | **UI-L4-08** | Component | AC-29 | Account switching refreshes dashboard without stale data | Fresh metrics rendered after login | `client/tests/lab-04/Dashboard.test.tsx` | Passed (F3, 2026-10-02) |
 | **UI-L4-09** | Component | BR-12 | TicketWorkflow: Resolution gate error alert banner on modal when 0 actions | Renders 422 error banner with guidance | `client/tests/lab-04/TicketWorkflow.test.tsx` | Passed |
 | **UI-L4-10** | Component | BR-14 | TicketWorkflow: 409 conflict renders reload banner | Stale update alerts user to reload page | `client/tests/lab-04/TicketWorkflow.test.tsx` | Passed |
-| **UI-L4-11** | Component | FR-07 | Requester view: read-only Actions Taken list, zero mutation buttons | Renders pending/completed/cancelled without edit controls | `client/tests/lab-04/ActionsTaken.test.tsx` | Passed |
+| **UI-L4-11** | Component | AC-26, FR-07 | Requester view: read-only Actions Taken list, zero mutation buttons | Renders pending/completed/cancelled without edit controls | `client/tests/lab-04/ActionsTaken.test.tsx` | Passed |
 | **UI-L4-12** | Component | FR-08 | Requester view: confidentiality verified, internal notes are never rendered | Assert rendered HTML contains zero internal note text | `client/tests/lab-04/ActionsTaken.test.tsx` | Passed |
 | **UI-L4-13** | Component | BR-08, D11 | Action date/time input formatted in local browser timezone without UTC skew | Input initializes and enforces max in local timezone (not UTC -7h) | `client/tests/lab-04/ActionsTaken.test.tsx` | Passed |
 | **UI-L4-13b**| Component | BR-08, D11 | Fixed-clock assertion verifies local now and max = now + 5m boundary | Clock frozen, asserts exact local string format | `client/tests/lab-04/ActionsTaken.test.tsx` | Passed |
-| **UI-L4-14** | Component | UI-4 | Modal locks close button, Escape key, and form inputs during submission | In-flight submission guards prevent duplicate clicks | `client/tests/lab-04/ActionsTaken.test.tsx` | Passed |
+| **UI-L4-14** | Component | AC-27, UI-4 | Modal locks close button, Escape key, and form inputs during submission | In-flight submission guards prevent duplicate clicks | `client/tests/lab-04/ActionsTaken.test.tsx` | Passed |
 | **UI-L4-15** | Component | UI-spec:208| Mobile (<768px): Actions Taken renders responsive card list (not table) | Date/time, badges, description, result, assignee, follow-up, staff buttons | `client/tests/lab-04/ActionsTaken.test.tsx` | Passed |
 | **UI-L4-16** | Component | FR-03, UI-4 | Eligible-assignee lookup fails and user retries | Visible error; assignment controls disabled until successful retry restores choices | `client/tests/lab-04/TicketWorkflow.test.tsx` | Passed |
 | **UI-L4-17** | Component | UI-4.2 | Action create/complete succeeds then ticket reloads | Green success feedback survives ticket reload; modal closes | `client/tests/lab-04/TicketWorkflow.test.tsx` | Passed |
@@ -205,3 +212,15 @@ Recovery retains a newly created restored database and proves row/schema/sequenc
 ## 7. F4 recovery review correction — 2026-10-02
 
 MIG-L4-02 adds four negative cases: active source file missing, soft-removed source file missing, file size different from Attachment metadata, and loss of a referenced restored copy. Before the fix, the first three resolve incorrectly; the restored-copy case already rejects. After the fix, all five recovery cases plus safety pass (6/6). Full server 353/353, client 115/115, full Playwright 132/132 and both builds pass at `bde66e99e6bfeece12835a4beef85badcc0df6ba`. Latest hashes, referenced-file counts, Red/Green and complete logs: `artifacts/lab-04/f4-pr53-review-fix-20261002/verification.md`. This supersedes the earlier recovery certification in section 6.
+
+## 8. Requirement-audit follow-up test plan — 2026-10-02
+
+These are **planned, not implemented/not run**; no test is disabled or counted as passing. Product code is unchanged in this documentation-only audit. Existing suites were not rerun; their source checkpoint/logs remain explicit above.
+
+| Planned ID | Requirement / finding | Test file target | Assertion | Status |
+|---|---|---|---|---|
+| API-L4-34 | Handout §6/§8 safe errors; AUD-01 | `server/tests/lab-04/actions-taken.api.test.ts` | Inject unexpected DB error into all five action endpoints; generic 500 shape, no sentinel/SQL/path/internal details; restore mocks; no mutation | Planned; standalone GET-handler audit reproduction exposes raw message, not a passing product AC |
+| A11Y-L4-03 | AC-30/31, FR-19; AUD-02 | `e2e/lab-04/actions-taken-flow.spec.ts` | Edit modal initial focus, Tab/Shift+Tab wrap, visible focus, close/focus restoration and no clipping/overflow across three viewports | Planned; existing Log/Complete/Cancel tests do not certify Edit |
+| STYLE-L4-03 | FR-19 WCAG AA; AUD-02 | `client/tests/lab-04/ZenGreenTokens.test.tsx` plus visual checklist | Measure contrast using actual computed foreground/background pairs for normal/large text and required UI/focus states; record ratios and thresholds | Planned; token equality alone is insufficient |
+
+Before implementing API-L4-34, reconcile an explicit public unexpected-500 body in api-spec.md; retain detailed diagnostics server-side. No silent API business-rule change is made by this plan. Full [audit](requirements-audit-F2-F3-F4.md) maps every AC and distinguishes release/main/PDF gates.
