@@ -192,7 +192,7 @@ test.describe("Phase F2 / L4-P05: Actions Taken Lifecycle Flow (E2E-L4-01)", () 
     await expect(completedBadge).toBeVisible({ timeout: 6_000 });
     await expect(page.getByText("Cleaned LC fiber connector; zero CRC errors recorded").filter({ visible: true })).toBeVisible();
 
-    await page.screenshot({ path: screenshotPath(testInfo, "e2e-l4-01-staff-completed.png") });
+    await actionsSection.screenshot({ path: screenshotPath(testInfo, "e2e-l4-01-staff-completed.png") });
 
     // Cancellation is verified through the UI with the current action version.
     await logBtn.click();
@@ -225,6 +225,6 @@ test.describe("Phase F2 / L4-P05: Actions Taken Lifecycle Flow (E2E-L4-01)", () 
     await expect(page.getByRole("button", { name: /^Complete$/i })).not.toBeVisible();
     await expect(page.getByRole("button", { name: /^Cancel$/i })).not.toBeVisible();
 
-    await page.screenshot({ path: screenshotPath(testInfo, "e2e-l4-01-requester-readonly.png") });
+    await page.getByTestId("actions-taken-section").screenshot({ path: screenshotPath(testInfo, "e2e-l4-01-requester-readonly.png") });
   });
 });
