@@ -52,6 +52,8 @@ async function loginAs(page: Page, email: string, password = PASS) {
   await page.getByTestId("login-password-input").fill(password);
   await page.getByTestId("login-submit-button").click();
   await page.waitForURL((url) => !url.pathname.endsWith("/login"), { timeout: 15_000 });
+  // These regression flows exercise the queue after Lab 4 dashboard landing.
+  await page.goto(email === ADMIN_EMAIL ? "/admin/users" : email === STAFF_EMAIL ? "/staff/queue" : "/my-tickets");
 }
 
 test.beforeAll(async () => {
