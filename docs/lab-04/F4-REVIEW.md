@@ -4,6 +4,8 @@ Date: 2026-10-02. Branch: `codex/lab4-f4-verification`. Tracking: [Issue #52](ht
 
 F4 adds executable database/attachment recovery verification, Dashboard performance checks with the prescribed dataset and sample protocol, and browser modal keyboard/cancellation checks. README, test traceability and visual evidence describe how to repeat and assess verification. Product/API behavior remains the merged F3 baseline.
 
+Pull request: [Draft PR #53](https://github.com/JinggXd/TokTickIT/pull/53), targeting `lab4-staging`. Explicit Development-panel Issue #52 linking remains unverified; keep the PR draft until that link and peer review gates are satisfied.
+
 ## Review by work package
 
 | Package | Files / evidence | Reviewer checks |
