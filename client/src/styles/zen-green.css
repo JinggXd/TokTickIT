@@ -62,6 +62,12 @@ body {
   font-size: 1.25rem;
 }
 
+.navbar-zen .navbar-brand:focus-visible {
+  outline: 3px solid var(--zg-surface);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
 .nav-link-zen {
   color: rgba(255, 255, 255, 0.85) !important;
   font-weight: 500;
