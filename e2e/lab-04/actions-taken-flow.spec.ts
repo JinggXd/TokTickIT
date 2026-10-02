@@ -34,6 +34,18 @@ async function verifyModalKeyboard(page: Page) {
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
 }
 
+async function captureActionsPanel(page: Page, testInfo: TestInfo, filename: string) {
+  const destination = screenshotPath(testInfo, filename);
+  if (await page.evaluate(() => window.innerWidth < 768)) {
+    // Capture from the page top so the sticky mobile header cannot cover the panel.
+    await page.evaluate(() => window.scrollTo(0, 0));
+    await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0);
+    await page.screenshot({ path: destination, fullPage: true });
+  } else {
+    await page.getByTestId("actions-taken-section").screenshot({ path: destination });
+  }
+}
+
 const createdUserIds: number[] = [];
 const createdTicketIds: number[] = [];
 
@@ -192,7 +204,7 @@ test.describe("Phase F2 / L4-P05: Actions Taken Lifecycle Flow (E2E-L4-01)", () 
     await expect(completedBadge).toBeVisible({ timeout: 6_000 });
     await expect(page.getByText("Cleaned LC fiber connector; zero CRC errors recorded").filter({ visible: true })).toBeVisible();
 
-    await actionsSection.screenshot({ path: screenshotPath(testInfo, "e2e-l4-01-staff-completed.png") });
+    await captureActionsPanel(page, testInfo, "e2e-l4-01-staff-completed.png");
 
     // Cancellation is verified through the UI with the current action version.
     await logBtn.click();
@@ -225,6 +237,6 @@ test.describe("Phase F2 / L4-P05: Actions Taken Lifecycle Flow (E2E-L4-01)", () 
     await expect(page.getByRole("button", { name: /^Complete$/i })).not.toBeVisible();
     await expect(page.getByRole("button", { name: /^Cancel$/i })).not.toBeVisible();
 
-    await page.getByTestId("actions-taken-section").screenshot({ path: screenshotPath(testInfo, "e2e-l4-01-requester-readonly.png") });
+    await captureActionsPanel(page, testInfo, "e2e-l4-01-requester-readonly.png");
   });
 });
