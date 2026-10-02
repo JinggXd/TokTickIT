@@ -1,0 +1,26 @@
+{
+  "sourceCommit": "70f3808ae53552795f81b74df77f92828d7b2555",
+  "hashFormat": "sha256 of Git source blob; workingTreeSha256 also records tested checkout bytes",
+  "files": [
+    {
+      "path": "client/src/components/AppShell.tsx",
+      "sha256": "0c5d3b8cba6fb41a7ea6d8b099d3d6be82c360712cf980ebaf2ba7303770ea7f",
+      "workingTreeSha256": "897ed2a28e74d2c0dfb00369cf078b075d4818d56968a135441cda5b31cf01d7"
+    },
+    {
+      "path": "client/src/styles/zen-green.css",
+      "sha256": "d248b132d2e878caa92c84edc87c42d687b10b096e826361473a46092f9674a5",
+      "workingTreeSha256": "65947b13c666bb60a7bdf8117e471dcf808def46a674056ab8f768f1eae2d4f3"
+    },
+    {
+      "path": "client/tests/lab-04/AppShellAccessibility.test.tsx",
+      "sha256": "615361b76f6b6bde6d1f759a8255c6da75caa28a63e022838f311fff24c54e05",
+      "workingTreeSha256": "615361b76f6b6bde6d1f759a8255c6da75caa28a63e022838f311fff24c54e05"
+    },
+    {
+      "path": "e2e/lab-04/dashboards.spec.ts",
+      "sha256": "c2a8a06a81c8a10c96a355f78bfcd43cc64fc49cb86200ce5452f29b502f2cbb",
+      "workingTreeSha256": "c2a8a06a81c8a10c96a355f78bfcd43cc64fc49cb86200ce5452f29b502f2cbb"
+    }
+  ]
+}

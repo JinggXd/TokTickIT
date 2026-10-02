@@ -391,4 +391,13 @@ Current checkout at inspection: feature/actions-and-workflow-phase2-lab4, HEAD 3
 - F3 is **Verified (automated), awaiting peer review/integration**. Explicit Development-panel link and reviewer approval/merge remain required. F4 MIG-L4-02 backup/restore and performance smoke not run; F5 release/submission remain planned.
 - Published the feature branch and created [Draft PR #51](https://github.com/JinggXd/TokTickIT/pull/51) targeting `lab4-staging`, attached to this chat. GitHub reports `mergeable: true`. Inspected the actual PR page: browser signed out; Development panel displays the closing-issues label but **None yet**, with no gear available. Issue #50 is referenced in PR prose only; explicit linking is not claimed complete. PR stays draft pending that gate and peer review. No reviewer message/request and no merge performed.
 
+### F3 keyboard review correction — 2026-10-02
+
+- User authorized fixing the F3 review finding and updating PR #51. GitHub confirmed PR #51 was Open, Ready for review, with unchanged head `89d1313` before the correction. The user's screenshot records approval of that earlier version; it does not approve new commits or prove a merge.
+- Created a separate checkout on `codex/lab4-f3-dashboard` to preserve all in-progress F4 changes. Added three role component regressions first; all failed because the clickable brand span was not a native focusable link.
+- Source checkpoint `70f3808ae53552795f81b74df77f92828d7b2555` replaces the span with an anchor pointing to the role's dashboard, preserves modified clicks, and adds a visible 3px outline using `--zg-surface`. No new business rule or dependency was introduced.
+- Added A11Y-L4-02: Requester/Staff/Admin component checks and browser home/card Enter navigation with visible focus at Desktop 1280, Tablet 768 and Mobile 375. Full regression: server **345/345**, client **115/115**, Playwright **132/132**, both builds passed; zero failed/skipped in final runs.
+- Verified the same disposable local database `toktickit_test_f2_review_1790784843569` before each sequential database suite, with run-specific uploads and isolated API/client servers. New proof: `artifacts/lab-04/f3-pr51-review-fix-20261002/verification.md`, logs, browser result and source hashes.
+- The previous approval predates the correction. Explicit Development-panel Issue #50 linking remains unverified, and the reviewer must inspect the new commit before merging. F1 decision acceptance, F4 recovery/performance and F5 release/submission are separate. No merge or reviewer message was performed.
+
 
