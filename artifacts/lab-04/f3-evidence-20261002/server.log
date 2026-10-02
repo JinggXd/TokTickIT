@@ -44,4 +44,3 @@ Verified disposable database: toktickit_test_f2_review_1790784843569
       Tests  345 passed (345)
    Start at  16:27:03
    Duration  28.95s (transform 477ms, setup 242ms, collect 4.72s, tests 18.99s, environment 4ms, prepare 1.62s)
-

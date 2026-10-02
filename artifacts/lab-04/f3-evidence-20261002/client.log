@@ -104,4 +104,3 @@ This ensures that you're testing the behavior the user would see in the browser.
       Tests  112 passed (112)
    Start at  16:27:14
    Duration  9.42s (transform 1.87s, setup 2.41s, collect 8.02s, tests 30.86s, environment 16.62s, prepare 2.79s)
-
