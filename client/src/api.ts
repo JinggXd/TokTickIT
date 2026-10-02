@@ -3,6 +3,44 @@ export type { RequesterUser, SafeUser, Category, RelatedSystem, Priority, Ticket
 
 const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:3000";
 
+export interface RequesterDashboardMetrics {
+  totalOpenTickets: number;
+  ticketsWaitingForRequester: number;
+  recentlyUpdatedTicketsCount: number;
+  recentlyResolvedTicketsCount: number;
+}
+export interface StaffDashboardMetrics {
+  unassignedTickets: number;
+  myAssignedTickets: number;
+  openQueueTickets: number;
+  ticketsWaitingForRequester: number;
+  myActionsTakenCount: number;
+  ticketsByStatus: Record<TicketStatus, number>;
+  ticketsByPriority: Record<Priority, number>;
+}
+export interface DashboardTicket {
+  id: number; ticketNo: string; summary: string; currentStatus: TicketStatus; updatedAt: string;
+  requestedPriority?: Priority; itPriority?: Priority; ticketOwner?: TicketOwner | null;
+}
+export interface DashboardData {
+  metrics?: RequesterDashboardMetrics | StaffDashboardMetrics;
+  staffMetrics?: StaffDashboardMetrics;
+  recentTickets?: DashboardTicket[];
+  recentOrUrgentTickets?: DashboardTicket[];
+  myRecentActions?: Array<{ id: number; ticketId: number; ticketNo: string; actionDescription: string; status: "PENDING" | "COMPLETED" | "CANCELLED"; actionDateTime: string }>;
+  userMetrics?: { totalUsers: number; activeUsers: number; inactiveUsers: number; usersByRole: Record<Role, number> };
+}
+export async function fetchDashboard(role: Role): Promise<DashboardData> {
+  const endpoint = role === "REQUESTER" ? "requester" : role === "IT_STAFF" ? "staff" : "admin";
+  const response = await apiFetch(`${API_URL}/api/dashboard/${endpoint}`);
+  if (!response.ok) {
+    const body = await response.json().catch(() => ({}));
+    const error = Object.assign(new Error(body.error || "Unable to load dashboard."), { status: response.status });
+    throw error;
+  }
+  return response.json();
+}
+
 let globalCsrfToken: string | null = null;
 
 export function setGlobalCsrfToken(token: string | null): void {
@@ -219,6 +257,8 @@ export async function createTicket(
 }
 
 export interface GetTicketsParams {
+  recent?: string;
+  statusGroup?: string;
   search?: string;
   categoryId?: number | string;
   requestedPriority?: string;
@@ -261,6 +301,8 @@ export async function fetchMyTickets(
   requesterId?: number,
 ): Promise<TicketsResponse> {
   const query = new URLSearchParams();
+  if (params.recent) query.set("recent", params.recent);
+  if (params.statusGroup) query.set("statusGroup", params.statusGroup);
   if (params.search) query.set("search", params.search);
   if (params.categoryId && params.categoryId !== "ALL") query.set("categoryId", String(params.categoryId));
   if (params.requestedPriority && params.requestedPriority !== "ALL") query.set("requestedPriority", params.requestedPriority);
@@ -463,6 +505,7 @@ export interface StaffTicketItem {
 }
 
 export interface StaffQueueParams {
+  statusGroup?: string;
   search?: string;
   categoryId?: number | string;
   requestedPriority?: string;
@@ -494,6 +537,7 @@ export interface TicketOwner {
 
 export async function fetchStaffTickets(params: StaffQueueParams = {}): Promise<StaffQueueResponse> {
   const query = new URLSearchParams();
+  if (params.statusGroup) query.set("statusGroup", params.statusGroup);
   if (params.search) query.set("search", params.search.trim());
   if (params.categoryId && params.categoryId !== "ALL") query.set("categoryId", String(params.categoryId));
   if (params.requestedPriority && params.requestedPriority !== "ALL") query.set("requestedPriority", params.requestedPriority);

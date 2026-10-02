@@ -37,6 +37,7 @@ export const AppShell: React.FC<AppShellProps> = ({
   };
 
   const isRequesterNav = (user && user.role === "REQUESTER") || (!user && !!currentRequester);
+  const dashboardTab = user?.role === "IT_STAFF" ? "staff-dashboard" : user?.role === "ADMINISTRATOR" ? "admin-dashboard" : "dashboard";
 
   return (
     <div className="min-vh-100 d-flex flex-column" style={{ backgroundColor: "var(--zg-canvas)" }}>
@@ -49,9 +50,8 @@ export const AppShell: React.FC<AppShellProps> = ({
               className="navbar-brand d-flex align-items-center gap-2 mb-0 text-white cursor-pointer text-decoration-none"
               style={{ cursor: "pointer" }}
               onClick={() => {
-                if (user?.role === "REQUESTER" || (!user && currentRequester)) onTabChange("my-tickets");
-                else if (user?.role === "IT_STAFF") onTabChange("staff-queue");
-                else if (user?.role === "ADMINISTRATOR") onTabChange("admin-users");
+                if (user) onTabChange(dashboardTab);
+                else if (currentRequester) onTabChange("my-tickets");
               }}
               data-testid="app-brand"
             >
@@ -62,6 +62,7 @@ export const AppShell: React.FC<AppShellProps> = ({
             {/* Desktop navigation links based on Role */}
             {(user || currentRequester) && (
               <nav className="d-none d-md-flex gap-2 ms-3">
+                {user && <button className={`btn btn-sm text-white ${currentTab === dashboardTab ? "active fw-bold bg-white bg-opacity-25" : ""}`} onClick={() => onTabChange(dashboardTab)} data-testid="nav-dashboard">Dashboard</button>}
                 {isRequesterNav && (
                   <>
                     <button
@@ -81,7 +82,7 @@ export const AppShell: React.FC<AppShellProps> = ({
                   </>
                 )}
 
-                {user?.role === "IT_STAFF" && (
+                {(user?.role === "IT_STAFF" || user?.role === "ADMINISTRATOR") && (
                   <button
                     className={`btn btn-sm text-white ${currentTab === "staff-queue" ? "active fw-bold bg-white bg-opacity-25" : ""}`}
                     onClick={() => onTabChange("staff-queue")}
@@ -178,9 +179,10 @@ export const AppShell: React.FC<AppShellProps> = ({
         {/* Mobile navigation bar */}
         {user && (
           <nav
-            className="d-flex d-md-none overflow-x-auto text-nowrap gap-2 pt-2 pb-1 w-100"
+            className="d-flex d-md-none flex-wrap gap-2 pt-2 pb-1 w-100"
             style={{ minHeight: "44px" }}
           >
+            <button className={`btn btn-sm text-white ${currentTab === dashboardTab ? "fw-bold bg-white bg-opacity-25" : ""}`} onClick={() => onTabChange(dashboardTab)} data-testid="nav-dashboard-mobile" style={{ minHeight: "44px", padding: "10px 16px" }}>Dashboard</button>
             {user.role === "REQUESTER" && (
               <>
                 <button
@@ -202,7 +204,7 @@ export const AppShell: React.FC<AppShellProps> = ({
               </>
             )}
 
-            {user.role === "IT_STAFF" && (
+            {(user.role === "IT_STAFF" || user.role === "ADMINISTRATOR") && (
               <button
                 className={`btn btn-sm text-white ${currentTab === "staff-queue" ? "fw-bold bg-white bg-opacity-25" : ""}`}
                 onClick={() => onTabChange("staff-queue")}
@@ -253,7 +255,7 @@ export const AppShell: React.FC<AppShellProps> = ({
 
       {/* Footer */}
       <footer className="py-3 text-center text-muted small border-top" style={{ backgroundColor: "var(--zg-surface)" }}>
-        TokTickIT • CPE 334 Lab 3
+        TokTickIT • CPE 334 Lab 4
       </footer>
     </div>
   );
