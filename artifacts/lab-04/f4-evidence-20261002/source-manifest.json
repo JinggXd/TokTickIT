@@ -1,0 +1,64 @@
+{
+  "base": "1ee7786cda440c03f830ca2a271d45ce9eb45864",
+  "fullSuiteCheckpoint": "e8185c7b73100f723acd8ff78a9b40379aaec4f6",
+  "finalAffectedFlowCheckpoint": "fd842950e738479386272962284d5887e574c818",
+  "note": "After full suite, only the browser test changed: complete panel captures and synchronization with initial modal focus. All keyboard/lifecycle assertions retained; affected flow passed on all three projects at final checkpoint. Later commits only package docs/evidence.",
+  "files": [
+    {
+      "path": "e2e/lab-04/actions-taken-flow.spec.ts",
+      "sha256": "dd438f56b2d3b118959dba7b640fc71002cfb47faff63a1f2e6391657b5b4dd9",
+      "gitBlob": "1b2e319f2829618d15e11bd2212f5cda2b20d084"
+    },
+    {
+      "path": "server/scripts/verify-recovery.d.mts",
+      "sha256": "457074e5ee11a8f9887f3cb91b05ea8791bcea12d89ef0aa4fd95587980c6208",
+      "gitBlob": "076a4469241824032f46dae3f5ce346f4b5a6550"
+    },
+    {
+      "path": "server/scripts/verify-recovery.mjs",
+      "sha256": "e0a591e32f02c67a0a8fc008fb931ece3c093b8d2c2f887b4d8951fc14560a46",
+      "gitBlob": "3e306fef0ef89ea393ceab31e0d1b557502038ff"
+    },
+    {
+      "path": "server/tests/lab-04/database-recovery.test.ts",
+      "sha256": "83bf612d44f057ddae8f06c4c9541f6ea0e0bcd6612842d8a703e1fdcd5f155b",
+      "gitBlob": "99deb0cdb8bc512c84b1b9e7fe0a80995c93f0d6"
+    },
+    {
+      "path": "server/tests/lab-04/performance-smoke.test.ts",
+      "sha256": "2b47ea146adc2f38883e6cfe0f6be7ef7cf3d11af9fe9025b0765895012f3350",
+      "gitBlob": "456a375ac084a4c679b59e010ceaa0be227a78d6"
+    },
+    {
+      "path": "server/tests/lab-04/recovery-safety.unit.test.ts",
+      "sha256": "6b3d2b4a6f6b8fd9d7705bb41a42fb485803f1f107918842cddd7f50f3be1d5d",
+      "gitBlob": "6459c9f858722969d19d4d78e6e0371ad2e12f01"
+    }
+  ],
+  "logs": [
+    {
+      "path": "server-integrated.log",
+      "sha256": "068388e21612a4ef39061d2b82bd0562d5b582abb2f1bf53ce38964c98d01c4a"
+    },
+    {
+      "path": "client-integrated.log",
+      "sha256": "b83583ef8542f8dbac76bb6b6036f0e3697e98a327db0d026b6b4ae638591af9"
+    },
+    {
+      "path": "server-build-integrated.log",
+      "sha256": "1b599cb12dd98cd38ffc9f62d77a9494144a16af2c807685a60a47e26fa29701"
+    },
+    {
+      "path": "client-build-integrated.log",
+      "sha256": "83da69ba0bca289428ee3de4ec8635e0fb86229676f57cdef3aafa6deacdc8b3"
+    },
+    {
+      "path": "playwright-integrated.log",
+      "sha256": "9cf9d403dc70e0797d69624ae37392f1ff7de6418f9d5655767835586b8de90a"
+    },
+    {
+      "path": "panels-playwright-verified.log",
+      "sha256": "a632073d64f057d1f083eab271d83d6850c1ee794b93fcc295262c6ad5250d87"
+    }
+  ]
+}

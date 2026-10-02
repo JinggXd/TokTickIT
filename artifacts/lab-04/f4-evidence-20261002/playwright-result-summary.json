@@ -1,0 +1,14 @@
+{
+  "kind": "Derived from complete successful console log, not a raw Playwright reporter export",
+  "sourceCheckpoint": "e8185c7b73100f723acd8ff78a9b40379aaec4f6",
+  "log": "playwright-integrated.log",
+  "passed": 132,
+  "failed": 0,
+  "skipped": 0,
+  "projects": [
+    "desktop",
+    "tablet",
+    "mobile"
+  ],
+  "duration": "3.2m"
+}

@@ -143,16 +143,16 @@ e2e/lab-04/
 | **UI-L4-18** | Component | D09, AC-28, F3 carry-over | Create action without crypto.randomUUID, then retry a recoverable failure | Valid UUIDv4 accepted by server format; same key/payload reused on retry; reopening gets a new key | `client/tests/lab-04/ActionsTaken.test.tsx` | Passed (F3, 2026-10-02) |
 | **UI-L4-19** | Integration component | AC-22–24 | Dashboard query navigation, Clear Filters, Back and Admin detail route | Query is preserved/restored; Admin opens read-only ticket operations | `client/tests/lab-04/DashboardRouting.test.tsx` | Passed (F3, 2026-10-02) |
 | **RESP-L4-01** | Responsive | AC-30 | Dashboards and Actions Taken render on Desktop/Tablet/Mobile | No horizontal scroll, no clipping | `e2e/lab-04/dashboards.spec.ts`, `actions-taken-flow.spec.ts` | Passed (F3, 2026-10-02) |
-| **A11Y-L4-01** | A11y | AC-31 | Modal focus trap and visible focus indicators | Focus trapped in modal, esc closes, visible ring | `e2e/lab-04/actions-taken-flow.spec.ts` | Passed |
+| **A11Y-L4-01** | Component + E2E | AC-31 | Log/Complete/Cancel modal keyboard focus and visible indicators | Initial focus observed; Tab/Shift+Tab wrap; Escape dismisses Cancel, confirmed cancel persists; inherited submission guards pass component tests | `e2e/lab-04/actions-taken-flow.spec.ts`, `client/tests/lab-04/ActionsTaken.test.tsx` | Passed (F4, 2026-10-02); final affected flow 3/3 and visual checklist |
 | **A11Y-L4-02** | Component + E2E | AC-31, UI-spec §7 | Dashboard home brand is a native focusable link for all three roles | Role-specific href, modified-click preserved, Enter navigation and visible 3px focus at all three viewports | `client/tests/lab-04/AppShellAccessibility.test.tsx`, `e2e/lab-04/dashboards.spec.ts` | Passed (F3 review correction, 2026-10-02); evidence in `artifacts/lab-04/f3-pr51-review-fix-20261002/verification.md` |
 | **E2E-L4-01** | E2E | AC-01, AC-07 | End-to-end action logging, assignment, and completion | Action flow fully traversable on desktop, tablet, and mobile | `e2e/lab-04/actions-taken-flow.spec.ts` | Passed |
 | **E2E-L4-02** | E2E | AC-14, AC-16 | End-to-end ticket resolution gate enforcement | Blocked before action (422), allowed after action completed | `e2e/lab-04/ticket-resolution.spec.ts` | Passed |
 | **E2E-L4-03** | E2E | AC-18–24, AC-29–30 | Role dashboards, all ticket-count drill-downs, Back/reload, empty/clear, account switch and network Retry | 15 cases pass across Desktop/Tablet/Mobile with real API parity | `e2e/lab-04/dashboards.spec.ts` | Passed (F3, 2026-10-02) |
-| **REG-L4-01** | Regression | AC-32 | Full Lab 1 & 2 regression test execution | All existing tests pass 100% | `server/tests/lab-02/`, `client/tests/lab-02/` | Planned |
-| **REG-L4-02** | Regression | AC-33 | Full Lab 3 regression test execution | All existing tests pass 100% | `server/tests/lab-03/`, `client/tests/lab-03/` | Planned |
+| **REG-L4-01** | Regression | AC-32 | Full Lab 1 & 2 regression test execution | All existing tests pass 100% | `server/tests/lab-02/`, `client/tests/lab-02/` | Passed (F4, 2026-10-02); full suite evidence in `artifacts/lab-04/f4-evidence-20261002/verification.md` |
+| **REG-L4-02** | Regression | AC-33 | Full Lab 3 regression test execution | All existing tests pass 100% | `server/tests/lab-03/`, `client/tests/lab-03/` | Passed (F4, 2026-10-02); full suite evidence in `artifacts/lab-04/f4-evidence-20261002/verification.md` |
 | **MIG-L4-01** | Migration | AC-34, AC-35 | Idempotent seed and schema migration preservation | Zero data loss, seed twice identical | `server/tests/lab-04/migration-preservation.test.ts`| Passed |
-| **MIG-L4-02** | Migration | D10 | Sandbox backup and restore recovery verification | pg_dump and pg_restore test on test DB (deferred to Phase F4 L4-P11) | `server/tests/lab-04/migration-preservation.test.ts`| Deferred to F4 |
-| **PERF-L4-01** | Performance | DoD | Dashboard metrics performance smoke test on 500 tickets (p95 < 200ms) | 50 samples, p95 < 200ms | `server/tests/lab-04/performance-smoke.test.ts` | Planned |
+| **MIG-L4-02** | Migration + safety | D10 | Native dump/restore into a fresh disposable database; compare all rows/schema/sequences and active/removed upload bytes | Source unchanged; all 10 tables and 10 files matched; unsafe targets refused | `server/tests/lab-04/database-recovery.test.ts`, `recovery-safety.unit.test.ts` | Passed (F4, 2026-10-02); `recovery.json` |
+| **PERF-L4-01** | Performance | DoD | Dashboard metrics on 500 fixture tickets / 1,000 actions | Each Staff/Requester: 5 warm-ups + 50 HTTP samples, nearest-rank p95 < 200ms | `server/tests/lab-04/performance-smoke.test.ts` | Passed (F4, 2026-10-02); Staff 14.21ms / Requester 10.34ms; `performance.json` |
 
 ---
 
@@ -193,3 +193,10 @@ Phase F2 (L4-P03–L4-P06) implementation and verification completed on branch `
 - Full Playwright suite: **114 passed**, no failed or skipped tests, on Desktop/Tablet/Mobile (2026-10-01). Includes E2E-L4-01 and E2E-L4-02 on all three viewports.
 - Disposable database: `toktickit_test_f2_review_1790784843569`; isolated browser upload run: `f2-fixes-1790841869802`.
 - Logs and screenshot evidence are linked by path in `implementation-log.md`. These results supersede the earlier blocked browser attempt; F3–F5 gates and MIG-L4-02 remain separate.
+
+
+## 6. F4 integrated verification — 2026-10-02
+
+REG-L4-01/02, MIG-L4-02, PERF-L4-01, RESP-L4-01 and A11Y-L4-01 are verified on the merged F3 baseline plus F4 changes. Server 349/349 (34 files), client 115/115 (21 files), full Playwright 132/132 across all three viewports, both builds passed; no failed/skipped tests in these final runs. Subsequent capture/initial-focus test edits passed the affected Actions Taken flow 3/3; full and final checkpoint SHAs are kept separately in `artifacts/lab-04/f4-evidence-20261002/verification.md`. The raw latest browser result covers only that targeted run.
+
+Recovery retains a newly created restored database and proves row/schema/sequence hashes plus upload copy/restore byte hashes; it excludes owner/ACL/global roles. Performance is local sequential authenticated HTTP timing, with all 50 samples for each role recorded. All 33 selected captures were visually inspected; see `visual-checklist.md`. F1 decision acceptance and F4 peer/link/merge gates remain distinct from passing product tests.

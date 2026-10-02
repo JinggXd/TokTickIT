@@ -1,0 +1,351 @@
+{
+  "inspectedDate": "2026-10-02",
+  "cssViewports": {
+    "desktop": [
+      1280,
+      800
+    ],
+    "tablet": [
+      768,
+      1024
+    ],
+    "mobile": [
+      375,
+      667
+    ]
+  },
+  "mobileDeviceScaleFactor": 2.75,
+  "note": "Mobile action panels captured as full pages from scroll top to avoid sticky-header occlusion. Desktop/tablet panels are locator screenshots. Long Log modal includes separate top and bottom captures.",
+  "screenshots": [
+    {
+      "path": "artifacts/lab-04/screenshots/f4-20261002/desktop/dashboard-requester.png",
+      "source": "artifacts/lab-03/screenshots/f4-20261002-integrated/desktop/f3-requester.png",
+      "sourceCheckpoint": "e8185c7b73100f723acd8ff78a9b40379aaec4f6",
+      "project": "desktop",
+      "pixelWidth": 1280,
+      "pixelHeight": 1078,
+      "sha256": "237e667da133f649725add6e5fa3c28a59afc13558920b25f4f71a066ecff2c1",
+      "visuallyInspected": true
+    },
+    {
+      "path": "artifacts/lab-04/screenshots/f4-20261002/desktop/dashboard-staff.png",
+      "source": "artifacts/lab-03/screenshots/f4-20261002-integrated/desktop/f3-it_staff.png",
+      "sourceCheckpoint": "e8185c7b73100f723acd8ff78a9b40379aaec4f6",
+      "project": "desktop",
+      "pixelWidth": 1280,
+      "pixelHeight": 1405,
+      "sha256": "c04575cc51956b98a01719812b14dc6c828f5604b819da6f6840e0a9bd3a24e0",
+      "visuallyInspected": true
+    },
+    {
+      "path": "artifacts/lab-04/screenshots/f4-20261002/desktop/dashboard-admin.png",
+      "source": "artifacts/lab-03/screenshots/f4-20261002-integrated/desktop/f3-administrator.png",
+      "sourceCheckpoint": "e8185c7b73100f723acd8ff78a9b40379aaec4f6",
+      "project": "desktop",
+      "pixelWidth": 1280,
+      "pixelHeight": 1615,
+      "sha256": "e6437b8893866a4b4a16c00a67cb34431eb88948c553e0452dd46c84e1fdd8af",
+      "visuallyInspected": true
+    },
+    {
+      "path": "artifacts/lab-04/screenshots/f4-20261002/desktop/resolution-blocked.png",
+      "source": "artifacts/lab-03/screenshots/f4-20261002-integrated/desktop/e2e-l4-02-resolution-blocked-422.png",
+      "sourceCheckpoint": "e8185c7b73100f723acd8ff78a9b40379aaec4f6",
+      "project": "desktop",
+      "pixelWidth": 1280,
+      "pixelHeight": 800,
+      "sha256": "b97003affceed0ff5e30c40134e5f9a6f2fe818d650e328a831d8af18b727818",
+      "visuallyInspected": true
+    },
+    {
+      "path": "artifacts/lab-04/screenshots/f4-20261002/desktop/resolution-succeeded.png",
+      "source": "artifacts/lab-03/screenshots/f4-20261002-integrated/desktop/e2e-l4-02-resolution-succeeded.png",
+      "sourceCheckpoint": "e8185c7b73100f723acd8ff78a9b40379aaec4f6",
+      "project": "desktop",
+      "pixelWidth": 1280,
+      "pixelHeight": 800,
+      "sha256": "29df546a2c0e8d3186ad8ac194d262c39162fbda942ff7c44eac8e9f78951427",
+      "visuallyInspected": true
+    },
+    {
+      "path": "artifacts/lab-04/screenshots/f4-20261002/desktop/modal-log-top.png",
+      "source": "artifacts/lab-03/screenshots/f4-20261002-integrated/desktop/f4-modal-log-action-top.png",
+      "sourceCheckpoint": "e8185c7b73100f723acd8ff78a9b40379aaec4f6",
+      "project": "desktop",
+      "pixelWidth": 1280,
+      "pixelHeight": 800,
+      "sha256": "b6db25c0a83a092270d4c3af1274265ec39e74f7dfff1677057f1d1cf0226030",
+      "visuallyInspected": true
+    },
+    {
+      "path": "artifacts/lab-04/screenshots/f4-20261002/desktop/modal-log-bottom.png",
+      "source": "artifacts/lab-03/screenshots/f4-20261002-integrated/desktop/f4-modal-log-action.png",
+      "sourceCheckpoint": "e8185c7b73100f723acd8ff78a9b40379aaec4f6",
+      "project": "desktop",
+      "pixelWidth": 1280,
+      "pixelHeight": 800,
+      "sha256": "68a20a846c144ca2663413657da250b8158021cb1e9c7cb197d346993ba18b20",
+      "visuallyInspected": true
+    },
+    {
+      "path": "artifacts/lab-04/screenshots/f4-20261002/desktop/modal-complete.png",
+      "source": "artifacts/lab-03/screenshots/f4-20261002-integrated/desktop/f4-modal-complete-action.png",
+      "sourceCheckpoint": "e8185c7b73100f723acd8ff78a9b40379aaec4f6",
+      "project": "desktop",
+      "pixelWidth": 1280,
+      "pixelHeight": 800,
+      "sha256": "28cfae036a54583db7d4e3939cd5f158d7909f54230331115c59a83c23f475bc",
+      "visuallyInspected": true
+    },
+    {
+      "path": "artifacts/lab-04/screenshots/f4-20261002/desktop/modal-cancel.png",
+      "source": "artifacts/lab-03/screenshots/f4-20261002-integrated/desktop/f4-modal-cancel-action.png",
+      "sourceCheckpoint": "e8185c7b73100f723acd8ff78a9b40379aaec4f6",
+      "project": "desktop",
+      "pixelWidth": 1280,
+      "pixelHeight": 800,
+      "sha256": "124cac519d281eefc740b4a7dfa0b4ae6ad2474242ea93c9537b74364a3945e4",
+      "visuallyInspected": true
+    },
+    {
+      "path": "artifacts/lab-04/screenshots/f4-20261002/desktop/staff-actions.png",
+      "source": "artifacts/lab-03/screenshots/f4-20261002-panels/desktop/e2e-l4-01-staff-completed.png",
+      "sourceCheckpoint": "b7d6b4b73d068eff5ce9b5e4d6bbac101efdf752",
+      "project": "desktop",
+      "pixelWidth": 1116,
+      "pixelHeight": 192,
+      "sha256": "50c7a3cc4174fc86aa166088ed1f0d9d4eeb62da3559bb348fc03791446eda24",
+      "visuallyInspected": true
+    },
+    {
+      "path": "artifacts/lab-04/screenshots/f4-20261002/desktop/requester-actions.png",
+      "source": "artifacts/lab-03/screenshots/f4-20261002-panels/desktop/e2e-l4-01-requester-readonly.png",
+      "sourceCheckpoint": "b7d6b4b73d068eff5ce9b5e4d6bbac101efdf752",
+      "project": "desktop",
+      "pixelWidth": 1176,
+      "pixelHeight": 225,
+      "sha256": "0107de50062c470ed76dad1ff57a0360d0492f27ccce43b56ff500021e5ce810",
+      "visuallyInspected": true
+    },
+    {
+      "path": "artifacts/lab-04/screenshots/f4-20261002/tablet/dashboard-requester.png",
+      "source": "artifacts/lab-03/screenshots/f4-20261002-integrated/tablet/f3-requester.png",
+      "sourceCheckpoint": "e8185c7b73100f723acd8ff78a9b40379aaec4f6",
+      "project": "tablet",
+      "pixelWidth": 768,
+      "pixelHeight": 1223,
+      "sha256": "0c9c962318f3e0f1b01484d1ea083fa1af0156abd2cc4c89432bb17f091e2a30",
+      "visuallyInspected": true
+    },
+    {
+      "path": "artifacts/lab-04/screenshots/f4-20261002/tablet/dashboard-staff.png",
+      "source": "artifacts/lab-03/screenshots/f4-20261002-integrated/tablet/f3-it_staff.png",
+      "sourceCheckpoint": "e8185c7b73100f723acd8ff78a9b40379aaec4f6",
+      "project": "tablet",
+      "pixelWidth": 768,
+      "pixelHeight": 1897,
+      "sha256": "1267560c78bdedaba25203f07344e375284f274c89c032cbfe94f7746e1d7118",
+      "visuallyInspected": true
+    },
+    {
+      "path": "artifacts/lab-04/screenshots/f4-20261002/tablet/dashboard-admin.png",
+      "source": "artifacts/lab-03/screenshots/f4-20261002-integrated/tablet/f3-administrator.png",
+      "sourceCheckpoint": "e8185c7b73100f723acd8ff78a9b40379aaec4f6",
+      "project": "tablet",
+      "pixelWidth": 768,
+      "pixelHeight": 2042,
+      "sha256": "4fb4dc7e87d7bca4f866ef51b39a1c392064f11d36a4079d6fded54159975c3a",
+      "visuallyInspected": true
+    },
+    {
+      "path": "artifacts/lab-04/screenshots/f4-20261002/tablet/resolution-blocked.png",
+      "source": "artifacts/lab-03/screenshots/f4-20261002-integrated/tablet/e2e-l4-02-resolution-blocked-422.png",
+      "sourceCheckpoint": "e8185c7b73100f723acd8ff78a9b40379aaec4f6",
+      "project": "tablet",
+      "pixelWidth": 768,
+      "pixelHeight": 1024,
+      "sha256": "683c1d2a370520715dd2558ee3449163781d14ae01bd39fcef3386807131e8f2",
+      "visuallyInspected": true
+    },
+    {
+      "path": "artifacts/lab-04/screenshots/f4-20261002/tablet/resolution-succeeded.png",
+      "source": "artifacts/lab-03/screenshots/f4-20261002-integrated/tablet/e2e-l4-02-resolution-succeeded.png",
+      "sourceCheckpoint": "e8185c7b73100f723acd8ff78a9b40379aaec4f6",
+      "project": "tablet",
+      "pixelWidth": 768,
+      "pixelHeight": 1024,
+      "sha256": "7181fa85a4bc6876b1d2bfcafd75b022ec26a1c3f6f00b6949d288f3d7c3dbb8",
+      "visuallyInspected": true
+    },
+    {
+      "path": "artifacts/lab-04/screenshots/f4-20261002/tablet/modal-log-top.png",
+      "source": "artifacts/lab-03/screenshots/f4-20261002-integrated/tablet/f4-modal-log-action-top.png",
+      "sourceCheckpoint": "e8185c7b73100f723acd8ff78a9b40379aaec4f6",
+      "project": "tablet",
+      "pixelWidth": 768,
+      "pixelHeight": 1024,
+      "sha256": "13c7e1931d3b175d7576cab271cc0be60d8114366e5d15adfa11fe4d899e55cf",
+      "visuallyInspected": true
+    },
+    {
+      "path": "artifacts/lab-04/screenshots/f4-20261002/tablet/modal-log-bottom.png",
+      "source": "artifacts/lab-03/screenshots/f4-20261002-integrated/tablet/f4-modal-log-action.png",
+      "sourceCheckpoint": "e8185c7b73100f723acd8ff78a9b40379aaec4f6",
+      "project": "tablet",
+      "pixelWidth": 768,
+      "pixelHeight": 1024,
+      "sha256": "7b26a6974e7449be4a2b43f11c0f01c7e8e7b364f2c3d23d373324948374195d",
+      "visuallyInspected": true
+    },
+    {
+      "path": "artifacts/lab-04/screenshots/f4-20261002/tablet/modal-complete.png",
+      "source": "artifacts/lab-03/screenshots/f4-20261002-integrated/tablet/f4-modal-complete-action.png",
+      "sourceCheckpoint": "e8185c7b73100f723acd8ff78a9b40379aaec4f6",
+      "project": "tablet",
+      "pixelWidth": 768,
+      "pixelHeight": 1024,
+      "sha256": "8178375d1a3db8655373bca2f5c9b875c212de56880c2da576b2d8cfb98097b1",
+      "visuallyInspected": true
+    },
+    {
+      "path": "artifacts/lab-04/screenshots/f4-20261002/tablet/modal-cancel.png",
+      "source": "artifacts/lab-03/screenshots/f4-20261002-integrated/tablet/f4-modal-cancel-action.png",
+      "sourceCheckpoint": "e8185c7b73100f723acd8ff78a9b40379aaec4f6",
+      "project": "tablet",
+      "pixelWidth": 768,
+      "pixelHeight": 1024,
+      "sha256": "823fa18e4e1981188489fb151e3aa08446bb735fb3abdd29e7b38dbddabfaf0e",
+      "visuallyInspected": true
+    },
+    {
+      "path": "artifacts/lab-04/screenshots/f4-20261002/tablet/staff-actions.png",
+      "source": "artifacts/lab-03/screenshots/f4-20261002-panels/tablet/e2e-l4-01-staff-completed.png",
+      "sourceCheckpoint": "b7d6b4b73d068eff5ce9b5e4d6bbac101efdf752",
+      "project": "tablet",
+      "pixelWidth": 696,
+      "pixelHeight": 258,
+      "sha256": "30b0ca605b420f8512dc743ad7c81d1fb2e881da2d86c07da52c091f885d6606",
+      "visuallyInspected": true
+    },
+    {
+      "path": "artifacts/lab-04/screenshots/f4-20261002/tablet/requester-actions.png",
+      "source": "artifacts/lab-03/screenshots/f4-20261002-panels/tablet/e2e-l4-01-requester-readonly.png",
+      "sourceCheckpoint": "b7d6b4b73d068eff5ce9b5e4d6bbac101efdf752",
+      "project": "tablet",
+      "pixelWidth": 744,
+      "pixelHeight": 316,
+      "sha256": "0bec54c3a809e93a0cdab51bc36278dcaafa6fc40eccfead14cde392a05121a6",
+      "visuallyInspected": true
+    },
+    {
+      "path": "artifacts/lab-04/screenshots/f4-20261002/mobile/dashboard-requester.png",
+      "source": "artifacts/lab-03/screenshots/f4-20261002-integrated/mobile/f3-requester.png",
+      "sourceCheckpoint": "e8185c7b73100f723acd8ff78a9b40379aaec4f6",
+      "project": "mobile",
+      "pixelWidth": 1031,
+      "pixelHeight": 4573,
+      "sha256": "253491813939e7816e417c84d9ed0469d30e9e1e2e8ffeb54a9170b72151b060",
+      "visuallyInspected": true
+    },
+    {
+      "path": "artifacts/lab-04/screenshots/f4-20261002/mobile/dashboard-staff.png",
+      "source": "artifacts/lab-03/screenshots/f4-20261002-integrated/mobile/f3-it_staff.png",
+      "sourceCheckpoint": "e8185c7b73100f723acd8ff78a9b40379aaec4f6",
+      "project": "mobile",
+      "pixelWidth": 1031,
+      "pixelHeight": 6419,
+      "sha256": "ae7b146b7349f59f73cabd952760fa76b78e80d5507ac8a8f3210642abf4842b",
+      "visuallyInspected": true
+    },
+    {
+      "path": "artifacts/lab-04/screenshots/f4-20261002/mobile/dashboard-admin.png",
+      "source": "artifacts/lab-03/screenshots/f4-20261002-integrated/mobile/f3-administrator.png",
+      "sourceCheckpoint": "e8185c7b73100f723acd8ff78a9b40379aaec4f6",
+      "project": "mobile",
+      "pixelWidth": 1031,
+      "pixelHeight": 7004,
+      "sha256": "fdcdfc07aaee1c4eaed72fc8335c887eca0d4c31c49dbd18a8a2d8944f1b6c97",
+      "visuallyInspected": true
+    },
+    {
+      "path": "artifacts/lab-04/screenshots/f4-20261002/mobile/resolution-blocked.png",
+      "source": "artifacts/lab-03/screenshots/f4-20261002-integrated/mobile/e2e-l4-02-resolution-blocked-422.png",
+      "sourceCheckpoint": "e8185c7b73100f723acd8ff78a9b40379aaec4f6",
+      "project": "mobile",
+      "pixelWidth": 1031,
+      "pixelHeight": 1834,
+      "sha256": "9c58016b876a48d638d6e60ded10dc3fdde6c0d57f0a6e21f9aaaec7454d5ab4",
+      "visuallyInspected": true
+    },
+    {
+      "path": "artifacts/lab-04/screenshots/f4-20261002/mobile/resolution-succeeded.png",
+      "source": "artifacts/lab-03/screenshots/f4-20261002-integrated/mobile/e2e-l4-02-resolution-succeeded.png",
+      "sourceCheckpoint": "e8185c7b73100f723acd8ff78a9b40379aaec4f6",
+      "project": "mobile",
+      "pixelWidth": 1031,
+      "pixelHeight": 1834,
+      "sha256": "a72a7aa2bad0745434dbdea126865d6abc6af10d5402e9cb3a789f029878b573",
+      "visuallyInspected": true
+    },
+    {
+      "path": "artifacts/lab-04/screenshots/f4-20261002/mobile/modal-log-top.png",
+      "source": "artifacts/lab-03/screenshots/f4-20261002-integrated/mobile/f4-modal-log-action-top.png",
+      "sourceCheckpoint": "e8185c7b73100f723acd8ff78a9b40379aaec4f6",
+      "project": "mobile",
+      "pixelWidth": 1031,
+      "pixelHeight": 1834,
+      "sha256": "49e01a9b4f6d7560ff7037514df25f88bcd9f076a1f79995ca8eebc57fba5fa6",
+      "visuallyInspected": true
+    },
+    {
+      "path": "artifacts/lab-04/screenshots/f4-20261002/mobile/modal-log-bottom.png",
+      "source": "artifacts/lab-03/screenshots/f4-20261002-integrated/mobile/f4-modal-log-action.png",
+      "sourceCheckpoint": "e8185c7b73100f723acd8ff78a9b40379aaec4f6",
+      "project": "mobile",
+      "pixelWidth": 1031,
+      "pixelHeight": 1834,
+      "sha256": "0e045dc68b727281506199b640d917089af172a8116dd5a53669dd41004528ef",
+      "visuallyInspected": true
+    },
+    {
+      "path": "artifacts/lab-04/screenshots/f4-20261002/mobile/modal-complete.png",
+      "source": "artifacts/lab-03/screenshots/f4-20261002-integrated/mobile/f4-modal-complete-action.png",
+      "sourceCheckpoint": "e8185c7b73100f723acd8ff78a9b40379aaec4f6",
+      "project": "mobile",
+      "pixelWidth": 1031,
+      "pixelHeight": 1834,
+      "sha256": "415c908d51d01a6ecad00c6cd8c8564db18eb8fdb777ad9c878eacddfaf709ec",
+      "visuallyInspected": true
+    },
+    {
+      "path": "artifacts/lab-04/screenshots/f4-20261002/mobile/modal-cancel.png",
+      "source": "artifacts/lab-03/screenshots/f4-20261002-integrated/mobile/f4-modal-cancel-action.png",
+      "sourceCheckpoint": "e8185c7b73100f723acd8ff78a9b40379aaec4f6",
+      "project": "mobile",
+      "pixelWidth": 1031,
+      "pixelHeight": 1834,
+      "sha256": "7e7716004b3d31e405656cf040a8c9a899283150024ee3b842405c4a3a8b61d8",
+      "visuallyInspected": true
+    },
+    {
+      "path": "artifacts/lab-04/screenshots/f4-20261002/mobile/staff-actions.png",
+      "source": "artifacts/lab-03/screenshots/f4-20261002-panels-verified/mobile/e2e-l4-01-staff-completed.png",
+      "sourceCheckpoint": "fd842950e738479386272962284d5887e574c818",
+      "project": "mobile",
+      "pixelWidth": 1031,
+      "pixelHeight": 7736,
+      "sha256": "9439792bc4259fcbdeef203828626c3f97cc397e58c178fe743ba2a8e1a8bec8",
+      "visuallyInspected": true
+    },
+    {
+      "path": "artifacts/lab-04/screenshots/f4-20261002/mobile/requester-actions.png",
+      "source": "artifacts/lab-03/screenshots/f4-20261002-panels-verified/mobile/e2e-l4-01-requester-readonly.png",
+      "sourceCheckpoint": "fd842950e738479386272962284d5887e574c818",
+      "project": "mobile",
+      "pixelWidth": 1031,
+      "pixelHeight": 7472,
+      "sha256": "b9667e67833bd9da65ca9a179d99ec2e409dea9d97762d6f47d8e8e6023a7d45",
+      "visuallyInspected": true
+    }
+  ]
+}
