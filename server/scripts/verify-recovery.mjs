@@ -67,7 +67,19 @@ async function snapshot(db) {
     const [state] = await db.$queryRawUnsafe(`SELECT last_value,is_called FROM public.${quote(sequencename)}`);
     sequences.push({ name: sequencename, ...state });
   }
-  return { tables: rows, schemaSha256: digest(serialize({ columns, constraints, indexes, enums })), sequencesSha256: digest(serialize(sequences)) };
+  // Include active and soft-removed rows from the same snapshot as the dump.
+  const attachmentReferences = await db.$queryRawUnsafe(`SELECT "storedFileName", "fileSize" FROM public."Attachment" ORDER BY "id"`);
+  return { tables: rows, schemaSha256: digest(serialize({ columns, constraints, indexes, enums })), sequencesSha256: digest(serialize(sequences)), attachmentReferences };
+}
+
+function verifyAttachmentReferences(references, files, location) {
+  const byPath = new Map(files.map(file => [file.path, file]));
+  for (const reference of references) {
+    const file = byPath.get(reference.storedFileName);
+    if (!file || file.size !== reference.fileSize) {
+      throw new Error(`Attachment reference is missing or has incorrect size in ${location} uploads.`);
+    }
+  }
 }
 
 async function filesIn(directory, excluded, prefix = "") {
@@ -78,7 +90,10 @@ async function filesIn(directory, excluded, prefix = "") {
     if (entry.isSymbolicLink()) throw new Error("Recovery refuses symlinked upload files.");
     const relative = path.join(prefix, entry.name);
     if (entry.isDirectory()) result.push(...await filesIn(filename, excluded, relative));
-    else if (entry.isFile()) result.push({ path: relative, sha256: digest(await fs.readFile(filename)) });
+    else if (entry.isFile()) {
+      const bytes = await fs.readFile(filename);
+      result.push({ path: relative, size: bytes.length, sha256: digest(bytes) });
+    }
   }
   return result.sort((a, b) => a.path.localeCompare(b.path));
 }
@@ -117,6 +132,7 @@ export async function verifyRecovery({ databaseUrl, uploadDir, outputDir, pgDump
     const started = Date.now();
     const before = await source.$transaction(async tx => {
       const state = await snapshot(tx);
+      verifyAttachmentReferences(state.attachmentReferences, files, "source");
       const [exported] = await tx.$queryRawUnsafe("SELECT pg_export_snapshot() AS snapshot");
       await tool(pgDump, ["--format=custom", "--schema=public", "--no-owner", "--no-privileges",
         `--snapshot=${exported.snapshot}`, `--file=${archive}`], env);
@@ -161,9 +177,15 @@ export async function verifyRecovery({ databaseUrl, uploadDir, outputDir, pgDump
       await fs.mkdir(path.dirname(destination), { recursive: true });
       await fs.copyFile(path.join(backupFiles, file.path), destination);
     }
-    if (serialize(files) !== serialize(await filesIn(recoveredFiles, ""))) throw new Error("Recovered attachment bytes differ.");
+    const restoredFiles = await filesIn(recoveredFiles, "");
+    verifyAttachmentReferences(after.attachmentReferences, restoredFiles, "restored");
+    if (serialize(files) !== serialize(restoredFiles)) throw new Error("Recovered attachment bytes differ.");
+    if (serialize(files) !== serialize(await filesIn(path.resolve(uploadDir), output))) {
+      throw new Error("Source upload files changed during recovery verification; rerun without concurrent writers.");
+    }
     return { sourceDatabase: name, restoredDatabase: restoreDatabase, retainedForInspection: true,
-      databaseMatched: true, filesMatched: true, tables: before.tables, schemaSha256: before.schemaSha256,
+      databaseMatched: true, filesMatched: true, referencedFilesMatched: true, referencedAttachmentCount: before.attachmentReferences.length,
+      tables: before.tables, schemaSha256: before.schemaSha256,
       sequencesSha256: before.sequencesSha256, files, dumpSha256: digest(await fs.readFile(archive)),
       dumpVersion, restoreVersion, serverVersion: server.version, restoreMethod, durationMs: Date.now() - started };
   } finally {

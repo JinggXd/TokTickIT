@@ -12,10 +12,12 @@ export interface RecoveryResult {
   retainedForInspection: boolean;
   databaseMatched: boolean;
   filesMatched: boolean;
+  referencedFilesMatched: boolean;
+  referencedAttachmentCount: number;
   tables: Array<{ name: string; count: number; sha256: string }>;
   schemaSha256: string;
   sequencesSha256: string;
-  files: Array<{ path: string; sha256: string }>;
+  files: Array<{ path: string; size: number; sha256: string }>;
   dumpSha256: string;
   dumpVersion: string;
   restoreVersion: string;
