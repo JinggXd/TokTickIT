@@ -14,6 +14,8 @@ import { staffRouter, getDetailedTicket } from "./routes/staff.js";
 import { communicationRouter } from "./routes/communication.js";
 import { adminUsersRouter } from "./routes/adminUsers.js";
 import { actionsRouter } from "./routes/actions.js";
+import { dashboardRouter } from "./routes/dashboard.js";
+import { OPEN_STATUSES, recentCutoff } from "./utils/dashboardFilters.js";
 import { validateTicketInput } from "./utils/validation.js";
 import { generateTicketNumber, TicketNumberGenerationError } from "./utils/ticketNumber.js";
 import fs from "fs";
@@ -71,6 +73,7 @@ app.use("/api/auth", authRouter);
 app.use("/api/staff", staffRouter);
 app.use("/api", communicationRouter);
 app.use("/api", actionsRouter);
+app.use("/api/dashboard", dashboardRouter);
 app.use("/api/admin/users", adminUsersRouter);
 
 // Administrator read-only ticket detail (api-spec §5.6)
@@ -372,6 +375,11 @@ app.get(
         validationDetails.status = `status must be one of ${ALLOWED_STATUS_QUERY.join(", ")}`;
       }
 
+      const recent = req.query.recent;
+      const statusGroup = req.query.statusGroup;
+      if (recent !== undefined && recent !== "7d") validationDetails.recent = "recent must be 7d";
+      if (statusGroup !== undefined && statusGroup !== "open") validationDetails.statusGroup = "statusGroup must be open";
+
       if (Object.keys(validationDetails).length > 0) {
         res.status(400).json({
           error: "Validation failed",
@@ -407,6 +415,8 @@ app.get(
       if (statusParam && statusParam !== "ALL") {
         where.currentStatus = statusParam;
       }
+      if (statusGroup === "open") where.AND = [{ currentStatus: { in: OPEN_STATUSES } }];
+      if (recent === "7d") where.updatedAt = { gte: recentCutoff() };
 
       const totalItems = await prisma.ticket.count({ where });
 

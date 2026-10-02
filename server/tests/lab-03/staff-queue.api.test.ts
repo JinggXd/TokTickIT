@@ -83,9 +83,9 @@ describe("IT Staff Queue API (AC-23, AC-24, AC-25, AC-26, BR-06, BR-12, API-07 t
       expect(res.status).toBe(403);
     });
 
-    it("denies ADMINISTRATOR with 403 Forbidden (Staff-only queue)", async () => {
+    it("allows ADMINISTRATOR read access for Lab 4 dashboard drill-down", async () => {
       const res = await request(app).get("/api/staff/tickets").set(adminHeaders);
-      expect(res.status).toBe(403);
+      expect(res.status).toBe(200);
     });
 
     it("denies unauthenticated request with 401", async () => {
