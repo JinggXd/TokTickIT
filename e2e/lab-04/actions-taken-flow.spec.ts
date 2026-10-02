@@ -152,6 +152,7 @@ test.describe("Phase F2 / L4-P05: Actions Taken Lifecycle Flow (E2E-L4-01)", () 
 
     await expect(page.getByRole("dialog")).toBeVisible({ timeout: 6_000 });
     await expect(page.getByText("Log New Action")).toBeVisible();
+    await expect(page.getByRole("dialog").getByRole("button").first()).toBeFocused();
 
     // Fill action as PENDING with assignee and follow-up
     await page.locator("label[for='mode-pending']").click();
@@ -190,6 +191,7 @@ test.describe("Phase F2 / L4-P05: Actions Taken Lifecycle Flow (E2E-L4-01)", () 
     // Complete modal opens
     await expect(page.getByRole("dialog")).toBeVisible({ timeout: 6_000 });
     await expect(page.getByText("Complete Action Taken")).toBeVisible();
+    await expect(page.getByRole("dialog").getByRole("button").first()).toBeFocused();
 
     // Fill result details
     await page.locator("#complete-result").fill("Cleaned LC fiber connector; zero CRC errors recorded");
@@ -214,6 +216,7 @@ test.describe("Phase F2 / L4-P05: Actions Taken Lifecycle Flow (E2E-L4-01)", () 
     await expect(page.getByRole("dialog")).not.toBeVisible();
     await actionsSection.getByRole("button", { name: "Cancel", exact: true }).filter({ visible: true }).last().click();
     await expect(page.getByRole("dialog")).toBeVisible();
+    await expect(page.getByRole("dialog").getByRole("button").first()).toBeFocused();
     await verifyModalKeyboard(page);
     await page.screenshot({ path: screenshotPath(testInfo, "f4-modal-cancel-action.png") });
     await page.keyboard.press("Escape");
