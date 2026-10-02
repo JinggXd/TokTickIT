@@ -1,6 +1,6 @@
 # F3 review packet — L4-P07–P10
 
-Date: 2026-10-02. Branch: `codex/lab4-f3-dashboard`. Base: `lab4-staging` at `8bbd1aa9c975183279c43fe64d47330f9bd94293` (merged F2 PR #49). Tracking: [Issue #50](https://github.com/JinggXd/TokTickIT/issues/50).
+Date: 2026-10-02. Branch: `codex/lab4-f3-dashboard`. Base: `lab4-staging` at `8bbd1aa9c975183279c43fe64d47330f9bd94293` (merged F2 PR #49). Tracking: [Issue #50](https://github.com/JinggXd/TokTickIT/issues/50), [Draft PR #51](https://github.com/JinggXd/TokTickIT/pull/51).
 
 F3 adds Requester, IT Staff and Administrator dashboards with server-calculated metrics, limited recent items and exact ticket-list drill-down filters. Login/password-change returns to each role's dashboard. Browser Back, reload, query-only changes and Clear Filters preserve the intended navigation. Administrators can read the queue and open their existing detail route; ticket workflow mutations remain Staff-only while Lab 4 action controls remain available to Admin.
 
@@ -25,5 +25,7 @@ F3 adds Requester, IT Staff and Administrator dashboards with server-calculated 
 Final evidence and results are recorded in `artifacts/lab-04/f3-evidence-20261002/verification.md` after the integrated verification run. Tests use the verified local disposable database `toktickit_test_f2_review_1790784843569` and run-specific upload directories, API port 3001 and client port 5174. Production/development data is not used.
 
 New tests were run before implementation: datetime cases failed on coercion/invalid formats, UUID fallback failed the UUIDv4 assertion, dashboard API calls failed with 404 and component/routing tests failed because their screens/routes were absent. A subsequent priority regression failed when closed/resolved tickets were incorrectly included, then the query was corrected to D05's open scope.
+
+PR #51 targets `lab4-staging`; GitHub reports it mergeable with no conflicts. The browser is signed out of GitHub, so its Development panel still shows **None yet** and offers no linking control. A signed-in repository member must link Issue #50 using the Development gear and verify the closing-issues sidebar before moving the PR to PR Review. Keep the PR draft until that gate is satisfied. No reviewer was messaged or review requested automatically; no merge was performed.
 
 Peer review/Development-panel linking and merge are separate from automated verification. F4 backup/restore and performance checks, F5 release/submission, and historical F1 Proposed decision records are not claimed complete by this packet.
