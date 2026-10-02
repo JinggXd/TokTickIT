@@ -19,6 +19,7 @@ export interface ActionsTakenSectionProps {
   onRetry?: () => void;
   onActionSaved: () => void;
   assignableStaff?: Array<{ id: number; name: string }>;
+  assigneesUnavailable?: boolean;
 }
 
 /**
@@ -36,6 +37,15 @@ export function formatLocalDatetime(date: Date): string {
   return `${year}-${month}-${day}T${hours}:${minutes}`;
 }
 
+export function createClientRequestId(): string {
+  if (typeof crypto.randomUUID === "function") return crypto.randomUUID();
+  const bytes = crypto.getRandomValues(new Uint8Array(16));
+  bytes[6] = (bytes[6] & 0x0f) | 0x40;
+  bytes[8] = (bytes[8] & 0x3f) | 0x80;
+  const hex = Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("");
+  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
+}
+
 export const ActionsTakenSection: React.FC<ActionsTakenSectionProps> = ({
   ticketId,
   ticketStatus,
@@ -47,6 +57,7 @@ export const ActionsTakenSection: React.FC<ActionsTakenSectionProps> = ({
   onRetry,
   onActionSaved,
   assignableStaff = [],
+  assigneesUnavailable = false,
 }) => {
   const isTerminal = ["RESOLVED", "CLOSED", "CANCELLED"].includes(ticketStatus);
 
@@ -134,7 +145,7 @@ export const ActionsTakenSection: React.FC<ActionsTakenSectionProps> = ({
 
   const openLogModal = () => {
     const nowLocal = formatLocalDatetime(new Date());
-    const newUuid = typeof crypto.randomUUID === "function" ? crypto.randomUUID() : "uuid-" + Date.now();
+    const newUuid = createClientRequestId();
     setClientRequestId(newUuid);
     setActionDateTime(nowLocal);
     setStatusMode("COMPLETED");
@@ -187,6 +198,7 @@ export const ActionsTakenSection: React.FC<ActionsTakenSectionProps> = ({
 
   const handleLogSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (statusMode === "PENDING" && assigneesUnavailable) return;
     if (!description.trim()) {
       setModalError("Action description is required.");
       return;
@@ -241,7 +253,7 @@ export const ActionsTakenSection: React.FC<ActionsTakenSectionProps> = ({
       await completeActionTaken(ticketId, selectedAction.id, {
         result: result.trim(),
         expectedVersion: selectedAction.version,
-        attachmentNotes: attachmentNotes.trim() || undefined,
+        attachmentNotes: attachmentNotes.trim() || null,
       });
       closeModal(true);
       onActionSaved();
@@ -275,6 +287,7 @@ export const ActionsTakenSection: React.FC<ActionsTakenSectionProps> = ({
   const handleEditSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedAction) return;
+    if (selectedAction.status === "PENDING" && assigneesUnavailable) return;
     if (!description.trim()) {
       setModalError("Action description is required.");
       return;
@@ -709,7 +722,7 @@ export const ActionsTakenSection: React.FC<ActionsTakenSectionProps> = ({
                         className="form-select"
                         value={assigneeId}
                         onChange={(e) => setAssigneeId(e.target.value ? Number(e.target.value) : "")}
-                        disabled={isSubmitting}
+                        disabled={isSubmitting || assigneesUnavailable}
                       >
                         <option value="">Unassigned</option>
                         {assignableStaff.map((staff) => (
@@ -718,6 +731,7 @@ export const ActionsTakenSection: React.FC<ActionsTakenSectionProps> = ({
                           </option>
                         ))}
                       </select>
+                      {assigneesUnavailable && <div className="form-text">Assignee list is unavailable. Close this dialog and retry loading the list.</div>}
                     </div>
                   )}
 
@@ -769,7 +783,7 @@ export const ActionsTakenSection: React.FC<ActionsTakenSectionProps> = ({
                   <button type="button" className="btn btn-secondary" onClick={() => closeModal()} disabled={isSubmitting}>
                     Cancel
                   </button>
-                  <button type="submit" className="btn btn-success" disabled={isSubmitting}>
+                  <button type="submit" className="btn btn-success" disabled={isSubmitting || (statusMode === "PENDING" && assigneesUnavailable)}>
                     {isSubmitting ? "Saving..." : "Save Action"}
                   </button>
                 </div>
@@ -941,7 +955,7 @@ export const ActionsTakenSection: React.FC<ActionsTakenSectionProps> = ({
                         className="form-select"
                         value={assigneeId}
                         onChange={(e) => setAssigneeId(e.target.value ? Number(e.target.value) : "")}
-                        disabled={isSubmitting}
+                        disabled={isSubmitting || assigneesUnavailable}
                       >
                         <option value="">Unassigned</option>
                         {assignableStaff.map((staff) => (
@@ -950,6 +964,7 @@ export const ActionsTakenSection: React.FC<ActionsTakenSectionProps> = ({
                           </option>
                         ))}
                       </select>
+                      {assigneesUnavailable && <div className="form-text">Assignee list is unavailable. Close this dialog and retry loading the list.</div>}
                     </div>
                   )}
 
@@ -999,7 +1014,7 @@ export const ActionsTakenSection: React.FC<ActionsTakenSectionProps> = ({
                   <button type="button" className="btn btn-secondary" onClick={() => closeModal()} disabled={isSubmitting}>
                     Cancel
                   </button>
-                  <button type="submit" className="btn btn-primary" disabled={isSubmitting}>
+                  <button type="submit" className="btn btn-primary" disabled={isSubmitting || (selectedAction?.status === "PENDING" && assigneesUnavailable)}>
                     {isSubmitting ? "Saving..." : "Save Changes"}
                   </button>
                 </div>

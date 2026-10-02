@@ -34,6 +34,8 @@ export const StaffTicketDetail: React.FC<StaffTicketDetailProps> = ({ ticketId, 
   const { user: currentUser } = useAuth();
   const [ticket, setTicket] = useState<StaffTicketDetailType | null>(null);
   const [ticketOwners, setTicketOwners] = useState<TicketOwner[]>([]);
+  const [ownersLoading, setOwnersLoading] = useState(true);
+  const [ownersError, setOwnersError] = useState<string | null>(null);
   const [comments, setComments] = useState<CommentItem[]>([]);
   const [notes, setNotes] = useState<CommentItem[]>([]);
   const [actions, setActions] = useState<ActionTaken[]>([]);
@@ -75,6 +77,19 @@ export const StaffTicketDetail: React.FC<StaffTicketDetailProps> = ({ ticketId, 
     }
   }, [ticketId]);
 
+  const loadOwners = useCallback(async () => {
+    setOwnersLoading(true);
+    setOwnersError(null);
+    try {
+      setTicketOwners(await fetchTicketOwners());
+    } catch (err: any) {
+      setTicketOwners([]);
+      setOwnersError(err.message || "Unable to load eligible assignees.");
+    } finally {
+      setOwnersLoading(false);
+    }
+  }, []);
+
   // Load ticket data
   const loadData = useCallback(async () => {
     setIsLoading(true);
@@ -83,9 +98,9 @@ export const StaffTicketDetail: React.FC<StaffTicketDetailProps> = ({ ticketId, 
 
     try {
       const fetchDetailFn = readOnly ? fetchAdminTicketDetail : fetchStaffTicketDetail;
-      const ownersPromise = fetchTicketOwners().catch(() => [] as TicketOwner[]);
+      const ownersPromise = loadOwners();
 
-      const [ticketData, ownersData, commentsData, notesData] = await Promise.all([
+      const [ticketData, , commentsData, notesData] = await Promise.all([
         fetchDetailFn(ticketId),
         ownersPromise,
         fetchPublicComments(ticketId).catch(() => [] as CommentItem[]),
@@ -93,7 +108,6 @@ export const StaffTicketDetail: React.FC<StaffTicketDetailProps> = ({ ticketId, 
       ]);
 
       setTicket(ticketData);
-      setTicketOwners(ownersData);
       setComments(commentsData);
       setNotes(notesData);
 
@@ -107,7 +121,7 @@ export const StaffTicketDetail: React.FC<StaffTicketDetailProps> = ({ ticketId, 
     }
 
     loadActions();
-  }, [ticketId, readOnly, loadActions]);
+  }, [ticketId, readOnly, loadActions, loadOwners]);
 
   useEffect(() => {
     loadData();
@@ -137,6 +151,7 @@ export const StaffTicketDetail: React.FC<StaffTicketDetailProps> = ({ ticketId, 
 
   // Reassign owner handler
   const handleReassignOwner = async () => {
+    if (ownersLoading || ownersError) return;
     if (!ticket || !selectedOwnerId) return;
     setIsSubmittingAction(true);
     setConflictError(null);
@@ -372,6 +387,15 @@ export const StaffTicketDetail: React.FC<StaffTicketDetailProps> = ({ ticketId, 
         </div>
       )}
 
+      {ownersError && (
+        <div className="alert alert-danger d-flex justify-content-between align-items-center mb-3" role="alert" data-testid="staff-owners-error">
+          <span>Failed to load eligible assignees: {ownersError}</span>
+          <button type="button" className="btn btn-sm btn-outline-danger" disabled={ownersLoading} onClick={loadOwners}>
+            Retry assignee list
+          </button>
+        </div>
+      )}
+
       {/* Ticket Header Card */}
       <div className="card shadow-sm border-0 mb-4">
         <div className="card-header bg-white py-3 d-flex flex-wrap justify-content-between align-items-center border-bottom">
@@ -457,6 +481,7 @@ export const StaffTicketDetail: React.FC<StaffTicketDetailProps> = ({ ticketId, 
                         value={selectedOwnerId}
                         onChange={(e) => setSelectedOwnerId(e.target.value ? Number(e.target.value) : "")}
                         data-testid="staff-reassign-owner-select"
+                        disabled={isSubmittingAction || ownersLoading || !!ownersError}
                       >
                         <option value="">Select new owner...</option>
                         {ticketOwners.map((o) => (
@@ -469,7 +494,7 @@ export const StaffTicketDetail: React.FC<StaffTicketDetailProps> = ({ ticketId, 
                         type="button"
                         className="btn btn-sm btn-outline-primary"
                         onClick={handleReassignOwner}
-                        disabled={isSubmittingAction || !selectedOwnerId || selectedOwnerId === ticket.ticketOwner.id}
+                        disabled={isSubmittingAction || ownersLoading || !!ownersError || !selectedOwnerId || selectedOwnerId === ticket.ticketOwner.id}
                         data-testid="staff-reassign-owner-btn"
                       >
                         Reassign
@@ -559,7 +584,11 @@ export const StaffTicketDetail: React.FC<StaffTicketDetailProps> = ({ ticketId, 
         isLoading={actionsLoading}
         error={actionsError}
         onRetry={loadActions}
-        onActionSaved={loadData}
+        onActionSaved={() => {
+          setActionSuccess("Action Taken saved successfully.");
+          void loadData();
+        }}
+        assigneesUnavailable={ownersLoading || !!ownersError}
         assignableStaff={ticketOwners.map((o) => ({ id: o.id, name: o.name }))}
       />
 

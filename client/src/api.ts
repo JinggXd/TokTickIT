@@ -902,7 +902,7 @@ export async function completeActionTaken(
   payload: {
     expectedVersion?: number;
     result: string;
-    attachmentNotes?: string;
+    attachmentNotes?: string | null;
   },
 ): Promise<{ ticketId: number; action: ActionTaken }> {
   const response = await apiFetch(`${API_URL}/api/tickets/${ticketId}/actions/${actionId}/complete`, {
