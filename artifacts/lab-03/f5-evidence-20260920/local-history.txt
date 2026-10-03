@@ -1,0 +1,20 @@
+7038238 2026-09-20T04:00:48+07:00 test(lab-03): verify F3 and F4 full test suites on isolated test db and update tracking to Verified
+6f1f073 2026-09-19T03:17:21+07:00 fix(auth): prevent change-password race against admin reset with row lock and optimistic match
+22bcb81 2026-09-19T03:10:59+07:00 fix(auth): coordinate change-password vs reset, distinguish logout errors, and clear client auth state directly on self-revocation
+28d9d2b 2026-09-19T02:54:38+07:00 fix(security): resolve 6 cross-phase review findings across F1-F4
+7ea8774 2026-09-19T00:31:35+07:00 test(f4): harden API-35 assertions for assignRes, version, and unassigned count (#42)
+52eea42 2026-09-19T00:10:36+07:00 fix(f4): resolve peer review findings on concurrency, locking, and Unicode passwords (#42)
+a56da80 2026-09-18T23:05:21+07:00 feat(f4): implement admin user management and integrated E2E verification (P11-P12) (#42)
+78bf7cf 2026-09-18T22:41:13+07:00 docs(lab-03): document Issue #40 and PR #41 in implementation log
+cf1a893 2026-09-18T22:35:29+07:00 feat(f3): admin read-only detail view and hardened E2E triage assertions
+7fa2ac9 2026-09-18T22:18:47+07:00 docs(lab-03): log completion of Major Phase F3 (P07-P10)
+7489b62 2026-09-18T22:17:52+07:00 test(f3): support responsive queue selectors across desktop, tablet, and mobile viewports
+7c6b0bf 2026-09-18T22:13:17+07:00 test(f3): wait for login redirect and verify admin portal in E2E staff flow
+a41013d 2026-09-18T22:03:35+07:00 test(f3): fix ticketNo fixture and model names in E2E staff-ticket-flow teardown
+305d88b 2026-09-18T22:02:08+07:00 fix(f3): atomic optimistic locking, write-time owner check, and requester P10 UI
+f6a0a7e 2026-09-18T20:48:47+07:00 feat(f3): wire staff UI, ALLOWED_TRANSITIONS, E2E + client unit tests
+a4a921d 2026-09-18T19:05:39+07:00 Merge pull request #39 from JinggXd/feature/f2-database-and-auth
+081d3e7 2026-09-18T18:59:28+07:00 docs(lab-03): add seed accounts and default credentials reference in accounts.md
+8817292 2026-09-18T18:56:50+07:00 test(e2e): complete full login-changePassword-role-logout chain in E2E-02 and reconcile test evidence
+2472360 2026-09-18T18:48:52+07:00 fix(lab-03): fix mobile username visibility, isolate multi-viewport screenshots, and add password timer cleanup
+0c21c29 2026-09-18T17:51:09+07:00 docs(lab-03): link commit SHA and raw output in tests.md for E2E-01-05 and UI-13
