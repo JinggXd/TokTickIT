@@ -1,0 +1,42 @@
+[
+  {
+    "id": 5233441410,
+    "node_id": "PRR_kwDOT5IXk88AAAABN-_6gg",
+    "user": {
+      "login": "JinggXd",
+      "id": 186692315,
+      "node_id": "U_kgDOCyCy2w",
+      "avatar_url": "https://avatars.githubusercontent.com/u/186692315?v=4",
+      "gravatar_id": "",
+      "url": "https://api.github.com/users/JinggXd",
+      "html_url": "https://github.com/JinggXd",
+      "followers_url": "https://api.github.com/users/JinggXd/followers",
+      "following_url": "https://api.github.com/users/JinggXd/following{/other_user}",
+      "gists_url": "https://api.github.com/users/JinggXd/gists{/gist_id}",
+      "starred_url": "https://api.github.com/users/JinggXd/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/JinggXd/subscriptions",
+      "organizations_url": "https://api.github.com/users/JinggXd/orgs",
+      "repos_url": "https://api.github.com/users/JinggXd/repos",
+      "events_url": "https://api.github.com/users/JinggXd/events{/privacy}",
+      "received_events_url": "https://api.github.com/users/JinggXd/received_events",
+      "type": "User",
+      "user_view_type": "public",
+      "site_admin": false
+    },
+    "body": "[P1] มี guard แต่ไม่ได้เรียกใช้ก่อนรัน tests จริง\nensureTestHarnessReady() ถูกเรียกเฉพาะใน unit tests ของมันเอง ขณะที่ Vitest และ Playwright ยังรับ DATABASE_URL จาก environment โดยตรง ถ้าค่านั้นชี้ฐาน dev ก็ยังรันทดสอบกับฐาน dev ได้ ต้องผูก guard เข้าจุดเริ่มรันก่อนโหลด tests/app\n\n[P1] เปลี่ยนพอร์ตเป็น 3103 แต่ E2E ยังยิงไป 3000\nหน้าเว็บใช้ backend ทดสอบ แต่คำขอ API ใน E2E ยัง hardcode localhost:3000 รวมถึงสร้าง ticket หากเปิด dev server อยู่ อาจเขียนข้อมูลเข้า dev; หากไม่ได้เปิด tests ก็ล้ม ต้องใช้ API URL เดียวกันทั้งระบบ\n\n[P1] Upload guard ยังยอมรับโฟลเดอร์อันตราย\nผมลองแล้ว server/uploads/attachments ซึ่งเป็นที่เก็บไฟล์ dev จริง และรากโปรเจกต์ ได้ผล valid: true ทั้งคู่ เพราะตรวจแค่ชื่อโฟลเดอร์ตรงกัน ไม่ตรวจการซ้อนหรือ real path อีกทั้งเมื่อไม่ตั้ง UPLOAD_DIR guard ผ่าน แต่ไม่ได้ตั้งค่านั้นให้ storage ซึ่งยัง fallback ไปโฟลเดอร์เดิม\n\n[P1] ชื่อฐานข้อมูลมีคำว่า test ไม่ได้แปลว่าแยกปลอดภัย\nผมลอง URL ของฐานชื่อ contest บน hostname อื่นแล้ว guard ยอมรับ ต้องตรวจ target ที่อนุญาตอย่างชัดเจนและยืนยันว่าเป็นฐานสำหรับทดสอบ ไม่ใช้เพียง includes(\"test\")\n\nP2] บันทึกว่า F1 verified เร็วเกินไป\nนอกจากข้อข้างบน TestHarnessRegistry ยังไม่ได้ใช้กับ suites จริง และ responsive tests ยังเขียนทับภาพใน artifacts/lab-02/screenshots ควรเปลี่ยนสถานะเป็น In progress — P02 needs fixes แล้วตรวจใหม่ก่อนต่อ F2",
+    "state": "CHANGES_REQUESTED",
+    "html_url": "https://github.com/yuminnini/toktickit/pull/38#pullrequestreview-5233441410",
+    "pull_request_url": "https://api.github.com/repos/yuminnini/toktickit/pulls/38",
+    "author_association": "COLLABORATOR",
+    "_links": {
+      "html": {
+        "href": "https://github.com/yuminnini/toktickit/pull/38#pullrequestreview-5233441410"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/yuminnini/toktickit/pulls/38"
+      }
+    },
+    "submitted_at": "2026-09-17T09:05:29Z",
+    "commit_id": "aec681384b13049997c6d81782f83a18d32ca9bd"
+  }
+]

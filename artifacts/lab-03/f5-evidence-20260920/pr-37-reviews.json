@@ -1,0 +1,42 @@
+[
+  {
+    "id": 5234857309,
+    "node_id": "PRR_kwDOTzBNlM8AAAABOAWVXQ",
+    "user": {
+      "login": "yuminnini",
+      "id": 183857793,
+      "node_id": "U_kgDOCvVygQ",
+      "avatar_url": "https://avatars.githubusercontent.com/u/183857793?u=feaf8b1c41dd6bcfa91ec4418d70327230a4b49e&v=4",
+      "gravatar_id": "",
+      "url": "https://api.github.com/users/yuminnini",
+      "html_url": "https://github.com/yuminnini",
+      "followers_url": "https://api.github.com/users/yuminnini/followers",
+      "following_url": "https://api.github.com/users/yuminnini/following{/other_user}",
+      "gists_url": "https://api.github.com/users/yuminnini/gists{/gist_id}",
+      "starred_url": "https://api.github.com/users/yuminnini/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/yuminnini/subscriptions",
+      "organizations_url": "https://api.github.com/users/yuminnini/orgs",
+      "repos_url": "https://api.github.com/users/yuminnini/repos",
+      "events_url": "https://api.github.com/users/yuminnini/events{/privacy}",
+      "received_events_url": "https://api.github.com/users/yuminnini/received_events",
+      "type": "User",
+      "user_view_type": "public",
+      "site_admin": false
+    },
+    "body": "- E และ tests ใช้ helper ร่วมกันสำหรับ API endpoint และ cleanup\n- Cleanup จำกัดไฟล์ภายในโฟลเดอร์ของรอบทดสอบ และส่งต่อข้อผิดพลาดจากการลบไฟล์\n- ทดสอบ environment propagation ผ่าน Playwright worker จริง โดยไม่พึ่ง build artifacts\n- จำกัดการข้าม webServer เฉพาะ probe และปฏิเสธ regex ที่เลือก non-probe รวมถึงการใช้ PLAYWRIGHT_IS_PROBE=true เพื่อข้าม guard\nผลตรวจสอบ: HARNESS 24/24 ผ่าน ไม่มี skip, server build ผ่าน และ git diff --check ผ่าน",
+    "state": "APPROVED",
+    "html_url": "https://github.com/JinggXd/TokTickIT/pull/37#pullrequestreview-5234857309",
+    "pull_request_url": "https://api.github.com/repos/JinggXd/TokTickIT/pulls/37",
+    "author_association": "COLLABORATOR",
+    "_links": {
+      "html": {
+        "href": "https://github.com/JinggXd/TokTickIT/pull/37#pullrequestreview-5234857309"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/JinggXd/TokTickIT/pulls/37"
+      }
+    },
+    "submitted_at": "2026-09-17T11:15:33Z",
+    "commit_id": "157b7804b56ba6f7556f2993dbea8b5832bea125"
+  }
+]

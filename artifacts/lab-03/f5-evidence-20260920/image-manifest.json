@@ -1,0 +1,382 @@
+[
+  {
+    "figure": "5.1",
+    "path": "artifacts/lab-03/screenshots/playwright-1789845301652-30424/desktop/e2e-04-login-error-states.png",
+    "sha256": "fe86697190a9726c5605efd8aa904249b41d276e4a30ae33b6e0940808de7f5c",
+    "dimensions": [
+      1280,
+      800
+    ],
+    "caption": "Invalid login feedback"
+  },
+  {
+    "figure": "5.2",
+    "path": "artifacts/lab-03/screenshots/playwright-1789845301652-30424/desktop/e2e-02-mandatory-change-screen.png",
+    "sha256": "0ffeba555b08b4ce1883b1ab155781a16665c3f9b0e850da5608dd97354ed520",
+    "dimensions": [
+      1280,
+      800
+    ],
+    "caption": "Mandatory password change desktop"
+  },
+  {
+    "figure": "5.3",
+    "path": "artifacts/lab-03/screenshots/playwright-1789845301652-30424/tablet/e2e-02-mandatory-change-screen.png",
+    "sha256": "308dbfdfecda325803733284463892c8f40be545bbbab1cd67dbbc281c6e8469",
+    "dimensions": [
+      768,
+      1024
+    ],
+    "caption": "Mandatory change tablet"
+  },
+  {
+    "figure": "5.4",
+    "path": "artifacts/lab-03/screenshots/playwright-1789845301652-30424/mobile/e2e-02-mandatory-change-screen.png",
+    "sha256": "4e5a01f0c9e4bddb26c5fa1fb72cc5340e1f199ad9ff8aca093962717666e6e7",
+    "dimensions": [
+      1031,
+      1834
+    ],
+    "caption": "Mandatory change mobile"
+  },
+  {
+    "figure": "5.5",
+    "path": "artifacts/lab-03/screenshots/playwright-1789845301652-30424/desktop/e2e-01-requester-authenticated.png",
+    "sha256": "d5b89701963afa3e08d281147c373603e7ebe7036ec3137ada202d56117143fa",
+    "dimensions": [
+      1280,
+      800
+    ],
+    "caption": "Requester name role and navigation"
+  },
+  {
+    "figure": "5.6",
+    "path": "artifacts/lab-03/screenshots/playwright-1789845301652-30424/desktop/e2e-03-back-navigation-blocked.png",
+    "sha256": "a02f8de092ac467f6eb0da8b3d0e343b2c26c5c005f113ea05b5dd6b497a3002",
+    "dimensions": [
+      1280,
+      800
+    ],
+    "caption": "Back navigation after logout returns to login"
+  },
+  {
+    "figure": "6.1",
+    "path": "artifacts/lab-03/screenshots/playwright-1789845301652-30424/desktop/e2e09-queue-initial.png",
+    "sha256": "d7453c775eb1cd6d52c8c12f095d61002cd13ec21472836ea730664f6daa01f0",
+    "dimensions": [
+      1280,
+      800
+    ],
+    "caption": "Staff Queue desktop"
+  },
+  {
+    "figure": "6.2",
+    "path": "artifacts/lab-03/screenshots/playwright-1789845301652-30424/tablet/e2e09-status-filter.png",
+    "sha256": "6ce12ef0a0b17be834fcf8d5898a3a599cbfafa3006aa04533e708b3a37f6498",
+    "dimensions": [
+      768,
+      1024
+    ],
+    "caption": "Queue status filter tablet"
+  },
+  {
+    "figure": "6.3",
+    "path": "artifacts/lab-03/screenshots/playwright-1789845301652-30424/mobile/e2e09-queue-search.png",
+    "sha256": "9e283c8cfccee580c4323edfe6f632ed6b0c518c8d5ce8b680f5582e8edd30e6",
+    "dimensions": [
+      1031,
+      1834
+    ],
+    "caption": "Queue search mobile"
+  },
+  {
+    "figure": "6.4",
+    "path": "artifacts/lab-03/screenshots/playwright-1789845301652-30424/mobile/e2e09-no-results.png",
+    "sha256": "11c4a0967b0e8884c951604e4a3f05e29800cf8df8ffab66b02cf003306c530c",
+    "dimensions": [
+      1031,
+      1834
+    ],
+    "caption": "No results mobile"
+  },
+  {
+    "figure": "6.5",
+    "path": "artifacts/lab-03/screenshots/playwright-1789845301652-30424/desktop/e2e09-queue-search.png",
+    "sha256": "9885237e052a43c19c1bb761be378dea0e4b0765b57fd4c7c5c3c72b2757fff7",
+    "dimensions": [
+      1280,
+      800
+    ],
+    "caption": "Matching Ticket found in Queue"
+  },
+  {
+    "figure": "6.6",
+    "path": "artifacts/lab-03/screenshots/playwright-1789845301652-30424/desktop/e2e09-no-results.png",
+    "sha256": "7193d83c2c3eb3cbc607ce8e222069781fd03840f53292be5aef6f7a3c7fccb9",
+    "dimensions": [
+      1280,
+      800
+    ],
+    "caption": "Distinct no-results feedback"
+  },
+  {
+    "figure": "7.1",
+    "path": "artifacts/lab-03/screenshots/playwright-1789845301652-30424/desktop/e2e11-priority.png",
+    "sha256": "4dfd66d4265ae048ddf73c8c1adc9ec5a30359f0d203553430ba0802581b9fc4",
+    "dimensions": [
+      1280,
+      800
+    ],
+    "caption": "Claimed Ticket and saved IT Priority"
+  },
+  {
+    "figure": "7.2",
+    "path": "artifacts/lab-03/screenshots/playwright-1789845301652-30424/desktop/e2e11-note.png",
+    "sha256": "6f722028c9c0ce199a54a12d1ec00bbca8064614cc5c8bf8ed00333375ac54dd",
+    "dimensions": [
+      1280,
+      800
+    ],
+    "caption": "Public Comments and Internal Notes are separate panels"
+  },
+  {
+    "figure": "7.3",
+    "path": "artifacts/lab-03/screenshots/playwright-1789845301652-30424/desktop/e2e15-admin-readonly.png",
+    "sha256": "e2e3ed88b73d77517a4dd62a3c8cd6ac17f8993335da4b4548889f3bfc993e3a",
+    "dimensions": [
+      1280,
+      800
+    ],
+    "caption": "Administrator read-only communication view"
+  },
+  {
+    "figure": "7.4",
+    "path": "artifacts/lab-03/screenshots/playwright-1789845301652-30424/desktop/e2e11-status-resolved.png",
+    "sha256": "1bb6f8bcd5a6b6e942a99608d8e66f50f8ebcb42397a9fca56f70eceb86503ab",
+    "dimensions": [
+      1280,
+      800
+    ],
+    "caption": "Staff resolved the Ticket"
+  },
+  {
+    "figure": "7.5",
+    "path": "artifacts/lab-03/screenshots/playwright-1789845301652-30424/desktop/e2e11-status-closed.png",
+    "sha256": "be8d9fbcb83126e94b125c1ef94996302eb0fd28c823ed2df38cf321074e508c",
+    "dimensions": [
+      1280,
+      800
+    ],
+    "caption": "Staff closed the Ticket"
+  },
+  {
+    "figure": "7.6",
+    "path": "artifacts/lab-03/screenshots/playwright-1789845301652-30424/mobile/e2e11-requester-in-progress.png",
+    "sha256": "cd1860ed5057f206ac621b38424686d2bbfa3a6ce02b6cd9c87bc4eae27805eb",
+    "dimensions": [
+      1031,
+      1834
+    ],
+    "caption": "Requester in-progress view"
+  },
+  {
+    "figure": "7.7",
+    "path": "artifacts/lab-03/screenshots/playwright-1789845301652-30424/mobile/e2e11-requester-closed.png",
+    "sha256": "194364deb611fd23d13f2e39a724642afe129d26aabd56e1a862c3ceed232ba8",
+    "dimensions": [
+      1031,
+      1834
+    ],
+    "caption": "Requester closed view"
+  },
+  {
+    "figure": "7.8",
+    "path": "artifacts/lab-03/screenshots/playwright-1789845301652-30424/tablet/e2e11-requester-resolved.png",
+    "sha256": "fc9cf25c49888fafac1a96989029de7ed00aa529a8765272b56c0a77c4b31241",
+    "dimensions": [
+      768,
+      1024
+    ],
+    "caption": "Requester indication and resolved Ticket tablet"
+  },
+  {
+    "figure": "7.9",
+    "path": "artifacts/lab-03/screenshots/playwright-1789845301652-30424/e2e/08-removed-attachment-410-desktop.png",
+    "sha256": "803b3817dfb2d13003e22f31a10e256763127086962cd9aff530c4801cb2d763",
+    "dimensions": [
+      1280,
+      1511
+    ],
+    "caption": "Inherited removed attachment UI and authenticated Ticket detail"
+  },
+  {
+    "figure": "8.1",
+    "path": "artifacts/lab-03/screenshots/playwright-1789845301652-30424/desktop/e2e16-admin-directory.png",
+    "sha256": "0310e11a93fee76242d7395fe897da00547a038481af6c9da4235b6fd1dc2330",
+    "dimensions": [
+      1280,
+      800
+    ],
+    "caption": "Administrator user directory"
+  },
+  {
+    "figure": "8.2",
+    "path": "artifacts/lab-03/screenshots/playwright-1789845301652-30424/desktop/e2e12-add-user-modal.png",
+    "sha256": "d8706a0eb85b41235b64fe40de70c7b6ac49f1ed9752137ecc0e5be73d189775",
+    "dimensions": [
+      1280,
+      800
+    ],
+    "caption": "Create user with one role and initial password"
+  },
+  {
+    "figure": "8.3",
+    "path": "artifacts/lab-03/screenshots/playwright-1789845301652-30424/desktop/e2e16-user-edited.png",
+    "sha256": "ad9b2cdf0e61caca425efdb5f2f188e823e8b4f1bc0bf6eca952b1394cda6dc5",
+    "dimensions": [
+      1280,
+      800
+    ],
+    "caption": "Edited user result"
+  },
+  {
+    "figure": "8.4",
+    "path": "artifacts/lab-03/screenshots/playwright-1789845301652-30424/desktop/e2e13-target-session-active.png",
+    "sha256": "5c313201db5facd63d5b482ebf0238ce0ce04b832c5b20282e84951e9a9e200c",
+    "dimensions": [
+      1280,
+      800
+    ],
+    "caption": "Target session before reset"
+  },
+  {
+    "figure": "8.5",
+    "path": "artifacts/lab-03/screenshots/playwright-1789845301652-30424/desktop/e2e13-old-session-invalidated.png",
+    "sha256": "f3ba49bc4488a5a54d1f997462c1e5cf30372dd4fcb8572e8b483b6ebb11900e",
+    "dimensions": [
+      1280,
+      800
+    ],
+    "caption": "Old session returns to login after reset"
+  },
+  {
+    "figure": "8.6",
+    "path": "artifacts/lab-03/screenshots/playwright-1789845301652-30424/mobile/e2e14-self-deactivation-guard.png",
+    "sha256": "c5dfe1067030255de3681b384b999e6ed81a11f0f3b387d36a60f0eaa880e2bd",
+    "dimensions": [
+      1031,
+      1834
+    ],
+    "caption": "Self-deactivation blocked"
+  },
+  {
+    "figure": "8.7",
+    "path": "artifacts/lab-03/screenshots/playwright-1789845301652-30424/mobile/e2e13-reset-user-forced-change.png",
+    "sha256": "713345b5c13722e23a4f7cb2f59d4d5be181ddd03c268dbeeafb3323f7096f4e",
+    "dimensions": [
+      1031,
+      1834
+    ],
+    "caption": "Reset user forced to change password"
+  },
+  {
+    "figure": "9.1",
+    "path": "artifacts/lab-03/screenshots/playwright-1789845301652-30424/tablet/e2e-01-logged-out.png",
+    "sha256": "7a787a68ebab041348ef8f8abcc7d0afa2653abe89ea510feb2d762c03a01872",
+    "dimensions": [
+      768,
+      1024
+    ],
+    "caption": "Login tablet"
+  },
+  {
+    "figure": "9.2",
+    "path": "artifacts/lab-03/screenshots/playwright-1789845301652-30424/mobile/e2e-01-logged-out.png",
+    "sha256": "4b6ba795216d12f5b517656e57bdd316bfbe3d5f3c07784fd105bfc487828e9a",
+    "dimensions": [
+      1031,
+      1834
+    ],
+    "caption": "Login mobile"
+  },
+  {
+    "figure": "9.3",
+    "path": "artifacts/lab-03/screenshots/playwright-1789845301652-30424/tablet/e2e11-detail.png",
+    "sha256": "f5855ead78fe3766eb33481b59e13cf4ea78ec32db72f7fd245d565ccef933a5",
+    "dimensions": [
+      768,
+      1024
+    ],
+    "caption": "Staff Detail tablet"
+  },
+  {
+    "figure": "9.4",
+    "path": "artifacts/lab-03/screenshots/playwright-1789845301652-30424/mobile/e2e11-detail.png",
+    "sha256": "32092022c2418e25ae00f29ae7c491c793477ae58d4d4c7282f0222aa986d108",
+    "dimensions": [
+      1031,
+      1834
+    ],
+    "caption": "Staff Detail mobile"
+  },
+  {
+    "figure": "9.5",
+    "path": "artifacts/lab-03/screenshots/playwright-1789845301652-30424/tablet/e2e16-admin-directory.png",
+    "sha256": "6e8a267e1b18cb9bfd05f4d96b840dc8b5ccbd517001a440c296b8cf4bc21dd6",
+    "dimensions": [
+      768,
+      1024
+    ],
+    "caption": "User Management tablet"
+  },
+  {
+    "figure": "9.6",
+    "path": "artifacts/lab-03/screenshots/playwright-1789845301652-30424/mobile/e2e16-admin-directory.png",
+    "sha256": "e39851ce3a126bfb18c94742be91d3408e6bf1edbae023857b6d3f9f14473a59",
+    "dimensions": [
+      1031,
+      1834
+    ],
+    "caption": "User Management mobile"
+  },
+  {
+    "figure": "9.7",
+    "path": "artifacts/lab-03/screenshots/playwright-1789845301652-30424/create-ticket/desktop.png",
+    "sha256": "19c501901fc62bb2712bce0e19318dae5def5901de6394f6dcf75bce5c0b5a50",
+    "dimensions": [
+      1280,
+      1161
+    ],
+    "caption": "Authenticated Create Ticket regression desktop"
+  },
+  {
+    "figure": "9.8",
+    "path": "artifacts/lab-03/screenshots/playwright-1789845301652-30424/my-tickets/desktop.png",
+    "sha256": "12eca3ba0580d20f32c6581e7af48caec3c397811b18d9de3d7ae0da7fe0430a",
+    "dimensions": [
+      1280,
+      800
+    ],
+    "caption": "Authenticated My Tickets regression desktop"
+  },
+  {
+    "figure": "9.9",
+    "path": "artifacts/lab-03/screenshots/playwright-1789845301652-30424/create-ticket/mobile.png",
+    "sha256": "d08d0a1ebf046fd224c70121fb90e31c8f4c2e5b7fefdfcd81afb564cd208b8b",
+    "dimensions": [
+      1031,
+      4472
+    ],
+    "caption": "Create Ticket mobile full-page capture"
+  },
+  {
+    "figure": "9.10",
+    "path": "artifacts/lab-03/screenshots/playwright-1789845301652-30424/my-tickets/mobile.png",
+    "sha256": "ef489531c0387b45f92d496ff7630415ab6a3782b5fd6ad394d0094fdedf4d8c",
+    "dimensions": [
+      1031,
+      3300
+    ],
+    "caption": "My Tickets mobile full-page capture"
+  }
+]
