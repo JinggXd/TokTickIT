@@ -1,0 +1,2373 @@
+{
+  "config": {
+    "argv": [
+      "D:\\node.exe",
+      "D:\\toktickit\\node_modules\\@playwright\\test\\cli.js",
+      "test",
+      "--list",
+      "--reporter=json"
+    ],
+    "configFile": "D:\\toktickit\\playwright.config.ts",
+    "rootDir": "D:/toktickit/e2e",
+    "failOnFlakyTests": false,
+    "forbidOnly": false,
+    "fullyParallel": false,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {},
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "D:/toktickit/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {},
+        "id": "desktop",
+        "name": "desktop",
+        "testDir": "D:/toktickit/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 60000
+      },
+      {
+        "outputDir": "D:/toktickit/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {},
+        "id": "tablet",
+        "name": "tablet",
+        "testDir": "D:/toktickit/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 60000
+      },
+      {
+        "outputDir": "D:/toktickit/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {},
+        "id": "mobile",
+        "name": "mobile",
+        "testDir": "D:/toktickit/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 60000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "json"
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.63.0",
+    "workers": 1,
+    "webServer": null
+  },
+  "suites": [
+    {
+      "title": "lab-02\\requester-ticket-flow.spec.ts",
+      "file": "lab-02/requester-ticket-flow.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Phase 7 — Responsive Layout Tests (RESP-01, RESP-02, RESP-03 per tests.md)",
+          "file": "lab-02/requester-ticket-flow.spec.ts",
+          "line": 233,
+          "column": 6,
+          "specs": [
+            {
+              "title": "RESP-01: My Tickets at <768px replaces table with card list, buttons full width, and has zero horizontal scroll",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "desktop",
+                  "projectName": "desktop",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "92c331ccfa9af6aaefb2-3ef31b51f68e1db3d543",
+              "file": "lab-02/requester-ticket-flow.spec.ts",
+              "line": 235,
+              "column": 3
+            },
+            {
+              "title": "RESP-02: Create Ticket at 768–991px shows two-column classification fields while Summary/Description remain full width, and My Tickets shows compact table",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "desktop",
+                  "projectName": "desktop",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "92c331ccfa9af6aaefb2-0c5140205b0f411f2956",
+              "file": "lab-02/requester-ticket-flow.spec.ts",
+              "line": 290,
+              "column": 3
+            },
+            {
+              "title": "RESP-03: All three screens at ≥992px center content with max width 1200px, no clipped text, and handle long content",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "desktop",
+                  "projectName": "desktop",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "92c331ccfa9af6aaefb2-9b199c6df6762ec04dd0",
+              "file": "lab-02/requester-ticket-flow.spec.ts",
+              "line": 353,
+              "column": 3
+            },
+            {
+              "title": "RESP-01: My Tickets at <768px replaces table with card list, buttons full width, and has zero horizontal scroll",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "tablet",
+                  "projectName": "tablet",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "92c331ccfa9af6aaefb2-bd9eeac7554a398269e0",
+              "file": "lab-02/requester-ticket-flow.spec.ts",
+              "line": 235,
+              "column": 3
+            },
+            {
+              "title": "RESP-02: Create Ticket at 768–991px shows two-column classification fields while Summary/Description remain full width, and My Tickets shows compact table",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "tablet",
+                  "projectName": "tablet",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "92c331ccfa9af6aaefb2-c2e56992162cb039d0fc",
+              "file": "lab-02/requester-ticket-flow.spec.ts",
+              "line": 290,
+              "column": 3
+            },
+            {
+              "title": "RESP-03: All three screens at ≥992px center content with max width 1200px, no clipped text, and handle long content",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "tablet",
+                  "projectName": "tablet",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "92c331ccfa9af6aaefb2-f5532c2b05a7c4c329c8",
+              "file": "lab-02/requester-ticket-flow.spec.ts",
+              "line": 353,
+              "column": 3
+            },
+            {
+              "title": "RESP-01: My Tickets at <768px replaces table with card list, buttons full width, and has zero horizontal scroll",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "mobile",
+                  "projectName": "mobile",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "92c331ccfa9af6aaefb2-fef71bf26b24c9b3fc9d",
+              "file": "lab-02/requester-ticket-flow.spec.ts",
+              "line": 235,
+              "column": 3
+            },
+            {
+              "title": "RESP-02: Create Ticket at 768–991px shows two-column classification fields while Summary/Description remain full width, and My Tickets shows compact table",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "mobile",
+                  "projectName": "mobile",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "92c331ccfa9af6aaefb2-fc1b478b6d8fc50d2553",
+              "file": "lab-02/requester-ticket-flow.spec.ts",
+              "line": 290,
+              "column": 3
+            },
+            {
+              "title": "RESP-03: All three screens at ≥992px center content with max width 1200px, no clipped text, and handle long content",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "mobile",
+                  "projectName": "mobile",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "92c331ccfa9af6aaefb2-a0bb47a01294a72be6f5",
+              "file": "lab-02/requester-ticket-flow.spec.ts",
+              "line": 353,
+              "column": 3
+            }
+          ]
+        },
+        {
+          "title": "Phase 7 — Visual Inspection Screenshot Captures (Project-Isolated)",
+          "file": "lab-02/requester-ticket-flow.spec.ts",
+          "line": 434,
+          "column": 6,
+          "specs": [
+            {
+              "title": "Capture 3 screenshots for current viewport project (desktop, tablet, or mobile)",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "desktop",
+                  "projectName": "desktop",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "92c331ccfa9af6aaefb2-24dc351ca1da27411b7f",
+              "file": "lab-02/requester-ticket-flow.spec.ts",
+              "line": 435,
+              "column": 3
+            },
+            {
+              "title": "Capture 3 screenshots for current viewport project (desktop, tablet, or mobile)",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "tablet",
+                  "projectName": "tablet",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "92c331ccfa9af6aaefb2-00d277928952beefe1f8",
+              "file": "lab-02/requester-ticket-flow.spec.ts",
+              "line": 435,
+              "column": 3
+            },
+            {
+              "title": "Capture 3 screenshots for current viewport project (desktop, tablet, or mobile)",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "mobile",
+                  "projectName": "mobile",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "92c331ccfa9af6aaefb2-e9bdb4f068529719b358",
+              "file": "lab-02/requester-ticket-flow.spec.ts",
+              "line": 435,
+              "column": 3
+            }
+          ]
+        },
+        {
+          "title": "Phase 8 — End-to-End Integration Flows (E2E-01, E2E-02, E2E-03 per tests.md)",
+          "file": "lab-02/requester-ticket-flow.spec.ts",
+          "line": 464,
+          "column": 6,
+          "specs": [
+            {
+              "title": "E2E-01: Full happy path — sign in, verify read-only fields, create ticket with attachment, find in My Tickets, sign out and switch account",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "desktop",
+                  "projectName": "desktop",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "92c331ccfa9af6aaefb2-824d8b7fcdbc50a731e0",
+              "file": "lab-02/requester-ticket-flow.spec.ts",
+              "line": 466,
+              "column": 3
+            },
+            {
+              "title": "E2E-02: Simulated backend failure during ticket submission retains form values",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "desktop",
+                  "projectName": "desktop",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "92c331ccfa9af6aaefb2-b196a10f3e586eae7cc4",
+              "file": "lab-02/requester-ticket-flow.spec.ts",
+              "line": 588,
+              "column": 3
+            },
+            {
+              "title": "E2E-03: Negative security flows — cross-requester direct URL (403) and removed attachment direct download (410)",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "desktop",
+                  "projectName": "desktop",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "92c331ccfa9af6aaefb2-699212a310f5e876d413",
+              "file": "lab-02/requester-ticket-flow.spec.ts",
+              "line": 655,
+              "column": 3
+            },
+            {
+              "title": "E2E-01: Full happy path — sign in, verify read-only fields, create ticket with attachment, find in My Tickets, sign out and switch account",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "tablet",
+                  "projectName": "tablet",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "92c331ccfa9af6aaefb2-0fe0663d3a6e6863b1cd",
+              "file": "lab-02/requester-ticket-flow.spec.ts",
+              "line": 466,
+              "column": 3
+            },
+            {
+              "title": "E2E-02: Simulated backend failure during ticket submission retains form values",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "tablet",
+                  "projectName": "tablet",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "92c331ccfa9af6aaefb2-0fe4604843c3356cca7f",
+              "file": "lab-02/requester-ticket-flow.spec.ts",
+              "line": 588,
+              "column": 3
+            },
+            {
+              "title": "E2E-03: Negative security flows — cross-requester direct URL (403) and removed attachment direct download (410)",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "tablet",
+                  "projectName": "tablet",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "92c331ccfa9af6aaefb2-f363ddfe77127bf3db49",
+              "file": "lab-02/requester-ticket-flow.spec.ts",
+              "line": 655,
+              "column": 3
+            },
+            {
+              "title": "E2E-01: Full happy path — sign in, verify read-only fields, create ticket with attachment, find in My Tickets, sign out and switch account",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "mobile",
+                  "projectName": "mobile",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "92c331ccfa9af6aaefb2-b02b761e77a7076a5de2",
+              "file": "lab-02/requester-ticket-flow.spec.ts",
+              "line": 466,
+              "column": 3
+            },
+            {
+              "title": "E2E-02: Simulated backend failure during ticket submission retains form values",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "mobile",
+                  "projectName": "mobile",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "92c331ccfa9af6aaefb2-7491eb2b842d16925ac3",
+              "file": "lab-02/requester-ticket-flow.spec.ts",
+              "line": 588,
+              "column": 3
+            },
+            {
+              "title": "E2E-03: Negative security flows — cross-requester direct URL (403) and removed attachment direct download (410)",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "mobile",
+                  "projectName": "mobile",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "92c331ccfa9af6aaefb2-36c6a5968174aa2d26c8",
+              "file": "lab-02/requester-ticket-flow.spec.ts",
+              "line": 655,
+              "column": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "lab-03\\authentication.spec.ts",
+      "file": "lab-03/authentication.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Phase F2 / P06 E2E Authentication & Navigation (E2E-01 to E2E-05)",
+          "file": "lab-03/authentication.spec.ts",
+          "line": 52,
+          "column": 6,
+          "specs": [
+            {
+              "title": "E2E-01: Valid login, permitted role landing page, logout flow",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "desktop",
+                  "projectName": "desktop",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "2f8f92484edc49dc7cac-ba948a4a17982c2c3236",
+              "file": "lab-03/authentication.spec.ts",
+              "line": 87,
+              "column": 3
+            },
+            {
+              "title": "E2E-02: Forced initial password change flow",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "desktop",
+                  "projectName": "desktop",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "2f8f92484edc49dc7cac-c8ab5a80efec9b7d8c78",
+              "file": "lab-03/authentication.spec.ts",
+              "line": 128,
+              "column": 3
+            },
+            {
+              "title": "E2E-03: Invalidate session on logout and verify back navigation blocked",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "desktop",
+                  "projectName": "desktop",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "2f8f92484edc49dc7cac-6697fbadfc467e4d806a",
+              "file": "lab-03/authentication.spec.ts",
+              "line": 189,
+              "column": 3
+            },
+            {
+              "title": "E2E-04: Login error flows (wrong password, inactive account, client validation)",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "desktop",
+                  "projectName": "desktop",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "2f8f92484edc49dc7cac-35a6036cc86c035d3fcc",
+              "file": "lab-03/authentication.spec.ts",
+              "line": 224,
+              "column": 3
+            },
+            {
+              "title": "E2E-05: Role-based navigation routing (Requester, Staff, Admin)",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "desktop",
+                  "projectName": "desktop",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "2f8f92484edc49dc7cac-edae15176bdf999a347d",
+              "file": "lab-03/authentication.spec.ts",
+              "line": 261,
+              "column": 3
+            },
+            {
+              "title": "E2E-01: Valid login, permitted role landing page, logout flow",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "tablet",
+                  "projectName": "tablet",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "2f8f92484edc49dc7cac-ef73062f62b57117ed91",
+              "file": "lab-03/authentication.spec.ts",
+              "line": 87,
+              "column": 3
+            },
+            {
+              "title": "E2E-02: Forced initial password change flow",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "tablet",
+                  "projectName": "tablet",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "2f8f92484edc49dc7cac-0089c02f27312e8ad2aa",
+              "file": "lab-03/authentication.spec.ts",
+              "line": 128,
+              "column": 3
+            },
+            {
+              "title": "E2E-03: Invalidate session on logout and verify back navigation blocked",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "tablet",
+                  "projectName": "tablet",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "2f8f92484edc49dc7cac-464fb7dfdcb9a54449bf",
+              "file": "lab-03/authentication.spec.ts",
+              "line": 189,
+              "column": 3
+            },
+            {
+              "title": "E2E-04: Login error flows (wrong password, inactive account, client validation)",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "tablet",
+                  "projectName": "tablet",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "2f8f92484edc49dc7cac-c2ba58be42fef64ce383",
+              "file": "lab-03/authentication.spec.ts",
+              "line": 224,
+              "column": 3
+            },
+            {
+              "title": "E2E-05: Role-based navigation routing (Requester, Staff, Admin)",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "tablet",
+                  "projectName": "tablet",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "2f8f92484edc49dc7cac-4f837306eaded6e9c5df",
+              "file": "lab-03/authentication.spec.ts",
+              "line": 261,
+              "column": 3
+            },
+            {
+              "title": "E2E-01: Valid login, permitted role landing page, logout flow",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "mobile",
+                  "projectName": "mobile",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "2f8f92484edc49dc7cac-113f980e6fd18f2493ac",
+              "file": "lab-03/authentication.spec.ts",
+              "line": 87,
+              "column": 3
+            },
+            {
+              "title": "E2E-02: Forced initial password change flow",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "mobile",
+                  "projectName": "mobile",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "2f8f92484edc49dc7cac-8c0a42770bfe502d22bd",
+              "file": "lab-03/authentication.spec.ts",
+              "line": 128,
+              "column": 3
+            },
+            {
+              "title": "E2E-03: Invalidate session on logout and verify back navigation blocked",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "mobile",
+                  "projectName": "mobile",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "2f8f92484edc49dc7cac-7c4195b7c5fef72a5c88",
+              "file": "lab-03/authentication.spec.ts",
+              "line": 189,
+              "column": 3
+            },
+            {
+              "title": "E2E-04: Login error flows (wrong password, inactive account, client validation)",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "mobile",
+                  "projectName": "mobile",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "2f8f92484edc49dc7cac-2a51f552502c03de08a0",
+              "file": "lab-03/authentication.spec.ts",
+              "line": 224,
+              "column": 3
+            },
+            {
+              "title": "E2E-05: Role-based navigation routing (Requester, Staff, Admin)",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "mobile",
+                  "projectName": "mobile",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "2f8f92484edc49dc7cac-21be0df5aed621af74bf",
+              "file": "lab-03/authentication.spec.ts",
+              "line": 261,
+              "column": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "lab-03\\staff-ticket-flow.spec.ts",
+      "file": "lab-03/staff-ticket-flow.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "E2E-09: Staff Queue search and filter",
+          "file": "lab-03/staff-ticket-flow.spec.ts",
+          "line": 116,
+          "column": 6,
+          "specs": [
+            {
+              "title": "Queue renders and search narrows results",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "desktop",
+                  "projectName": "desktop",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "ff8eb5f30526dc3dd210-58f0c27736b1e38d02f1",
+              "file": "lab-03/staff-ticket-flow.spec.ts",
+              "line": 117,
+              "column": 3
+            },
+            {
+              "title": "Status filter NEW shows queue",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "desktop",
+                  "projectName": "desktop",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "ff8eb5f30526dc3dd210-a911536f171d890d99c4",
+              "file": "lab-03/staff-ticket-flow.spec.ts",
+              "line": 136,
+              "column": 3
+            },
+            {
+              "title": "Non-matching search shows no-results state",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "desktop",
+                  "projectName": "desktop",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "ff8eb5f30526dc3dd210-a603c8f81829c61ceb4e",
+              "file": "lab-03/staff-ticket-flow.spec.ts",
+              "line": 151,
+              "column": 3
+            },
+            {
+              "title": "Clear filters resets search",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "desktop",
+                  "projectName": "desktop",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "ff8eb5f30526dc3dd210-d34c7ce64c0f8b9afc3d",
+              "file": "lab-03/staff-ticket-flow.spec.ts",
+              "line": 160,
+              "column": 3
+            },
+            {
+              "title": "Queue renders and search narrows results",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "tablet",
+                  "projectName": "tablet",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "ff8eb5f30526dc3dd210-76cdd0fc283f72fd17c9",
+              "file": "lab-03/staff-ticket-flow.spec.ts",
+              "line": 117,
+              "column": 3
+            },
+            {
+              "title": "Status filter NEW shows queue",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "tablet",
+                  "projectName": "tablet",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "ff8eb5f30526dc3dd210-b6878841221802070d4b",
+              "file": "lab-03/staff-ticket-flow.spec.ts",
+              "line": 136,
+              "column": 3
+            },
+            {
+              "title": "Non-matching search shows no-results state",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "tablet",
+                  "projectName": "tablet",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "ff8eb5f30526dc3dd210-8299e90596cee6d0c30e",
+              "file": "lab-03/staff-ticket-flow.spec.ts",
+              "line": 151,
+              "column": 3
+            },
+            {
+              "title": "Clear filters resets search",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "tablet",
+                  "projectName": "tablet",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "ff8eb5f30526dc3dd210-04618cef59f2e6df618c",
+              "file": "lab-03/staff-ticket-flow.spec.ts",
+              "line": 160,
+              "column": 3
+            },
+            {
+              "title": "Queue renders and search narrows results",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "mobile",
+                  "projectName": "mobile",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "ff8eb5f30526dc3dd210-d7b4b02ad64d97d7a516",
+              "file": "lab-03/staff-ticket-flow.spec.ts",
+              "line": 117,
+              "column": 3
+            },
+            {
+              "title": "Status filter NEW shows queue",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "mobile",
+                  "projectName": "mobile",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "ff8eb5f30526dc3dd210-4a96b0bfe4aecd1c3d71",
+              "file": "lab-03/staff-ticket-flow.spec.ts",
+              "line": 136,
+              "column": 3
+            },
+            {
+              "title": "Non-matching search shows no-results state",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "mobile",
+                  "projectName": "mobile",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "ff8eb5f30526dc3dd210-db4f814dd28a4d6da3fc",
+              "file": "lab-03/staff-ticket-flow.spec.ts",
+              "line": 151,
+              "column": 3
+            },
+            {
+              "title": "Clear filters resets search",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "mobile",
+                  "projectName": "mobile",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "ff8eb5f30526dc3dd210-98cb8992517f1e0bba3f",
+              "file": "lab-03/staff-ticket-flow.spec.ts",
+              "line": 160,
+              "column": 3
+            }
+          ]
+        },
+        {
+          "title": "E2E-11: Complete IT Staff triage workflow",
+          "file": "lab-03/staff-ticket-flow.spec.ts",
+          "line": 173,
+          "column": 6,
+          "specs": [
+            {
+              "title": "Navigate to ticket detail via queue row",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "desktop",
+                  "projectName": "desktop",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "ff8eb5f30526dc3dd210-a63c14fe27d022e94b94",
+              "file": "lab-03/staff-ticket-flow.spec.ts",
+              "line": 174,
+              "column": 3
+            },
+            {
+              "title": "Claim unassigned ticket",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "desktop",
+                  "projectName": "desktop",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "ff8eb5f30526dc3dd210-0526a3c9873e49ca8cb3",
+              "file": "lab-03/staff-ticket-flow.spec.ts",
+              "line": 194,
+              "column": 3
+            },
+            {
+              "title": "Update IT Priority to HIGH",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "desktop",
+                  "projectName": "desktop",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "ff8eb5f30526dc3dd210-77eb809438c2adeef096",
+              "file": "lab-03/staff-ticket-flow.spec.ts",
+              "line": 206,
+              "column": 3
+            },
+            {
+              "title": "Transition NEW → OPEN",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "desktop",
+                  "projectName": "desktop",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "ff8eb5f30526dc3dd210-fe7e980ad42912dcf597",
+              "file": "lab-03/staff-ticket-flow.spec.ts",
+              "line": 219,
+              "column": 3
+            },
+            {
+              "title": "Post public comment",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "desktop",
+                  "projectName": "desktop",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "ff8eb5f30526dc3dd210-5c5356911e86686504d0",
+              "file": "lab-03/staff-ticket-flow.spec.ts",
+              "line": 235,
+              "column": 3
+            },
+            {
+              "title": "Post internal note",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "desktop",
+                  "projectName": "desktop",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "ff8eb5f30526dc3dd210-7c6961ccfff19deed4e8",
+              "file": "lab-03/staff-ticket-flow.spec.ts",
+              "line": 246,
+              "column": 3
+            },
+            {
+              "title": "Transition OPEN → IN_PROGRESS",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "desktop",
+                  "projectName": "desktop",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "ff8eb5f30526dc3dd210-83efd6fe42cb84e82dff",
+              "file": "lab-03/staff-ticket-flow.spec.ts",
+              "line": 257,
+              "column": 3
+            },
+            {
+              "title": "Switch to Requester view: verify IN_PROGRESS, public comments visible, internal notes hidden, flag appears resolved",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "desktop",
+                  "projectName": "desktop",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "ff8eb5f30526dc3dd210-657a364b10b4ecd446c8",
+              "file": "lab-03/staff-ticket-flow.spec.ts",
+              "line": 273,
+              "column": 3
+            },
+            {
+              "title": "Transition IN_PROGRESS → RESOLVED via confirmation modal",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "desktop",
+                  "projectName": "desktop",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "ff8eb5f30526dc3dd210-a28ecd3652f95f296278",
+              "file": "lab-03/staff-ticket-flow.spec.ts",
+              "line": 300,
+              "column": 3
+            },
+            {
+              "title": "Switch to Requester view: verify RESOLVED status and confidentiality",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "desktop",
+                  "projectName": "desktop",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "ff8eb5f30526dc3dd210-92fec6f18e2d0fc739da",
+              "file": "lab-03/staff-ticket-flow.spec.ts",
+              "line": 322,
+              "column": 3
+            },
+            {
+              "title": "Transition RESOLVED → CLOSED via confirmation modal",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "desktop",
+                  "projectName": "desktop",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "ff8eb5f30526dc3dd210-fde37f6d4409cb25fd3d",
+              "file": "lab-03/staff-ticket-flow.spec.ts",
+              "line": 335,
+              "column": 3
+            },
+            {
+              "title": "Switch to Requester view: verify CLOSED status and terminal restrictions",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "desktop",
+                  "projectName": "desktop",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "ff8eb5f30526dc3dd210-935f82105417a0e71950",
+              "file": "lab-03/staff-ticket-flow.spec.ts",
+              "line": 357,
+              "column": 3
+            },
+            {
+              "title": "Navigate to ticket detail via queue row",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "tablet",
+                  "projectName": "tablet",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "ff8eb5f30526dc3dd210-4d9543b4a8974d69d7f7",
+              "file": "lab-03/staff-ticket-flow.spec.ts",
+              "line": 174,
+              "column": 3
+            },
+            {
+              "title": "Claim unassigned ticket",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "tablet",
+                  "projectName": "tablet",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "ff8eb5f30526dc3dd210-6431ed7a67755b977d85",
+              "file": "lab-03/staff-ticket-flow.spec.ts",
+              "line": 194,
+              "column": 3
+            },
+            {
+              "title": "Update IT Priority to HIGH",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "tablet",
+                  "projectName": "tablet",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "ff8eb5f30526dc3dd210-658dd55a49d68d313a1c",
+              "file": "lab-03/staff-ticket-flow.spec.ts",
+              "line": 206,
+              "column": 3
+            },
+            {
+              "title": "Transition NEW → OPEN",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "tablet",
+                  "projectName": "tablet",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "ff8eb5f30526dc3dd210-f1d974997d08ca282a83",
+              "file": "lab-03/staff-ticket-flow.spec.ts",
+              "line": 219,
+              "column": 3
+            },
+            {
+              "title": "Post public comment",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "tablet",
+                  "projectName": "tablet",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "ff8eb5f30526dc3dd210-db3fbf1c0c271b6f29d7",
+              "file": "lab-03/staff-ticket-flow.spec.ts",
+              "line": 235,
+              "column": 3
+            },
+            {
+              "title": "Post internal note",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "tablet",
+                  "projectName": "tablet",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "ff8eb5f30526dc3dd210-5d7cfb5125ef15345e9e",
+              "file": "lab-03/staff-ticket-flow.spec.ts",
+              "line": 246,
+              "column": 3
+            },
+            {
+              "title": "Transition OPEN → IN_PROGRESS",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "tablet",
+                  "projectName": "tablet",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "ff8eb5f30526dc3dd210-ff5d4a0a072ef58353e2",
+              "file": "lab-03/staff-ticket-flow.spec.ts",
+              "line": 257,
+              "column": 3
+            },
+            {
+              "title": "Switch to Requester view: verify IN_PROGRESS, public comments visible, internal notes hidden, flag appears resolved",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "tablet",
+                  "projectName": "tablet",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "ff8eb5f30526dc3dd210-b97679ebf4c2538119e8",
+              "file": "lab-03/staff-ticket-flow.spec.ts",
+              "line": 273,
+              "column": 3
+            },
+            {
+              "title": "Transition IN_PROGRESS → RESOLVED via confirmation modal",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "tablet",
+                  "projectName": "tablet",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "ff8eb5f30526dc3dd210-608f397ab950a2bf1200",
+              "file": "lab-03/staff-ticket-flow.spec.ts",
+              "line": 300,
+              "column": 3
+            },
+            {
+              "title": "Switch to Requester view: verify RESOLVED status and confidentiality",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "tablet",
+                  "projectName": "tablet",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "ff8eb5f30526dc3dd210-5c1a8fb73b8cd3c7e3f2",
+              "file": "lab-03/staff-ticket-flow.spec.ts",
+              "line": 322,
+              "column": 3
+            },
+            {
+              "title": "Transition RESOLVED → CLOSED via confirmation modal",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "tablet",
+                  "projectName": "tablet",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "ff8eb5f30526dc3dd210-590f21674f2b5a385cb0",
+              "file": "lab-03/staff-ticket-flow.spec.ts",
+              "line": 335,
+              "column": 3
+            },
+            {
+              "title": "Switch to Requester view: verify CLOSED status and terminal restrictions",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "tablet",
+                  "projectName": "tablet",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "ff8eb5f30526dc3dd210-1125eb5a5052a5754a2b",
+              "file": "lab-03/staff-ticket-flow.spec.ts",
+              "line": 357,
+              "column": 3
+            },
+            {
+              "title": "Navigate to ticket detail via queue row",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "mobile",
+                  "projectName": "mobile",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "ff8eb5f30526dc3dd210-b6b6001bf6c4e5bd9259",
+              "file": "lab-03/staff-ticket-flow.spec.ts",
+              "line": 174,
+              "column": 3
+            },
+            {
+              "title": "Claim unassigned ticket",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "mobile",
+                  "projectName": "mobile",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "ff8eb5f30526dc3dd210-ce3cb96f4244ae50ad28",
+              "file": "lab-03/staff-ticket-flow.spec.ts",
+              "line": 194,
+              "column": 3
+            },
+            {
+              "title": "Update IT Priority to HIGH",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "mobile",
+                  "projectName": "mobile",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "ff8eb5f30526dc3dd210-33a4e339bc5a0acd9041",
+              "file": "lab-03/staff-ticket-flow.spec.ts",
+              "line": 206,
+              "column": 3
+            },
+            {
+              "title": "Transition NEW → OPEN",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "mobile",
+                  "projectName": "mobile",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "ff8eb5f30526dc3dd210-0a52dd409671521a46de",
+              "file": "lab-03/staff-ticket-flow.spec.ts",
+              "line": 219,
+              "column": 3
+            },
+            {
+              "title": "Post public comment",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "mobile",
+                  "projectName": "mobile",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "ff8eb5f30526dc3dd210-2420fe40a73a4057945a",
+              "file": "lab-03/staff-ticket-flow.spec.ts",
+              "line": 235,
+              "column": 3
+            },
+            {
+              "title": "Post internal note",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "mobile",
+                  "projectName": "mobile",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "ff8eb5f30526dc3dd210-59c0495bf2af5a376bc0",
+              "file": "lab-03/staff-ticket-flow.spec.ts",
+              "line": 246,
+              "column": 3
+            },
+            {
+              "title": "Transition OPEN → IN_PROGRESS",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "mobile",
+                  "projectName": "mobile",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "ff8eb5f30526dc3dd210-d70fb67f372ee8147ff3",
+              "file": "lab-03/staff-ticket-flow.spec.ts",
+              "line": 257,
+              "column": 3
+            },
+            {
+              "title": "Switch to Requester view: verify IN_PROGRESS, public comments visible, internal notes hidden, flag appears resolved",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "mobile",
+                  "projectName": "mobile",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "ff8eb5f30526dc3dd210-ed34745e28cba9227eff",
+              "file": "lab-03/staff-ticket-flow.spec.ts",
+              "line": 273,
+              "column": 3
+            },
+            {
+              "title": "Transition IN_PROGRESS → RESOLVED via confirmation modal",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "mobile",
+                  "projectName": "mobile",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "ff8eb5f30526dc3dd210-94353cf8588f19a5bd5b",
+              "file": "lab-03/staff-ticket-flow.spec.ts",
+              "line": 300,
+              "column": 3
+            },
+            {
+              "title": "Switch to Requester view: verify RESOLVED status and confidentiality",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "mobile",
+                  "projectName": "mobile",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "ff8eb5f30526dc3dd210-5fd02f58fd397d68282d",
+              "file": "lab-03/staff-ticket-flow.spec.ts",
+              "line": 322,
+              "column": 3
+            },
+            {
+              "title": "Transition RESOLVED → CLOSED via confirmation modal",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "mobile",
+                  "projectName": "mobile",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "ff8eb5f30526dc3dd210-8a33124d9a9a8331a638",
+              "file": "lab-03/staff-ticket-flow.spec.ts",
+              "line": 335,
+              "column": 3
+            },
+            {
+              "title": "Switch to Requester view: verify CLOSED status and terminal restrictions",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "mobile",
+                  "projectName": "mobile",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "ff8eb5f30526dc3dd210-a01802b2e357c8385213",
+              "file": "lab-03/staff-ticket-flow.spec.ts",
+              "line": 357,
+              "column": 3
+            }
+          ]
+        },
+        {
+          "title": "E2E-15: Back navigation and admin read-only",
+          "file": "lab-03/staff-ticket-flow.spec.ts",
+          "line": 375,
+          "column": 6,
+          "specs": [
+            {
+              "title": "Back button returns to queue",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "desktop",
+                  "projectName": "desktop",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "ff8eb5f30526dc3dd210-3f4f688c540c5a0b5b9c",
+              "file": "lab-03/staff-ticket-flow.spec.ts",
+              "line": 376,
+              "column": 3
+            },
+            {
+              "title": "Admin read-only view of ticket detail (AC-28, AC-37, E2E-15)",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "desktop",
+                  "projectName": "desktop",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "ff8eb5f30526dc3dd210-957bfbfd55a6166b195d",
+              "file": "lab-03/staff-ticket-flow.spec.ts",
+              "line": 386,
+              "column": 3
+            },
+            {
+              "title": "Back button returns to queue",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "tablet",
+                  "projectName": "tablet",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "ff8eb5f30526dc3dd210-3ab089b0d58c08613001",
+              "file": "lab-03/staff-ticket-flow.spec.ts",
+              "line": 376,
+              "column": 3
+            },
+            {
+              "title": "Admin read-only view of ticket detail (AC-28, AC-37, E2E-15)",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "tablet",
+                  "projectName": "tablet",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "ff8eb5f30526dc3dd210-2c272d61ba8684a2d550",
+              "file": "lab-03/staff-ticket-flow.spec.ts",
+              "line": 386,
+              "column": 3
+            },
+            {
+              "title": "Back button returns to queue",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "mobile",
+                  "projectName": "mobile",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "ff8eb5f30526dc3dd210-d36e8bb2be47c36d1189",
+              "file": "lab-03/staff-ticket-flow.spec.ts",
+              "line": 376,
+              "column": 3
+            },
+            {
+              "title": "Admin read-only view of ticket detail (AC-28, AC-37, E2E-15)",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "mobile",
+                  "projectName": "mobile",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "ff8eb5f30526dc3dd210-9e747f2f8b0488e5c32b",
+              "file": "lab-03/staff-ticket-flow.spec.ts",
+              "line": 386,
+              "column": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "lab-03\\user-administration.spec.ts",
+      "file": "lab-03/user-administration.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Phase F4 / P11 & P12: User Administration E2E Verification",
+          "file": "lab-03/user-administration.spec.ts",
+          "line": 103,
+          "column": 6,
+          "specs": [
+            {
+              "title": "E2E-16: Admin list directory, search, and role filter",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "desktop",
+                  "projectName": "desktop",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "a11dbb5c18e1b3541c6b-c9cf6141e09c7ad675de",
+              "file": "lab-03/user-administration.spec.ts",
+              "line": 104,
+              "column": 3
+            },
+            {
+              "title": "E2E-12: Admin provisions new user account and verifies forced password change",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "desktop",
+                  "projectName": "desktop",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "a11dbb5c18e1b3541c6b-0417971d466f1d44ba94",
+              "file": "lab-03/user-administration.spec.ts",
+              "line": 127,
+              "column": 3
+            },
+            {
+              "title": "E2E-13: Admin resets user password and verifies session invalidation",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "desktop",
+                  "projectName": "desktop",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "a11dbb5c18e1b3541c6b-55323224226ae9c99e44",
+              "file": "lab-03/user-administration.spec.ts",
+              "line": 184,
+              "column": 3
+            },
+            {
+              "title": "E2E-14: Admin self-deactivation guard",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "desktop",
+                  "projectName": "desktop",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "a11dbb5c18e1b3541c6b-e06c46e78a04e802cfd8",
+              "file": "lab-03/user-administration.spec.ts",
+              "line": 244,
+              "column": 3
+            },
+            {
+              "title": "E2E-16: Edit user name and role",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "desktop",
+                  "projectName": "desktop",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "a11dbb5c18e1b3541c6b-0cd060b667b776863063",
+              "file": "lab-03/user-administration.spec.ts",
+              "line": 264,
+              "column": 3
+            },
+            {
+              "title": "E2E-16: Admin list directory, search, and role filter",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "tablet",
+                  "projectName": "tablet",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "a11dbb5c18e1b3541c6b-2b736ea9ffddb41b5e7f",
+              "file": "lab-03/user-administration.spec.ts",
+              "line": 104,
+              "column": 3
+            },
+            {
+              "title": "E2E-12: Admin provisions new user account and verifies forced password change",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "tablet",
+                  "projectName": "tablet",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "a11dbb5c18e1b3541c6b-f4dafdcccc4271eb524c",
+              "file": "lab-03/user-administration.spec.ts",
+              "line": 127,
+              "column": 3
+            },
+            {
+              "title": "E2E-13: Admin resets user password and verifies session invalidation",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "tablet",
+                  "projectName": "tablet",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "a11dbb5c18e1b3541c6b-cecf4f0ac8a100253033",
+              "file": "lab-03/user-administration.spec.ts",
+              "line": 184,
+              "column": 3
+            },
+            {
+              "title": "E2E-14: Admin self-deactivation guard",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "tablet",
+                  "projectName": "tablet",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "a11dbb5c18e1b3541c6b-29f5bf7042760f713f01",
+              "file": "lab-03/user-administration.spec.ts",
+              "line": 244,
+              "column": 3
+            },
+            {
+              "title": "E2E-16: Edit user name and role",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "tablet",
+                  "projectName": "tablet",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "a11dbb5c18e1b3541c6b-61bbc5be271b854893cf",
+              "file": "lab-03/user-administration.spec.ts",
+              "line": 264,
+              "column": 3
+            },
+            {
+              "title": "E2E-16: Admin list directory, search, and role filter",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "mobile",
+                  "projectName": "mobile",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "a11dbb5c18e1b3541c6b-ea8c8be68fbf52e52d99",
+              "file": "lab-03/user-administration.spec.ts",
+              "line": 104,
+              "column": 3
+            },
+            {
+              "title": "E2E-12: Admin provisions new user account and verifies forced password change",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "mobile",
+                  "projectName": "mobile",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "a11dbb5c18e1b3541c6b-0ebe3f20f35d116d1ec3",
+              "file": "lab-03/user-administration.spec.ts",
+              "line": 127,
+              "column": 3
+            },
+            {
+              "title": "E2E-13: Admin resets user password and verifies session invalidation",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "mobile",
+                  "projectName": "mobile",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "a11dbb5c18e1b3541c6b-0e4dc1b25d0371273c42",
+              "file": "lab-03/user-administration.spec.ts",
+              "line": 184,
+              "column": 3
+            },
+            {
+              "title": "E2E-14: Admin self-deactivation guard",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "mobile",
+                  "projectName": "mobile",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "a11dbb5c18e1b3541c6b-955b271c01069b2fe41f",
+              "file": "lab-03/user-administration.spec.ts",
+              "line": 244,
+              "column": 3
+            },
+            {
+              "title": "E2E-16: Edit user name and role",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "mobile",
+                  "projectName": "mobile",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "a11dbb5c18e1b3541c6b-fe08503380ceeef26d78",
+              "file": "lab-03/user-administration.spec.ts",
+              "line": 264,
+              "column": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "lab-03\\worker-env.spec.ts",
+      "file": "lab-03/worker-env.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "HARNESS-01 Playwright worker environment propagation",
+          "file": "lab-03/worker-env.spec.ts",
+          "line": 4,
+          "column": 6,
+          "specs": [
+            {
+              "title": "worker process inherits all test environment variables from Playwright config",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "desktop",
+                  "projectName": "desktop",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "4b169f2666c50568e439-2cf6bcfe1a4ebf0d0a89",
+              "file": "lab-03/worker-env.spec.ts",
+              "line": 5,
+              "column": 3
+            },
+            {
+              "title": "worker process inherits all test environment variables from Playwright config",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "tablet",
+                  "projectName": "tablet",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "4b169f2666c50568e439-38c2a7d29821d54d9ecc",
+              "file": "lab-03/worker-env.spec.ts",
+              "line": 5,
+              "column": 3
+            },
+            {
+              "title": "worker process inherits all test environment variables from Playwright config",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "mobile",
+                  "projectName": "mobile",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "4b169f2666c50568e439-e1c458cb6284d2a5d0bd",
+              "file": "lab-03/worker-env.spec.ts",
+              "line": 5,
+              "column": 3
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-09-19T21:48:31.192Z",
+    "duration": 951.6260000000002,
+    "expected": 0,
+    "skipped": 108,
+    "unexpected": 0,
+    "flaky": 0
+  }
+}
