@@ -1,5 +1,5 @@
 {
-  "inspectedDate": "2026-10-02",
+  "inspectedDate": "2026-10-17",
   "cssViewports": {
     "desktop": [
       1280,
@@ -69,22 +69,32 @@
     },
     {
       "path": "artifacts/lab-04/screenshots/f4-20261002/desktop/modal-log-top.png",
-      "source": "artifacts/lab-03/screenshots/f4-20261002-integrated/desktop/f4-modal-log-action-top.png",
-      "sourceCheckpoint": "e8185c7b73100f723acd8ff78a9b40379aaec4f6",
+      "source": "artifacts/lab-03/screenshots/f4-20261017-audit-fix/desktop/f4-modal-log-action-top.png",
+      "sourceCheckpoint": "3ddc8be0ffa72609134423b0512d1242cf2a25a0+f4-audit-fixes",
       "project": "desktop",
       "pixelWidth": 1280,
       "pixelHeight": 800,
-      "sha256": "b6db25c0a83a092270d4c3af1274265ec39e74f7dfff1677057f1d1cf0226030",
+      "sha256": "0e606ff5e4723bd9c8a636171a831f802cd89fbc4cdee283bc6aabd3f4cc58b7",
       "visuallyInspected": true
     },
     {
       "path": "artifacts/lab-04/screenshots/f4-20261002/desktop/modal-log-bottom.png",
-      "source": "artifacts/lab-03/screenshots/f4-20261002-integrated/desktop/f4-modal-log-action.png",
-      "sourceCheckpoint": "e8185c7b73100f723acd8ff78a9b40379aaec4f6",
+      "source": "artifacts/lab-03/screenshots/f4-20261017-audit-fix/desktop/f4-modal-log-action.png",
+      "sourceCheckpoint": "3ddc8be0ffa72609134423b0512d1242cf2a25a0+f4-audit-fixes",
       "project": "desktop",
       "pixelWidth": 1280,
       "pixelHeight": 800,
-      "sha256": "68a20a846c144ca2663413657da250b8158021cb1e9c7cb197d346993ba18b20",
+      "sha256": "99af1ee700e5874ab86c0951b13eef7d3d5a531ef2c6ea6b4a44f9c1f6972c5a",
+      "visuallyInspected": true
+    },
+    {
+      "path": "artifacts/lab-04/screenshots/f4-20261002/desktop/modal-edit.png",
+      "source": "artifacts/lab-03/screenshots/f4-20261017-audit-fix/desktop/f4-modal-edit-action.png",
+      "sourceCheckpoint": "3ddc8be0ffa72609134423b0512d1242cf2a25a0+f4-audit-fixes",
+      "project": "desktop",
+      "pixelWidth": 1280,
+      "pixelHeight": 800,
+      "sha256": "9a66b4de95f60f2d35df134367a9c1fbe2ae7cdb2571e6524fa338924bb0e9e6",
       "visuallyInspected": true
     },
     {
@@ -179,22 +189,32 @@
     },
     {
       "path": "artifacts/lab-04/screenshots/f4-20261002/tablet/modal-log-top.png",
-      "source": "artifacts/lab-03/screenshots/f4-20261002-integrated/tablet/f4-modal-log-action-top.png",
-      "sourceCheckpoint": "e8185c7b73100f723acd8ff78a9b40379aaec4f6",
+      "source": "artifacts/lab-03/screenshots/f4-20261017-audit-fix/tablet/f4-modal-log-action-top.png",
+      "sourceCheckpoint": "3ddc8be0ffa72609134423b0512d1242cf2a25a0+f4-audit-fixes",
       "project": "tablet",
       "pixelWidth": 768,
       "pixelHeight": 1024,
-      "sha256": "13c7e1931d3b175d7576cab271cc0be60d8114366e5d15adfa11fe4d899e55cf",
+      "sha256": "2ad3d33d1d311dd691607526766a3467e4e51cb61dbf83b8bf50c0da2ba97cdc",
       "visuallyInspected": true
     },
     {
       "path": "artifacts/lab-04/screenshots/f4-20261002/tablet/modal-log-bottom.png",
-      "source": "artifacts/lab-03/screenshots/f4-20261002-integrated/tablet/f4-modal-log-action.png",
-      "sourceCheckpoint": "e8185c7b73100f723acd8ff78a9b40379aaec4f6",
+      "source": "artifacts/lab-03/screenshots/f4-20261017-audit-fix/tablet/f4-modal-log-action.png",
+      "sourceCheckpoint": "3ddc8be0ffa72609134423b0512d1242cf2a25a0+f4-audit-fixes",
       "project": "tablet",
       "pixelWidth": 768,
       "pixelHeight": 1024,
-      "sha256": "7b26a6974e7449be4a2b43f11c0f01c7e8e7b364f2c3d23d373324948374195d",
+      "sha256": "58e1ee1037c551c3ba13d1ca3e5d8f2024486fa38a87f3023d58e04ab1f9cb91",
+      "visuallyInspected": true
+    },
+    {
+      "path": "artifacts/lab-04/screenshots/f4-20261002/tablet/modal-edit.png",
+      "source": "artifacts/lab-03/screenshots/f4-20261017-audit-fix/tablet/f4-modal-edit-action.png",
+      "sourceCheckpoint": "3ddc8be0ffa72609134423b0512d1242cf2a25a0+f4-audit-fixes",
+      "project": "tablet",
+      "pixelWidth": 768,
+      "pixelHeight": 1024,
+      "sha256": "dd75b809cf81887a6f1ceb752a7a73d2319b799a36621a0953c169742fbd20a9",
       "visuallyInspected": true
     },
     {
@@ -289,22 +309,32 @@
     },
     {
       "path": "artifacts/lab-04/screenshots/f4-20261002/mobile/modal-log-top.png",
-      "source": "artifacts/lab-03/screenshots/f4-20261002-integrated/mobile/f4-modal-log-action-top.png",
-      "sourceCheckpoint": "e8185c7b73100f723acd8ff78a9b40379aaec4f6",
+      "source": "artifacts/lab-03/screenshots/f4-20261017-audit-fix/mobile/f4-modal-log-action-top.png",
+      "sourceCheckpoint": "3ddc8be0ffa72609134423b0512d1242cf2a25a0+f4-audit-fixes",
       "project": "mobile",
       "pixelWidth": 1031,
       "pixelHeight": 1834,
-      "sha256": "49e01a9b4f6d7560ff7037514df25f88bcd9f076a1f79995ca8eebc57fba5fa6",
+      "sha256": "f504001116a1c66543b6615a16980dfd250c1293bda0e8200ca481346cbe15e2",
       "visuallyInspected": true
     },
     {
       "path": "artifacts/lab-04/screenshots/f4-20261002/mobile/modal-log-bottom.png",
-      "source": "artifacts/lab-03/screenshots/f4-20261002-integrated/mobile/f4-modal-log-action.png",
-      "sourceCheckpoint": "e8185c7b73100f723acd8ff78a9b40379aaec4f6",
+      "source": "artifacts/lab-03/screenshots/f4-20261017-audit-fix/mobile/f4-modal-log-action.png",
+      "sourceCheckpoint": "3ddc8be0ffa72609134423b0512d1242cf2a25a0+f4-audit-fixes",
       "project": "mobile",
       "pixelWidth": 1031,
       "pixelHeight": 1834,
-      "sha256": "0e045dc68b727281506199b640d917089af172a8116dd5a53669dd41004528ef",
+      "sha256": "e0918717e6d95a6f628cd4ab25a7ff3a462d2b868804e0f2e076b4e50a97eb81",
+      "visuallyInspected": true
+    },
+    {
+      "path": "artifacts/lab-04/screenshots/f4-20261002/mobile/modal-edit.png",
+      "source": "artifacts/lab-03/screenshots/f4-20261017-audit-fix/mobile/f4-modal-edit-action.png",
+      "sourceCheckpoint": "3ddc8be0ffa72609134423b0512d1242cf2a25a0+f4-audit-fixes",
+      "project": "mobile",
+      "pixelWidth": 1031,
+      "pixelHeight": 1834,
+      "sha256": "2369cf67112ed41a93e795e9cc07efd4afcb8ebe82e6c11e8ed54d8d3f407acd",
       "visuallyInspected": true
     },
     {

@@ -1,5 +1,9 @@
 # TokTickIT — REST API Specification (Lab 4)
 
+## Unexpected Actions API failures (F4 safe-error clarification)
+
+For list/create/edit/complete/cancel, an unexpected server or database failure returns **500** with `{ "error": "INTERNAL_ERROR", "message": "Unable to process actions request." }`. Never expose database/SQL/stack/path/driver messages to clients, including exceptions carrying status 500. Record detailed diagnostics server-side. Existing documented validation/authorization/not-found/conflict responses remain unchanged. API-L4-34 covers all five endpoints, logging and absence of mutations.
+
 **Document Version:** 1.2.0 (Revised following F1-Review Round 2 Findings)  
 **Status:** PROPOSED API CONTRACT (Sprint 4 F1)  
 **Standard Compliance:** CPE 334 Lab 4 Handout (`SE-Lab-4.pdf`, §6), Lab 3 Baseline, `GEMINI-PIPELINE.md`, `F1-REVIEW-ROUND2.md`

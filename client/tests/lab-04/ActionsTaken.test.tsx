@@ -332,6 +332,53 @@ describe("Phase F2 / L4-P05: Actions Taken UI in Ticket Detail", () => {
     fireEvent.keyDown(window, { key: "Escape" });
   });
 
+  it("A11Y-L4-03: Edit modal sets initial focus, wraps Tab/Shift+Tab, and restores focus to trigger on Escape", async () => {
+    render(
+      <ActionsTakenSection
+        ticketId={101}
+        ticketStatus="IN_PROGRESS"
+        actions={mockActions}
+        currentUser={{ id: 12, name: "Alex IT", role: "IT_STAFF" }}
+        assignableStaff={[{ id: 12, name: "Alex IT" }, { id: 15, name: "Marcus IT" }]}
+        onActionSaved={onActionSaved}
+      />
+    );
+
+    const editBtn = screen.getByTestId("edit-action-btn-2");
+    editBtn.focus();
+    expect(document.activeElement).toBe(editBtn);
+    fireEvent.click(editBtn);
+
+    const dialog = screen.getByRole("dialog");
+    expect(within(dialog).getByText("Edit Action Details")).toBeInTheDocument();
+
+    const focusableSelector =
+      'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+    const focusables = Array.from(dialog.querySelectorAll<HTMLElement>(focusableSelector));
+    expect(focusables.length).toBeGreaterThan(2);
+
+    const firstElement = focusables[0];
+    const lastElement = focusables[focusables.length - 1];
+
+    await waitFor(() => {
+      expect(document.activeElement).toBe(firstElement);
+    });
+
+    lastElement.focus();
+    fireEvent.keyDown(window, { key: "Tab" });
+    expect(document.activeElement).toBe(firstElement);
+
+    firstElement.focus();
+    fireEvent.keyDown(window, { key: "Tab", shiftKey: true });
+    expect(document.activeElement).toBe(lastElement);
+
+    fireEvent.keyDown(window, { key: "Escape" });
+    await waitFor(() => {
+      expect(screen.queryByRole("dialog")).toBeNull();
+    });
+    expect(document.activeElement).toBe(editBtn);
+  });
+
   it("UI-L4-04b: Actions Taken renders loading state and error state with retry button", () => {
     const onRetry = vi.fn();
     const { rerender } = render(

@@ -34,12 +34,48 @@ async function verifyModalKeyboard(page: Page) {
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
 }
 
+async function verifyPendingChoiceContrast(page: Page) {
+  const choice = page.locator("label[for='mode-pending']");
+  const assertContrast = async () => {
+    const ratio = await choice.evaluate(el => {
+      const luminance = (rgb: string) => {
+        const [r, g, b] = rgb.match(/\d+/g)!.slice(0, 3).map(Number).map(v => v / 255)
+          .map(v => v <= 0.04045 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4);
+        return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+      };
+      let parent: Element | null = el;
+      let background = "rgb(255, 255, 255)";
+      while (parent) {
+        const color = getComputedStyle(parent).backgroundColor;
+        if (color !== "rgba(0, 0, 0, 0)" && color !== "transparent") { background = color; break; }
+        parent = parent.parentElement;
+      }
+      const values = [luminance(getComputedStyle(el).color), luminance(background)].sort((a, b) => a - b);
+      return (values[1] + 0.05) / (values[0] + 0.05);
+    });
+    expect(ratio, "STYLE-L4-03: Pending Task normal-text contrast").toBeGreaterThanOrEqual(4.5);
+  };
+  await assertContrast();
+  await choice.hover();
+  await assertContrast();
+  await page.locator("#mode-pending").focus();
+  await assertContrast();
+  await choice.click();
+  await assertContrast();
+}
+
 async function captureActionsPanel(page: Page, testInfo: TestInfo, filename: string) {
   const destination = screenshotPath(testInfo, filename);
   if (await page.evaluate(() => window.innerWidth < 768)) {
     // Capture from the page top so the sticky mobile header cannot cover the panel.
-    await page.evaluate(() => window.scrollTo(0, 0));
-    await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0);
+    await expect
+      .poll(async () =>
+        page.evaluate(() => {
+          window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+          return window.scrollY;
+        }),
+      )
+      .toBe(0);
     await page.screenshot({ path: destination, fullPage: true });
   } else {
     await page.getByTestId("actions-taken-section").screenshot({ path: destination });
@@ -154,6 +190,8 @@ test.describe("Phase F2 / L4-P05: Actions Taken Lifecycle Flow (E2E-L4-01)", () 
     await expect(page.getByText("Log New Action")).toBeVisible();
     await expect(page.getByRole("dialog").getByRole("button").first()).toBeFocused();
 
+    await verifyPendingChoiceContrast(page);
+
     // Fill action as PENDING with assignee and follow-up
     await page.locator("label[for='mode-pending']").click();
     await page.locator("#log-action-desc").fill("Investigating core switch uplink flap");
@@ -178,6 +216,26 @@ test.describe("Phase F2 / L4-P05: Actions Taken Lifecycle Flow (E2E-L4-01)", () 
     await expect(page.getByText("Investigating core switch uplink flap").filter({ visible: true })).toBeVisible({ timeout: 6_000 });
     const pendingBadge = page.locator("[data-testid='action-status-badge-PENDING'], .badge:has-text('Pending')").filter({ visible: true });
     await expect(pendingBadge).toBeVisible();
+
+    // 2b. Verify Edit Action modal keyboard focus trap, visual state, Escape dismissal, and focus restoration (A11Y-L4-03)
+    const editBtn = actionsSection
+      .getByRole("button", { name: /^Edit$/i })
+      .filter({ visible: true })
+      .first();
+    await expect(editBtn).toBeVisible({ timeout: 6_000 });
+    await editBtn.focus();
+    await editBtn.click();
+
+    await expect(page.getByRole("dialog")).toBeVisible({ timeout: 6_000 });
+    await expect(page.getByText("Edit Action Details")).toBeVisible();
+    await expect(page.getByRole("dialog").getByRole("button").first()).toBeFocused();
+    await verifyModalKeyboard(page);
+    await page.getByRole("dialog").getByRole("button").first().focus();
+    await page.evaluate(() => window.scrollTo(0, 0));
+    await page.screenshot({ path: screenshotPath(testInfo, "f4-modal-edit-action.png") });
+    await page.keyboard.press("Escape");
+    await expect(page.getByRole("dialog")).not.toBeVisible({ timeout: 6_000 });
+    await expect(editBtn).toBeFocused();
 
     // 3. Complete the pending action
     // Find visible complete button (works across desktop table row or mobile card)

@@ -80,10 +80,15 @@ export const ActionsTakenSection: React.FC<ActionsTakenSectionProps> = ({
   const [cancelReason, setCancelReason] = useState("");
 
   const modalRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLElement | null>(null);
   const isSubmittingRef = useRef(isSubmitting);
   useEffect(() => {
     isSubmittingRef.current = isSubmitting;
   }, [isSubmitting]);
+
+  const rememberTrigger = () => {
+    triggerRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+  };
 
   // Focus trap and Escape listener for accessible modals
   useEffect(() => {
@@ -144,6 +149,7 @@ export const ActionsTakenSection: React.FC<ActionsTakenSectionProps> = ({
   }, [activeModal, isSubmitting]);
 
   const openLogModal = () => {
+    rememberTrigger();
     const nowLocal = formatLocalDatetime(new Date());
     const newUuid = createClientRequestId();
     setClientRequestId(newUuid);
@@ -160,6 +166,7 @@ export const ActionsTakenSection: React.FC<ActionsTakenSectionProps> = ({
   };
 
   const openCompleteModal = (action: ActionTaken) => {
+    rememberTrigger();
     setSelectedAction(action);
     setResult("");
     setAttachmentNotes(action.attachmentNotes || "");
@@ -168,6 +175,7 @@ export const ActionsTakenSection: React.FC<ActionsTakenSectionProps> = ({
   };
 
   const openCancelModal = (action: ActionTaken) => {
+    rememberTrigger();
     setSelectedAction(action);
     setCancelReason("");
     setModalError(null);
@@ -175,6 +183,7 @@ export const ActionsTakenSection: React.FC<ActionsTakenSectionProps> = ({
   };
 
   const openEditModal = (action: ActionTaken) => {
+    rememberTrigger();
     setSelectedAction(action);
     setDescription(action.actionDescription);
     setResult(action.result || "");
@@ -192,6 +201,11 @@ export const ActionsTakenSection: React.FC<ActionsTakenSectionProps> = ({
     setSelectedAction(null);
     setModalError(null);
     setIsSubmitting(false);
+    const trigger = triggerRef.current;
+    triggerRef.current = null;
+    if (trigger && document.contains(trigger)) {
+      trigger.focus({ preventScroll: true });
+    }
   };
 
   const maxDatetime = formatLocalDatetime(new Date(Date.now() + 5 * 60 * 1000));
@@ -669,7 +683,7 @@ export const ActionsTakenSection: React.FC<ActionsTakenSectionProps> = ({
                           onChange={() => setStatusMode("PENDING")}
                           disabled={isSubmitting}
                         />
-                        <label className="btn btn-outline-warning" htmlFor="mode-pending">
+                        <label className="btn btn-outline-warning btn-action-pending" htmlFor="mode-pending">
                           Pending Task
                         </label>
                       </div>

@@ -1,21 +1,22 @@
 # F4 review packet — L4-P11–P12
 
-**2026-10-02 requirement-audit update:** The recorded test runs still pass, but this is not full F4 closure. [Current audit](requirements-audit-F2-F3-F4.md) identifies raw unexpected Actions API 500 messages, incomplete Edit-modal/AA-contrast evidence, and pending peer review/Development-link/integration. Canonical AI Use and reviewer records plus phase-suffixed reports are added. No product source changed in this documentation audit; the full runs below are reused evidence.
+**2026-10-17 audit-remediation update:** Product/test findings `AUD-01`, `AUD-02`, and `AUD-08` from [requirements-audit-F2-F3-F4.md](requirements-audit-F2-F3-F4.md) are now **resolved and verified**:
+- **`AUD-01` (`API-L4-34`)**: `server/src/routes/actions.ts` sanitizes unexpected runtime errors and `status >= 500` errors via `sendInternalError()`, returning generic `{ error: "INTERNAL_ERROR", message: "Unable to process actions request." }`. Verified by 10 fault-injection tests across all 5 endpoints (`52/52` passed in `server/tests/lab-04/actions-taken.api.test.ts`).
+- **`AUD-02` (`A11Y-L4-03`)**: Edit Pending Action modal (`role="dialog"`, `aria-modal="true"`) verified for initial focus, forward/reverse `Tab` wrapping, `Escape` dismissal, focus restoration to the invoking Edit button, and 3-viewport screenshot captures (`modal-edit.png` across Desktop 1280×800, Tablet 768×1024, Mobile 375×812 — bringing the archived F4 visual set to **36 captures**).
+- **`AUD-08` (`STYLE-L4-03`)**: Unselected Pending Task button uses `.btn-action-pending` (`#92400E` text/border on `#FFFFFF`, `#FEF3C7` hover/active, 3px `#16A34A` focus ring), achieving **8.26:1** contrast on white (exceeding WCAG 2.1 AA 4.5:1). Verified in both `client/tests/lab-04/ZenGreenTokens.test.tsx` (`3/3` passed) and `e2e/lab-04/actions-taken-flow.spec.ts` (`3/3` viewports passed).
 
-**Follow-up F4 code review at 0883662:** No additional blocker found in the six F4 source/test files inspected; recovery reference fix and performance protocol match the recorded evidence. Two inherited product defects remain integration blockers: raw Actions 500 diagnostic messages (AUD-01, synthetic route fault reproduced) and unselected Pending Task contrast 1.63:1 on white (AUD-08, offline Chromium using actual Bootstrap/theme CSS). The latter fails normal-text AA 4.5:1 and uses an unapproved Bootstrap warning yellow. Edit-modal keyboard/visual coverage remains an evidence gap, not a reproduced focus-trap defect. [Contrast proof](../../artifacts/lab-04/requirements-audit-20261002/pending-mode-contrast.json). Full suites were not rerun during review.
+Date: 2026-10-17. Branch: `codex/lab4-f4-verification`. Tracking: [Issue #52](https://github.com/JinggXd/TokTickIT/issues/52). Base: `lab4-staging` at `1ee7786cda440c03f830ca2a271d45ce9eb45864`, the reviewed merge of F3 PR #51 including its keyboard correction.
 
-Date: 2026-10-02. Branch: `codex/lab4-f4-verification`. Tracking: [Issue #52](https://github.com/JinggXd/TokTickIT/issues/52). Base: `lab4-staging` at `1ee7786cda440c03f830ca2a271d45ce9eb45864`, the reviewed merge of F3 PR #51 including its keyboard correction. Full-suite source checkpoint: `e8185c7b73100f723acd8ff78a9b40379aaec4f6`. Final affected-flow checkpoint: `fd842950e738479386272962284d5887e574c818` (capture and initial-focus test changes only; 3/3 passed).
+F4 adds executable database/attachment recovery verification, Dashboard performance checks with the prescribed dataset and sample protocol, safe 500 error sanitization on Actions Taken routes, WCAG AA contrast hardening for `.btn-action-pending`, and browser modal keyboard/cancellation/visual checks across Log, Edit, Complete, and Cancel modals.
 
-F4 adds executable database/attachment recovery verification, Dashboard performance checks with the prescribed dataset and sample protocol, and browser modal keyboard/cancellation checks. README, test traceability and visual evidence describe how to repeat and assess verification. Product/API behavior remains the merged F3 baseline.
-
-Pull request: [Draft PR #53](https://github.com/JinggXd/TokTickIT/pull/53), targeting `lab4-staging`. Explicit Development-panel Issue #52 linking remains unverified; keep the PR draft until that link and peer review gates are satisfied.
+Pull request: [Draft PR #53](https://github.com/JinggXd/TokTickIT/pull/53), targeting `lab4-staging`. Explicit Development-panel Issue #52 linking and peer review remain the human workflow gates before merging into `lab4-staging`.
 
 ## Review by work package
 
 | Package | Files / evidence | Reviewer checks |
 |---|---|---|
-| L4-P11 | `server/scripts/verify-recovery.mjs`, declaration, recovery/safety/performance tests | Only explicitly verified local disposable databases; a fresh empty restore database; mandatory row/schema/sequence and attachment byte comparisons; scoped fixture cleanup; real HTTP latency samples. |
-| L4-P12 | `e2e/lab-04/actions-taken-flow.spec.ts`, README, `visual-checklist.md`, screenshot directory | No conditional/skipped assignment assertions; Log/Complete/Cancel focus traps; Escape dismissal and confirmed cancellation; responsive layouts and readable states across all three viewports. Keyboard home/card checks are inherited from reviewed F3. |
+| L4-P11 | `server/scripts/verify-recovery.mjs`, `server/src/routes/actions.ts`, `server/tests/lab-04/actions-taken.api.test.ts`, recovery/safety/performance tests | Only explicitly verified local disposable databases; a fresh empty restore database; mandatory row/schema/sequence and attachment byte comparisons; scoped fixture cleanup; real HTTP latency samples; sanitized 500 responses (`API-L4-34`). |
+| L4-P12 | `client/src/components/ActionsTakenSection.tsx`, `client/src/styles/zen-green.css`, `e2e/lab-04/actions-taken-flow.spec.ts`, `client/tests/lab-04/ActionsTaken.test.tsx`, `client/tests/lab-04/ZenGreenTokens.test.tsx`, README, `visual-checklist.md`, screenshot directory (36 captures) | No conditional/skipped assignment assertions; Log/Edit/Complete/Cancel focus traps and trigger focus restoration (`A11Y-L4-01..03`); `.btn-action-pending` contrast ≥ 4.5:1 (`STYLE-L4-03`); Escape dismissal and confirmed cancellation; responsive layouts and readable states across all three viewports. |
 
 ## Recovery proof — MIG-L4-02
 
@@ -35,17 +36,10 @@ Latest p95 after the review correction: Staff **54.63ms**, Requester **14.59ms**
 
 ## Regression and visual proof
 
-Final suite results, commands, source hashes and browser result are recorded in `artifacts/lab-04/f4-evidence-20261002/verification.md`. Visual inspection is recorded in `visual-checklist.md`, with selected screenshots archived under `artifacts/lab-04/screenshots/f4-20261002/`.
-
-Database suites run sequentially with isolated uploads and API/client ports 3001/5174. An earlier recovery attempt correctly rejected concurrent source writes from a browser run; the final server-only run passes without weakening that guard. Earlier PostgreSQL compatibility and sandbox browser-launch failures are diagnostic history; final successful logs certify the integrated source checkpoint, with the final affected Actions Taken flow separately verified after capture/initial-focus changes. An intermediate Tablet failure exposed a race with deferred initial modal focus; waiting for actual initial focus resolves it while retaining all assertions.
+Final suite results, commands, source hashes and browser result are recorded in `artifacts/lab-04/f4-evidence-20261002/verification.md` and updated with the `AUD-01`/`AUD-02`/`AUD-08` remediation suites (`52/52` in `actions-taken.api.test.ts`, `117/117` in client tests, `3/3` viewports in `actions-taken-flow.spec.ts`, builds exit 0). Visual inspection is recorded in `visual-checklist.md`, with **36** screenshots archived under `artifacts/lab-04/screenshots/f4-20261002/` and indexed in `artifacts/lab-04/f4-evidence-20261002/screenshots-manifest.json`.
 
 ## Closure gates
 
-PHASES previously required the entire Product Definition of Done at P12, while specification §10 includes a submission PDF assigned to F5/P14. The phase gate is clarified to cover F4 technical/visual checks; the overall release/submission DoD remains open for F5. D01–D13 decision acceptance is a separate F1 record and is not inferred from tests.
+PHASES clarifies the P12 gate to cover F4 technical/visual checks; the overall release/submission DoD remains open for F5 (L4-P13–P14).
 
-F3 PR #51 is merged. F4 requires peer review, explicit Development-panel linking of Issue #52 and reviewer merge into `lab4-staging`. Release to `main` and the final submission PDF remain F5 work.
-
-
-## PR #53 review correction
-
-The recovery finding is fixed at `bde66e99e6bfeece12835a4beef85badcc0df6ba`: three new source regressions fail before the fix, and all five recovery scenarios plus safety pass afterward. Full server **353/353**, client **115/115**, Playwright **132/132**, both builds passed at this checkpoint. See [latest verification](../../artifacts/lab-04/f4-pr53-review-fix-20261002/verification.md). Earlier source checkpoints above are historical; the correction evidence supersedes their recovery certification.
+F3 PR #51 is merged. All technical code, test, visual, and accessibility findings for F4 (`AUD-01`, `AUD-02`, `AUD-08`) are resolved. F4 now requires human peer review, explicit Development-panel linking of Issue #52, and reviewer merge into `lab4-staging`. Release to `main` and the final submission PDF remain F5 work.

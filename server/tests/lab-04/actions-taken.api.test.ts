@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeAll, afterAll } from "vitest";
+import { describe, it, expect, beforeAll, afterAll, vi } from "vitest";
 import request from "supertest";
 import { app } from "../../src/app.js";
 import { getPrisma } from "../../src/prisma.js";
@@ -155,6 +155,41 @@ describe("Phase F2 / L4-P04: Actions Taken REST API & Authorization", () => {
       },
     });
     createdTicketIds.push(testTicketB.id);
+  });
+
+  it.each([
+    ["get", "", false], ["post", "", false], ["patch", "/1", false],
+    ["post", "/1/complete", false], ["post", "/1/cancel", false],
+    ["get", "", true], ["post", "", true], ["patch", "/1", true],
+    ["post", "/1/complete", true], ["post", "/1/cancel", true],
+  ] as const)("API-L4-34: %s actions%s sanitizes unexpected error (status500=%s)", async (method, suffix, hasStatus) => {
+    const versionBefore = (await prisma.ticket.findUniqueOrThrow({ where: { id: testTicketOpen.id } })).version;
+    const countBefore = await prisma.actionTaken.count({ where: { ticketId: testTicketOpen.id } });
+    const diagnostic = new Error("SYNTHETIC_PRIVATE_SQL_DATABASE_PATH");
+    if (hasStatus) Object.assign(diagnostic, { status: 500, error: "PRIVATE_DRIVER_ERROR" });
+    const logger = vi.spyOn(console, "error").mockImplementation(() => {});
+    const originalFindUnique = prisma.ticket.findUnique;
+    const originalTransaction = prisma.$transaction;
+    if (method === "get") {
+      prisma.ticket.findUnique = vi.fn().mockRejectedValueOnce(diagnostic) as any;
+    } else {
+      prisma.$transaction = vi.fn().mockRejectedValueOnce(diagnostic) as any;
+    }
+    try {
+      const call = request(app)[method](`/api/tickets/${testTicketOpen.id}/actions${suffix}`).set(headersAlex);
+      const response = await (method === "get" ? call : call.send({
+        actionDescription: "Safe failure fixture", status: "PENDING", expectedVersion: 1, result: "Complete fixture",
+      }));
+      expect(response.status).toBe(500);
+      expect(response.body).toEqual({ error: "INTERNAL_ERROR", message: "Unable to process actions request." });
+      expect(logger).toHaveBeenCalledWith("Actions API request failed.", diagnostic);
+    } finally {
+      prisma.ticket.findUnique = originalFindUnique;
+      prisma.$transaction = originalTransaction;
+      logger.mockRestore();
+    }
+    expect((await prisma.ticket.findUniqueOrThrow({ where: { id: testTicketOpen.id } })).version).toBe(versionBefore);
+    expect(await prisma.actionTaken.count({ where: { ticketId: testTicketOpen.id } })).toBe(countBefore);
   });
 
   afterAll(async () => {
