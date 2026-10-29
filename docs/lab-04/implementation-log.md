@@ -1,5 +1,14 @@
 # TokTickIT Lab 4 — Implementation & Audit Log
 
+## Latest requirement and phase-document audit — 2026-10-02
+
+- User requested an all-requirement check and AI Use/What I Have Done for F2/F3/F4 with phase suffixes. Read the 11-page handout, visually inspected pages 9–11, cross-checked contracts/source/test assertions and reused latest raw suite evidence at bde66e9; no product source changes or full-suite rerun in this documentation audit.
+- Added six phase files, canonical ai-use.md (nine selected prompts, model-provenance limits and clearly marked human-finalization reflection draft), reviewer.md and requirements-audit-F2-F3-F4.md. Corrected AC-26/27/28 mapping; planned safe-error/Edit/contrast follow-up tests are explicitly not implemented/run.
+- Read-only development transaction: toktickit has 11 accounts, all mustChangePassword=true, initial-password bypass=0. No credentials/hashes/user rows exposed and no writes/resets/session changes.
+- Read-only GitHub verification: F1/F2/F3 peer merges confirmed; PR #53 still draft/no reviews/closingIssuesReferences=[]; main still Lab 3 baseline. F3 approval event references an earlier commit than final merged head; recorded without inventing a latest-head approval.
+- Actual Actions safe-failure defect: five catches return raw err.message. In-process compiled GET-handler fault injection reproduced a 500 leaking a synthetic diagnostic, without DB connection. Saved aggregate DB/GitHub/reproduction JSON in artifacts/lab-04/requirements-audit-20261002/.
+- Scope limits: recorded suites pass 353 server /115 client /132 browser, builds pass; that does not close unexpected 500, complete Edit/AA contrast, decision-status reconciliation, peer/link/merge, final-main tests, Kanban or PDF gates. Historical author/model claims below are preserved as prior records, not verified runtime identity for this Codex audit.
+
 **Author / Agent:** AI Coding Agent (Gemini 3.8 Flash High)  
 **Repository:** `d:/toktickit`  
 **Base Commit SHA:** `baad45e09272d665bc0cf765236c456edcf0eff7` (`Merge pull request #45 from JinggXd/lab3-staging`)  
@@ -401,3 +410,25 @@ Current checkout at inspection: feature/actions-and-workflow-phase2-lab4, HEAD 3
 - The previous approval predates the correction. Explicit Development-panel Issue #50 linking remains unverified, and the reviewer must inspect the new commit before merging. F1 decision acceptance, F4 recovery/performance and F5 release/submission are separate. No merge or reviewer message was performed.
 
 
+
+
+### F3 merge and F4 verification — 2026-10-02
+
+- GitHub API confirmed F3 PR #51 merged at 13:38:33 UTC (20:38:33 Bangkok), with merge commit 1ee7786cda440c03f830ca2a271d45ce9eb45864 and feature head e775d1b. Local F4 integration commit e8185c7b73100f723acd8ff78a9b40379aaec4f6 includes the reviewed keyboard correction without a net duplicate product change.
+- F4 Issue #52 / branch codex/lab4-f4-verification: P11 adds native recovery verification with target/path guards and whole-row/schema/sequence/upload comparisons, plus a 500-ticket/1,000-action Dashboard performance fixture. P12 strengthens real-browser modal focus/cancellation assertions, publishes selected visual evidence and updates README/traceability.
+- Final integrated full results: server 34 files / 349 passed (52.68s), client 21 files / 115 passed (22.90s), Playwright 132 passed (3.2m), both builds exit 0, no failed/skipped tests. After test-only capture/synchronization edits, final affected flow passes 3/3 (9.5s) at fd842950e738479386272962284d5887e574c818; checkpoints and hashes are recorded separately.
+- MIG-L4-02: 10 public tables / 154 rows, schema/sequence hashes and 10 upload files match after restore. New database toktickit_test_restore_1790953346295_ae34e520 retained; test runner cleaned temporary archives/SQL/upload copies. Tools PG18.1/server16.14 adapter removes only unsupported SET transaction_timeout=0 and redundant public-schema creation; no data/object comparison is disabled. Owners/ACL/global roles are outside this proof.
+- PERF-L4-01: five warm-ups and 50 authenticated HTTP samples per Staff/Requester endpoint; nearest-rank p95 Staff 14.2059ms / Requester 10.3433ms, both <200ms. All samples archived, fixture/session cleanup scoped to unique users.
+- Safety/diagnostics: disposable local database verified before each suite, isolated uploads/ports, sequential database runs. Recovery correctly rejected an earlier concurrent writer; final server-only proof passes unchanged source guard. Earlier native-tool and browser sandbox failures were resolved. An intermediate Tablet modal test raced its deferred initial focus; the test now waits for that observable state before input/Tab, retaining every assertion. No new dependency, existing database reset/drop, PR merge or reviewer message performed.
+- All 33 selected Desktop/Tablet/Mobile captures opened and inspected; mobile full-page action captures replace sticky-header-obscured panel captures. See visual-checklist.md and artifacts/lab-04/f4-evidence-20261002/verification.md. No claimed Red/Green implementation history is invented for this verification-only package.
+- Gate clarification recorded in F4-REVIEW.md: P12 closes technical/visual checks; specification §10 submission PDF and whole release DoD remain F5/P14. D01–D13 acceptance remains a separate F1 record. F4 implementation/verification is ready for peer review; explicit Development-panel linking of Issue #52 and reviewer merge remain pending.
+- Published the F4 branch and opened [Draft PR #53](https://github.com/JinggXd/TokTickIT/pull/53) into `lab4-staging`, attached to this chat. Issue #52 is referenced in prose; explicit Development-panel linking remains unverified. PR stays draft pending that gate and peer review. No merge or reviewer message/request was performed.
+
+
+### F4 PR #53 recovery reference correction — 2026-10-02
+
+- User authorized fixing the review finding. Added four negative recovery cases first; confirmed three expected Red failures (missing active/soft-removed file and incorrect byte size incorrectly resolved) with positive and lost-restored-copy cases passing.
+- Commit `bde66e99e6bfeece12835a4beef85badcc0df6ba` reads all Attachment stored names/sizes from the same repeatable-read snapshot used by pg_dump, checks source/restored manifests and rechecks source upload hashes. Active and soft-removed records are both included. No new dependency or application behavior change.
+- Green targeted recovery/safety 6/6, full server 353/353 (34 files), client 115/115 (21 files), Playwright 132/132 across all viewports, both builds passed; no failed/skipped tests in final runs. Sequential disposable DB suites and isolated uploads/ports preserved. Fault injection is limited to one uniquely created restored file and its spy is restored in finally.
+- Latest recovery matched 162 rows / 10 tables / 10 files, with 2 Attachment references verified. Staff/Requester p95 54.63/14.59ms. Latest proof: `artifacts/lab-04/f4-pr53-review-fix-20261002/verification.md`; earlier evidence remains historical.
+- PR #53 remains draft pending explicit Issue #52 Development-panel link and peer review/reviewer merge. No merge or reviewer message performed.

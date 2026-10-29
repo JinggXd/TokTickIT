@@ -50,6 +50,26 @@ body {
 }
 
 /* Zen Green Bootstrap Overrides */
+.btn-action-pending {
+  /* Existing Pending badge colors from ui-spec §1.2; readable before selection. */
+  --bs-btn-color: #92400E;
+  --bs-btn-border-color: #92400E;
+  --bs-btn-hover-color: #92400E;
+  --bs-btn-hover-bg: var(--zg-warning-bg);
+  --bs-btn-hover-border-color: #92400E;
+  --bs-btn-active-color: #92400E;
+  --bs-btn-active-bg: var(--zg-warning-bg);
+  --bs-btn-active-border-color: #92400E;
+  --bs-btn-focus-shadow-rgb: 146, 64, 14;
+  --bs-btn-disabled-color: #92400E;
+  --bs-btn-disabled-border-color: #92400E;
+}
+
+.btn-check:focus-visible + .btn-action-pending {
+  outline: 3px solid #92400E;
+  outline-offset: 3px;
+}
+
 .navbar-zen {
   background-color: var(--zg-primary) !important;
   color: #FFFFFF;

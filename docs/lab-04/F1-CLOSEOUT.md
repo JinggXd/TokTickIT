@@ -1,6 +1,8 @@
 # F1 closeout record — 2026-09-26
 
-สถานะ: **Document corrections complete for all reviewed findings; Owner direction recorded; Remote PR #47 verified via GitHub GraphQL API. Ready for peer-reviewer approval & merge.**
+สถานะปัจจุบัน: **PR #47 approved/merged โดย peer reviewer แล้ว; Proposed decision labels และภายหลัง F3 clarifications ยังต้อง reconcile เป็น acceptance record.** Remote verified 2026-10-02; รายละเอียด OPEN/ready for review ด้านล่างเป็น historical snapshot 2026-09-26 ไม่ใช่สถานะล่าสุด.
+
+Latest evidence: [reviewer.md](reviewer.md), [GitHub snapshot](../../artifacts/lab-04/requirements-audit-20261002/github-state.json). `yuminnini` approved head `9af7783` at 2026-09-26T06:11:36Z and merged at 06:11:44Z into lab4-staging. Later D05 details changed during F3; audit does not invent an acceptance event for every later decision revision. [Current requirement audit](requirements-audit-F2-F3-F4.md).
 
 เอกสารนี้เป็นจุดอ้างอิงสถานะปิด F1 ปัจจุบัน รายงาน review เก่าเป็นประวัติ ไม่ใช่รายการที่ต้องแก้ซ้ำทุกข้อ
 การแก้เอกสารไม่ใช่การรับรอง implementation ของ F2 หรือผล product tests

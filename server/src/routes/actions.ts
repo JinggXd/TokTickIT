@@ -14,6 +14,11 @@ import {
 
 export const actionsRouter = express.Router();
 
+function sendInternalError(res: Response, error: unknown): void {
+  console.error("Actions API request failed.", error);
+  res.status(500).json({ error: "INTERNAL_ERROR", message: "Unable to process actions request." });
+}
+
 function formatActionResponse(action: any) {
   return {
     id: action.id,
@@ -123,7 +128,7 @@ actionsRouter.get(
         actions: actions.map(formatActionResponse),
       });
     } catch (err: any) {
-      res.status(500).json({ error: "INTERNAL_ERROR", message: err.message });
+      sendInternalError(res, err);
     }
   }
 );
@@ -426,14 +431,14 @@ actionsRouter.post(
         });
       }
     } catch (err: any) {
-      if (err.status) {
+      if (err.status && err.status < 500) {
         res.status(err.status).json({
           error: err.error,
           message: err.message,
         });
         return;
       }
-      res.status(500).json({ error: "INTERNAL_ERROR", message: err.message });
+      sendInternalError(res, err);
     }
   }
 );
@@ -701,13 +706,13 @@ actionsRouter.patch(
         action: formatActionResponse(updatedAction),
       });
     } catch (err: any) {
-      if (err.status) {
+      if (err.status && err.status < 500) {
         const body: any = { error: err.error, message: err.message };
         if (err.currentVersion !== undefined) body.currentVersion = err.currentVersion;
         res.status(err.status).json(body);
         return;
       }
-      res.status(500).json({ error: "INTERNAL_ERROR", message: err.message });
+      sendInternalError(res, err);
     }
   }
 );
@@ -859,13 +864,13 @@ actionsRouter.post(
         action: formatActionResponse(completedAction),
       });
     } catch (err: any) {
-      if (err.status) {
+      if (err.status && err.status < 500) {
         const body: any = { error: err.error, message: err.message };
         if (err.currentVersion !== undefined) body.currentVersion = err.currentVersion;
         res.status(err.status).json(body);
         return;
       }
-      res.status(500).json({ error: "INTERNAL_ERROR", message: err.message });
+      sendInternalError(res, err);
     }
   }
 );
@@ -1002,13 +1007,13 @@ actionsRouter.post(
         action: formatActionResponse(cancelledAction),
       });
     } catch (err: any) {
-      if (err.status) {
+      if (err.status && err.status < 500) {
         const body: any = { error: err.error, message: err.message };
         if (err.currentVersion !== undefined) body.currentVersion = err.currentVersion;
         res.status(err.status).json(body);
         return;
       }
-      res.status(500).json({ error: "INTERNAL_ERROR", message: err.message });
+      sendInternalError(res, err);
     }
   }
 );
