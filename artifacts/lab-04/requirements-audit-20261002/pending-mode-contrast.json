@@ -1,0 +1,15 @@
+{
+  "checkedAt": "2026-10-02T16:39:52.599Z",
+  "sourceHead": "088366284429a46d4c6705d5c8585d6bb9e689f6",
+  "mode": "offline Chromium using installed Bootstrap and actual Zen Green CSS, reproduced Log modal status markup; no app/database access",
+  "file": "client/src/components/ActionsTakenSection.tsx",
+  "line": 672,
+  "color": "rgb(255, 193, 7)",
+  "background": "rgb(255, 255, 255)",
+  "fontSize": "16px",
+  "fontWeight": "400",
+  "statusSelected": false,
+  "contrastRatio": 1.6300483126171652,
+  "normalTextMinimum": 4.5,
+  "wcagSource": "https://www.w3.org/WAI/WCAG22/Understanding/contrast-minimum.html"
+}

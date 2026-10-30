@@ -1,4 +1,5 @@
 import { fileURLToPath } from "node:url";
+import { createHash } from "node:crypto";
 import { getPrisma } from "../src/prisma.js";
 import { hashPassword } from "../src/utils/password.js";
 
@@ -101,6 +102,19 @@ export function getDefaultSeedAccounts(): SeedAccount[] {
   ];
 }
 
+export interface SeedActionFixture {
+  clientRequestId: string;
+  actionDateTime?: string;
+  performedByEmail: string;
+  actionDescription: string;
+  status: "COMPLETED" | "PENDING" | "CANCELLED";
+  result?: string;
+  assigneeEmail?: string;
+  followUpRequired?: boolean;
+  followUpNote?: string;
+  attachmentNotes?: string;
+}
+
 export interface SeedTicketFixture {
   seedKey: string;
   ticketNo: string;
@@ -124,6 +138,7 @@ export interface SeedTicketFixture {
   resolvedByEmail?: string;
   comments?: Array<{ authorEmail: string; body: string }>;
   notes?: Array<{ authorEmail: string; body: string }>;
+  actions?: SeedActionFixture[];
 }
 
 export function getSeedTicketFixtures(): SeedTicketFixture[] {
@@ -212,6 +227,17 @@ export function getSeedTicketFixtures(): SeedTicketFixture[] {
       itPriority: "LOW",
       currentStatus: "IN_PROGRESS",
       ownerEmail: "staff3@example.com",
+      actions: [
+        {
+          clientRequestId: "seed-act-000007-1",
+          actionDateTime: "2026-09-17T09:30:00.000Z",
+          performedByEmail: "staff3@example.com",
+          actionDescription: "Verified mouse failure and ordered replacement from IT stock room",
+          status: "COMPLETED",
+          result: "Replaced faulty mouse with spare Logitech M185 from inventory.",
+          attachmentNotes: "Logitech M185 wireless mouse serial #98124",
+        },
+      ],
     },
     {
       ticketNo: "TKT-2026-000008",
@@ -230,6 +256,16 @@ export function getSeedTicketFixtures(): SeedTicketFixture[] {
       notes: [
         { authorEmail: "staff1@example.com", body: "Check nginx client_max_body_size setting." },
       ],
+      actions: [
+        {
+          clientRequestId: "seed-act-000008-1",
+          actionDateTime: "2026-09-17T11:00:00.000Z",
+          performedByEmail: "staff1@example.com",
+          actionDescription: "Inspected ingress proxy logs and tested timeout threshold",
+          status: "COMPLETED",
+          result: "Identified nginx client_max_body_size threshold causing upload drop.",
+        },
+      ],
     },
     {
       ticketNo: "TKT-2026-000009",
@@ -244,6 +280,26 @@ export function getSeedTicketFixtures(): SeedTicketFixture[] {
       ownerEmail: "staff2@example.com",
       notes: [
         { authorEmail: "staff2@example.com", body: "DB connection pool exhausted on prod cluster." },
+      ],
+      actions: [
+        {
+          clientRequestId: "seed-act-000009-1",
+          actionDateTime: "2026-09-17T13:00:00.000Z",
+          performedByEmail: "staff2@example.com",
+          actionDescription: "Restarted backend service instances to alleviate connection backlog",
+          status: "COMPLETED",
+          result: "Restarted backend instances to drain backlog; 502 cleared temporarily.",
+        },
+        {
+          clientRequestId: "seed-act-000009-2",
+          actionDateTime: "2026-09-17T13:30:00.000Z",
+          performedByEmail: "staff2@example.com",
+          assigneeEmail: "staff2@example.com",
+          actionDescription: "Perform tuning on database max_connections pool settings",
+          status: "PENDING",
+          followUpRequired: true,
+          followUpNote: "Tune pool size during 02:00 maintenance window.",
+        },
       ],
     },
 
@@ -303,6 +359,16 @@ export function getSeedTicketFixtures(): SeedTicketFixture[] {
       currentStatus: "RESOLVED",
       ownerEmail: "staff2@example.com",
       resolvedByEmail: "staff2@example.com",
+      actions: [
+        {
+          clientRequestId: "seed-act-000013-1",
+          actionDateTime: "2026-09-17T10:00:00.000Z",
+          performedByEmail: "staff2@example.com",
+          actionDescription: "Assigned license seat in portal and dispatched activation key to user",
+          status: "COMPLETED",
+          result: "License seat assigned from Adobe enterprise console and dispatched.",
+        },
+      ],
     },
     {
       ticketNo: "TKT-2026-000014",
@@ -322,6 +388,24 @@ export function getSeedTicketFixtures(): SeedTicketFixture[] {
       notes: [
         { authorEmail: "staff3@example.com", body: "Spare toner stock now down to 1 box." },
       ],
+      actions: [
+        {
+          clientRequestId: "seed-act-000014-1",
+          actionDateTime: "2026-09-17T09:00:00.000Z",
+          performedByEmail: "staff3@example.com",
+          actionDescription: "Retrieved replacement toner cartridge from 2nd floor supply room",
+          status: "COMPLETED",
+          result: "Obtained 1 box OEM HP 58A toner.",
+        },
+        {
+          clientRequestId: "seed-act-000014-2",
+          actionDateTime: "2026-09-17T09:45:00.000Z",
+          performedByEmail: "staff3@example.com",
+          actionDescription: "Installed toner cartridge, ran test print page, and verified output quality",
+          status: "COMPLETED",
+          result: "Printed clean test alignment sheet successfully.",
+        },
+      ],
     },
     {
       ticketNo: "TKT-2026-000015",
@@ -335,6 +419,16 @@ export function getSeedTicketFixtures(): SeedTicketFixture[] {
       currentStatus: "RESOLVED",
       ownerEmail: "staff1@example.com",
       resolvedByEmail: "staff1@example.com",
+      actions: [
+        {
+          clientRequestId: "seed-act-000015-1",
+          actionDateTime: "2026-09-17T14:00:00.000Z",
+          performedByEmail: "staff1@example.com",
+          actionDescription: "Patched wall port 4B to core switch 3 port 24 and verified link status",
+          status: "COMPLETED",
+          result: "Port link verified active at 1Gbps.",
+        },
+      ],
     },
 
     // 16-18: CLOSED
@@ -350,6 +444,24 @@ export function getSeedTicketFixtures(): SeedTicketFixture[] {
       currentStatus: "CLOSED",
       ownerEmail: "staff2@example.com",
       resolvedByEmail: "staff2@example.com",
+      actions: [
+        {
+          clientRequestId: "seed-act-000016-1",
+          actionDateTime: "2026-09-17T08:30:00.000Z",
+          performedByEmail: "staff2@example.com",
+          actionDescription: "Attempted automated SMS voucher delivery",
+          status: "CANCELLED",
+          result: "SMS gateway provider timed out, fallback to manual voucher printout.",
+        },
+        {
+          clientRequestId: "seed-act-000016-2",
+          actionDateTime: "2026-09-17T08:45:00.000Z",
+          performedByEmail: "staff2@example.com",
+          actionDescription: "Generated guest Wi-Fi portal voucher code and handed printout to visitor",
+          status: "COMPLETED",
+          result: "Delivered printed 3-day access credentials to lecturer.",
+        },
+      ],
     },
     {
       ticketNo: "TKT-2026-000017",
@@ -362,6 +474,16 @@ export function getSeedTicketFixtures(): SeedTicketFixture[] {
       itPriority: "MEDIUM",
       currentStatus: "CLOSED",
       resolvedByEmail: "staff1@example.com",
+      actions: [
+        {
+          clientRequestId: "seed-act-000017-1",
+          actionDateTime: "2026-09-17T15:00:00.000Z",
+          performedByEmail: "staff1@example.com",
+          actionDescription: "Replaced laptop battery pack and calibrated charging cycle",
+          status: "COMPLETED",
+          result: "Replaced battery pack; health reading reports 100% capacity.",
+        },
+      ],
     },
     {
       ticketNo: "TKT-2026-000018",
@@ -380,6 +502,16 @@ export function getSeedTicketFixtures(): SeedTicketFixture[] {
       ],
       notes: [
         { authorEmail: "staff3@example.com", body: "AD sync delay was caused by replication lag." },
+      ],
+      actions: [
+        {
+          clientRequestId: "seed-act-000018-1",
+          actionDateTime: "2026-09-17T16:00:00.000Z",
+          performedByEmail: "staff3@example.com",
+          actionDescription: "Re-synced Active Directory VPN security group and verified token login",
+          status: "COMPLETED",
+          result: "User successfully authenticated through VPN tunnel.",
+        },
       ],
     },
 
@@ -640,13 +772,69 @@ export async function seed(prismaClient?: any) {
         }
       }
     }
+
+    // 4. Actions Taken are attached strictly to the seed ticket with idempotent unique clientRequestId
+    if (fix.actions) {
+      for (const act of fix.actions) {
+        const performedById = userMap.get(act.performedByEmail);
+        const assigneeId = act.assigneeEmail ? userMap.get(act.assigneeEmail) ?? null : null;
+        if (!performedById) continue;
+        const createdById = performedById;
+
+        const existingAction = await prisma.actionTaken.findUnique({
+          where: {
+            createdById_ticketId_clientRequestId: {
+              createdById,
+              ticketId: ticket.id,
+              clientRequestId: act.clientRequestId,
+            },
+          },
+        });
+
+        if (!existingAction) {
+          const actionDateTime = act.actionDateTime
+            ? new Date(act.actionDateTime)
+            : new Date("2026-09-17T09:00:00.000Z");
+          const payloadObj = {
+            actionDateTime: actionDateTime.toISOString(),
+            actionDescription: act.actionDescription.trim(),
+            status: act.status,
+            result: act.result ? act.result.trim() : null,
+            assigneeId,
+            followUpRequired: Boolean(act.followUpRequired),
+            followUpNote: act.followUpNote ? act.followUpNote.trim() : null,
+            attachmentNotes: act.attachmentNotes ? act.attachmentNotes.trim() : null,
+          };
+          await prisma.actionTaken.create({
+            data: {
+              ticketId: ticket.id,
+              actionDateTime,
+              createdById,
+              performedById: act.status === "COMPLETED" ? performedById : null,
+              actionDescription: act.actionDescription.trim(),
+              status: act.status,
+              result: act.result ? act.result.trim() : null,
+              assigneeId,
+              followUpRequired: Boolean(act.followUpRequired),
+              followUpNote: act.followUpNote ? act.followUpNote.trim() : null,
+              attachmentNotes: act.attachmentNotes ? act.attachmentNotes.trim() : null,
+              clientRequestId: act.clientRequestId,
+              requestPayloadHash: createHash("sha256").update(JSON.stringify(payloadObj)).digest("hex"),
+            },
+          });
+        }
+      }
+    }
   }
+
+  const actionsCount = await prisma.actionTaken.count();
 
   return {
     categoriesCount: categories.length,
     systemsCount: relatedSystems.length,
     usersCount: accounts.length,
     ticketsCount: ticketFixtures.length,
+    actionsCount,
   };
 }
 

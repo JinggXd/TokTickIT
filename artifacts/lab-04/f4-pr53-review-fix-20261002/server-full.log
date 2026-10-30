@@ -1,0 +1,65 @@
+Verified disposable database: toktickit_test_f2_review_1790784843569
+
+ RUN  v2.1.9 D:/toktickit/server
+
+ ✓ tests/lab-04/actions-taken.api.test.ts (42 tests) 1004ms
+ ✓ tests/lab-03/migration-regression.test.ts (13 tests) 1994ms
+   ✓ Phase F2 / P03 Data Migration & Idempotent Seeding (AC-14–AC-18, AC-31, LCP-02) > MIG-03 & MIG-04 (AC-16, AC-17, R13, R14): Populated DB Data Preservation, Sequence Continuity & Credential Provisioning > proves populated DB data (users, tickets, attachments) is preserved across schema migration and seeding 315ms
+   ✓ Phase F2 / P03 Data Migration & Idempotent Seeding (AC-14–AC-18, AC-31, LCP-02) > MIG-03 & MIG-04 (AC-16, AC-17, R13, R14): Populated DB Data Preservation, Sequence Continuity & Credential Provisioning > proves seed isolates identity and does not modify fields or add comments/notes to colliding tickets (e.g. TKT-2026-000008) 765ms
+ ✓ tests/lab-03/users-admin.api.test.ts (29 tests) 1610ms
+ ✓ tests/lab-03/auth.api.test.ts (18 tests) 1007ms
+ ✓ tests/lab-04/migration-preservation.test.ts (5 tests) 486ms
+ ✓ tests/lab-02/my-tickets.api.test.ts (8 tests) 351ms
+ ✓ tests/lab-02/attachments.api.test.ts (19 tests) 395ms
+(node:60468) [DEP0190] DeprecationWarning: Passing args to a child process with shell option true can lead to security vulnerabilities, as the arguments are not escaped, only concatenated.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ tests/lab-03/test-environment.test.ts (24 tests) 9787ms
+   ✓ HARNESS-01 test-environment guard & isolation > HARNESS-01 integration: real path validation, worker propagation, and strict containment cleanup > proves at runtime via Playwright CLI that missing or dev DATABASE_URL_TEST is rejected and valid test DB succeeds 3472ms
+   ✓ HARNESS-01 test-environment guard & isolation > HARNESS-01 integration: real path validation, worker propagation, and strict containment cleanup > proves Playwright worker execution and environment propagation at runtime without build artifacts 1399ms
+   ✓ HARNESS-01 test-environment guard & isolation > HARNESS-01 integration: real path validation, worker propagation, and strict containment cleanup > strictly restricts skipping webServer to probe tests and rejects non-probe test suites 4905ms
+ ✓ tests/lab-02/ownership-hardening.api.test.ts (37 tests) 305ms
+ ✓ tests/lab-03/staff-ticket-detail.api.test.ts (18 tests) 365ms
+ ✓ tests/lab-02/create-ticket.api.test.ts (11 tests) 194ms
+ ✓ tests/lab-03/authorization.api.test.ts (10 tests) 343ms
+ ✓ tests/lab-03/staff-queue.api.test.ts (15 tests) 267ms
+ ✓ tests/lab-04/ticket-workflow.api.test.ts (10 tests) 706ms
+   ✓ Phase F2 / L4-P06: Ticket Workflow & Resolution Gate > API-L4-25b: Status transitions matrix: verify all 47 rejected transitions 311ms
+ ✓ tests/lab-03/requester-regression.api.test.ts (11 tests) 313ms
+ ✓ tests/lab-03/comments-notes.api.test.ts (9 tests) 242ms
+stdout | tests/lab-04/database-recovery.test.ts > MIG-L4-02: disposable database and attachment recovery > restores schema, every row, sequence state and attachment bytes into a fresh database
+MIG-L4-02 {"sourceDatabase":"toktickit_test_f2_review_1790784843569","restoredDatabase":"toktickit_test_restore_1790956729149_33e8e226","retainedForInspection":true,"databaseMatched":true,"filesMatched":true,"referencedFilesMatched":true,"referencedAttachmentCount":2,"tables":[{"name":"ActionTaken","count":31,"sha256":"5b0ac60fc8a0fcb709d5d6ebb68bcbaa2ea4ea08b5657bc309cd3af807587595"},{"name":"Attachment","count":2,"sha256":"6067226df7c6f4e6dec6bc8e5744502b8ef2135d697361bbd0dcff035660b449"},{"name":"Category","count":6,"sha256":"98f715f6f261c957bdc80f3f213519764bc053052c0e580cd60fc662b404b4ea"},{"name":"InternalNote","count":6,"sha256":"99583cd00a2d26e503df84c5f6d093dca3f4e46e948b0672ea45a419ead7d57b"},{"name":"PublicComment","count":6,"sha256":"720f125bed7d3eabbd1d5f3e14f102702fccbc7c2dc18b5f533fe6679dd7e7dd"},{"name":"RelatedSystem","count":9,"sha256":"17d586a9686c0ec4ff76fc94b530ded94e2e9ba1f2ecf74ed1c970fc01805d75"},{"name":"RequesterUser","count":17,"sha256":"97bcc4afb4025d9ad706851f1eeeab9f6df5fe9ea11fbe666a7cfed1828a499e"},{"name":"Session","count":46,"sha256":"a9b2d137af441956c4bd03012b440ea148cb817918623b04cc5ec8eda394d587"},{"name":"Ticket","count":34,"sha256":"19f1da38f568591577f34638c9a0a55eb973c1debea9821cb63ec96cdb1a8a6b"},{"name":"_prisma_migrations","count":5,"sha256":"ab551f9dbfafa130fc00a98f490180097b835bd815505c02165704063e004d77"}],"schemaSha256":"b1ee889a9a89fd7e9d5f78da85ea707c04437f4b9f0db4b4732c6e7b8a1c20e1","sequencesSha256":"776ca84dcd5bef5900e3452051b540f3fb56ca5754e373f29e972a59efc82379","files":[{"path":"1790956712157-5a8717-diagnostic_log.pdf","size":109,"sha256":"82594c41fdcb92df009edd76bafbf133b31289f39704132076ccda901f70feba"},{"path":"1790956712178-8d36a9-image_2.png","size":12,"sha256":"218ad85a233eff829618a6865ab681222b734c62d35a32b3eabd5c37d8945f86"},{"path":"1790956712192-91fc30-image_3.png","size":12,"sha256":"218ad85a233eff829618a6865ab681222b734c62d35a32b3eabd5c37d8945f86"},{"path":"1790956712207-a86f4f-image_4.png","size":12,"sha256":"218ad85a233eff829618a6865ab681222b734c62d35a32b3eabd5c37d8945f86"},{"path":"1790956712221-c42e80-image_5.png","size":12,"sha256":"218ad85a233eff829618a6865ab681222b734c62d35a32b3eabd5c37d8945f86"},{"path":"1790956712259-aae71d-concurrent_a.png","size":12,"sha256":"218ad85a233eff829618a6865ab681222b734c62d35a32b3eabd5c37d8945f86"},{"path":"1790956727999-06ceb0-sample.pdf","size":47,"sha256":"2ab94463e399ce58a21df28c88b429dd6c64637faadd1de7d8d44f10e4132415"},{"path":"1790956728048-539055-secret.pdf","size":47,"sha256":"2ab94463e399ce58a21df28c88b429dd6c64637faadd1de7d8d44f10e4132415"},{"path":"recovery-bc8ad087-c9e4-4363-b080-521f05c82235-active.txt","size":54,"sha256":"2c6f184b2dbeeb4fec2aacecfe32be2f7642845a25df2609fff8af1139a0e3a2"},{"path":"recovery-bc8ad087-c9e4-4363-b080-521f05c82235-removed.txt","size":54,"sha256":"659b2e8992ad0d3b472421b05d7687ae8f95ba5da71440fcd5c72f78b6fc2a65"}],"dumpSha256":"c04ce809eacf6597f98dd99e35b005450a2c0e1ca3ef74e6650bb208bfb4fd90","dumpVersion":"pg_dump (PostgreSQL) 18.1","restoreVersion":"pg_restore (PostgreSQL) 18.1","serverVersion":160014,"restoreMethod":"pg_restore SQL + psql --single-transaction; omitted unsupported SET transaction_timeout=0","durationMs":685}
+
+ ✓ tests/lab-04/database-recovery.test.ts (5 tests) 4976ms
+   ✓ MIG-L4-02: disposable database and attachment recovery > restores schema, every row, sequence state and attachment bytes into a fresh database 950ms
+   ✓ MIG-L4-02: disposable database and attachment recovery > rejects 'missing referenced file after restore' instead of certifying recovery 3461ms
+ ✓ tests/lab-04/staff-dashboard.api.test.ts (4 tests) 648ms
+ ✓ tests/lab-02/ticket-detail.api.test.ts (5 tests) 190ms
+ ✓ tests/lab-02/requester-middleware.api.test.ts (7 tests) 415ms
+   ✓ X-Requester-Id validation middleware (MW-03, MW-04, MW-05, MW-06) > MW-05 (API-05 equivalent): rejects a header referencing an inactive Requester with 401 364ms
+ ✓ tests/lab-04/requester-dashboard.api.test.ts (4 tests) 538ms
+ ✓ tests/lab-04/action-validation.unit.test.ts (17 tests) 7ms
+ ✓ tests/lab-03/workflow.unit.test.ts (6 tests) 5ms
+stdout | tests/lab-04/performance-smoke.test.ts > PERF-L4-01: dashboard performance with 500 tickets / 1000 actions > staff: 5 warm-ups + 50 samples, p95 < 200ms
+PERF-L4-01 {"role":"staff","fixtureTickets":500,"fixtureActions":1000,"warmups":5,"samples":50,"p95Ms":54.63069999999993,"maxMs":107.0653000000002,"sampleMs":[31.326900000000023,107.0653000000002,54.63069999999993,34.36940000000004,69.31790000000001,31.50130000000013,28.706900000000132,28.458899999999858,39.154199999999946,30.566299999999956,25.174400000000105,19.69549999999981,21.66949999999997,20.71120000000019,23.752300000000105,19.85199999999986,14.835399999999936,14.383299999999963,14.5458000000001,16.317800000000034,15.521299999999883,14.77559999999994,14.466099999999642,16.29870000000028,16.213999999999942,13.853200000000015,13.495499999999993,13.361899999999878,14.658800000000156,18.859400000000278,18.126500000000306,15.875900000000001,15.035100000000057,13.865299999999934,16.741500000000087,29.981399999999667,43.113900000000285,23.614700000000084,26.586099999999988,26.99689999999964,21.285599999999704,21.20609999999988,22.14110000000028,22.377899999999954,19.366700000000037,20.15480000000025,15.190599999999904,16.40859999999975,17.23180000000002,17.417599999999766]}
+
+stdout | tests/lab-04/performance-smoke.test.ts > PERF-L4-01: dashboard performance with 500 tickets / 1000 actions > requester: 5 warm-ups + 50 samples, p95 < 200ms
+PERF-L4-01 {"role":"requester","fixtureTickets":500,"fixtureActions":1000,"warmups":5,"samples":50,"p95Ms":14.593800000000101,"maxMs":19.89980000000014,"sampleMs":[13.625300000000152,11.85530000000017,10.953499999999622,13.441200000000208,19.89980000000014,12.126800000000003,12.466600000000199,11.841399999999794,11.502400000000307,11.11680000000024,12.339500000000044,11.219099999999798,11.902199999999993,13.13530000000037,12.905199999999695,12.58849999999984,14.655999999999949,12.197200000000066,10.596399999999903,11.509800000000268,11.693699999999808,13.166699999999764,12.200500000000375,11.941100000000006,12.54300000000012,10.580899999999929,10.390799999999672,9.378700000000208,12.252600000000257,13.870800000000145,12.394999999999982,12.127500000000055,12.870499999999993,10.472099999999955,11.025800000000345,11.14910000000009,12.266699999999673,11.041700000000219,10.173999999999978,10.199599999999919,10.223300000000108,10.768199999999979,10.796699999999873,11.787600000000111,11.488600000000133,14.593800000000101,10.872499999999945,10.66419999999971,11.11999999999989,11.986199999999826]}
+
+ ✓ tests/lab-04/performance-smoke.test.ts (2 tests) 2652ms
+   ✓ PERF-L4-01: dashboard performance with 500 tickets / 1000 actions > staff: 5 warm-ups + 50 samples, p95 < 200ms 1371ms
+   ✓ PERF-L4-01: dashboard performance with 500 tickets / 1000 actions > requester: 5 warm-ups + 50 samples, p95 < 200ms 688ms
+ ✓ tests/lab-02/safe-filename.unit.test.ts (2 tests) 3ms
+ ✓ tests/lab-02/ticket-number.unit.test.ts (4 tests) 4ms
+ ✓ tests/lab-02/reference-data.api.test.ts (4 tests) 113ms
+ ✓ tests/lab-02/validation.unit.test.ts (1 test) 2ms
+ ✓ tests/lab-03/password.unit.test.ts (6 tests) 73ms
+ ✓ tests/lab-02/pagination.unit.test.ts (1 test) 2ms
+ ✓ tests/lab-02/requesters.api.test.ts (3 tests) 68ms
+ ✓ tests/lab-04/recovery-safety.unit.test.ts (1 test) 2ms
+ ✓ tests/lab-01/health.test.ts (1 test) 15ms
+ ✓ tests/lab-01/categories.test.ts (1 test) 52ms
+
+ Test Files  34 passed (34)
+      Tests  353 passed (353)
+   Start at  22:58:22
+   Duration  44.09s (transform 1.04s, setup 316ms, collect 6.62s, tests 29.13s, environment 5ms, prepare 2.06s)

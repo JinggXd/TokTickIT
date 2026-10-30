@@ -1,7 +1,45 @@
-import type { RequesterUser, SafeUser, Category, RelatedSystem, Priority, TicketStatus, Ticket, Role } from "./types.js";
-export type { RequesterUser, SafeUser, Category, RelatedSystem, Priority, TicketStatus, Ticket, Role };
+import type { RequesterUser, SafeUser, Category, RelatedSystem, Priority, TicketStatus, Ticket, Role, ActionTaken } from "./types.js";
+export type { RequesterUser, SafeUser, Category, RelatedSystem, Priority, TicketStatus, Ticket, Role, ActionTaken };
 
 const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:3000";
+
+export interface RequesterDashboardMetrics {
+  totalOpenTickets: number;
+  ticketsWaitingForRequester: number;
+  recentlyUpdatedTicketsCount: number;
+  recentlyResolvedTicketsCount: number;
+}
+export interface StaffDashboardMetrics {
+  unassignedTickets: number;
+  myAssignedTickets: number;
+  openQueueTickets: number;
+  ticketsWaitingForRequester: number;
+  myActionsTakenCount: number;
+  ticketsByStatus: Record<TicketStatus, number>;
+  ticketsByPriority: Record<Priority, number>;
+}
+export interface DashboardTicket {
+  id: number; ticketNo: string; summary: string; currentStatus: TicketStatus; updatedAt: string;
+  requestedPriority?: Priority; itPriority?: Priority; ticketOwner?: TicketOwner | null;
+}
+export interface DashboardData {
+  metrics?: RequesterDashboardMetrics | StaffDashboardMetrics;
+  staffMetrics?: StaffDashboardMetrics;
+  recentTickets?: DashboardTicket[];
+  recentOrUrgentTickets?: DashboardTicket[];
+  myRecentActions?: Array<{ id: number; ticketId: number; ticketNo: string; actionDescription: string; status: "PENDING" | "COMPLETED" | "CANCELLED"; actionDateTime: string }>;
+  userMetrics?: { totalUsers: number; activeUsers: number; inactiveUsers: number; usersByRole: Record<Role, number> };
+}
+export async function fetchDashboard(role: Role): Promise<DashboardData> {
+  const endpoint = role === "REQUESTER" ? "requester" : role === "IT_STAFF" ? "staff" : "admin";
+  const response = await apiFetch(`${API_URL}/api/dashboard/${endpoint}`);
+  if (!response.ok) {
+    const body = await response.json().catch(() => ({}));
+    const error = Object.assign(new Error(body.error || "Unable to load dashboard."), { status: response.status });
+    throw error;
+  }
+  return response.json();
+}
 
 let globalCsrfToken: string | null = null;
 
@@ -219,6 +257,8 @@ export async function createTicket(
 }
 
 export interface GetTicketsParams {
+  recent?: string;
+  statusGroup?: string;
   search?: string;
   categoryId?: number | string;
   requestedPriority?: string;
@@ -261,6 +301,8 @@ export async function fetchMyTickets(
   requesterId?: number,
 ): Promise<TicketsResponse> {
   const query = new URLSearchParams();
+  if (params.recent) query.set("recent", params.recent);
+  if (params.statusGroup) query.set("statusGroup", params.statusGroup);
   if (params.search) query.set("search", params.search);
   if (params.categoryId && params.categoryId !== "ALL") query.set("categoryId", String(params.categoryId));
   if (params.requestedPriority && params.requestedPriority !== "ALL") query.set("requestedPriority", params.requestedPriority);
@@ -463,6 +505,7 @@ export interface StaffTicketItem {
 }
 
 export interface StaffQueueParams {
+  statusGroup?: string;
   search?: string;
   categoryId?: number | string;
   requestedPriority?: string;
@@ -494,6 +537,7 @@ export interface TicketOwner {
 
 export async function fetchStaffTickets(params: StaffQueueParams = {}): Promise<StaffQueueResponse> {
   const query = new URLSearchParams();
+  if (params.statusGroup) query.set("statusGroup", params.statusGroup);
   if (params.search) query.set("search", params.search.trim());
   if (params.categoryId && params.categoryId !== "ALL") query.set("categoryId", String(params.categoryId));
   if (params.requestedPriority && params.requestedPriority !== "ALL") query.set("requestedPriority", params.requestedPriority);
@@ -817,5 +861,133 @@ export async function resetAdminUserPassword(userId: number, initialPassword: st
     throw err;
   }
 }
+
+// ---------------------------------------------------------------------------
+// Lab 4: Actions Taken APIs
+// ---------------------------------------------------------------------------
+
+export async function fetchActionsTaken(ticketId: number): Promise<{ ticketId: number; actions: ActionTaken[] }> {
+  const response = await apiFetch(`${API_URL}/api/tickets/${ticketId}/actions`);
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    const err: any = new Error(data.message || data.error || "Unable to load actions.");
+    err.status = response.status;
+    err.error = data.error;
+    throw err;
+  }
+  return data;
+}
+
+export async function createActionTaken(
+  ticketId: number,
+  payload: {
+    actionDateTime?: string;
+    actionDescription: string;
+    status?: "COMPLETED" | "PENDING";
+    result?: string;
+    assigneeId?: number | null;
+    followUpRequired?: boolean;
+    followUpNote?: string | null;
+    attachmentNotes?: string | null;
+    clientRequestId?: string;
+  },
+  clientRequestIdHeader?: string,
+): Promise<{ ticketId: number; action: ActionTaken }> {
+  const headers: Record<string, string> = { "Content-Type": "application/json" };
+  if (clientRequestIdHeader) {
+    headers["X-Client-Request-Id"] = clientRequestIdHeader;
+  }
+  const response = await apiFetch(`${API_URL}/api/tickets/${ticketId}/actions`, {
+    method: "POST",
+    headers,
+    body: JSON.stringify(payload),
+  });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    const err: any = new Error(data.message || data.error || "Unable to create action.");
+    err.status = response.status;
+    err.error = data.error;
+    throw err;
+  }
+  return data;
+}
+
+export async function updateActionTaken(
+  ticketId: number,
+  actionId: number,
+  payload: {
+    expectedVersion?: number;
+    actionDescription?: string;
+    assigneeId?: number | null;
+    followUpRequired?: boolean;
+    followUpNote?: string | null;
+    attachmentNotes?: string | null;
+  },
+): Promise<{ ticketId: number; action: ActionTaken }> {
+  const response = await apiFetch(`${API_URL}/api/tickets/${ticketId}/actions/${actionId}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    const err: any = new Error(data.message || data.error || "Unable to update action.");
+    err.status = response.status;
+    err.error = data.error;
+    err.currentVersion = data.currentVersion;
+    throw err;
+  }
+  return data;
+}
+
+export async function completeActionTaken(
+  ticketId: number,
+  actionId: number,
+  payload: {
+    expectedVersion?: number;
+    result: string;
+    attachmentNotes?: string | null;
+  },
+): Promise<{ ticketId: number; action: ActionTaken }> {
+  const response = await apiFetch(`${API_URL}/api/tickets/${ticketId}/actions/${actionId}/complete`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    const err: any = new Error(data.message || data.error || "Unable to complete action.");
+    err.status = response.status;
+    err.error = data.error;
+    err.currentVersion = data.currentVersion;
+    throw err;
+  }
+  return data;
+}
+
+export async function cancelActionTaken(
+  ticketId: number,
+  actionId: number,
+  payload: {
+    expectedVersion?: number;
+    reason?: string;
+  },
+): Promise<{ ticketId: number; action: ActionTaken }> {
+  const response = await apiFetch(`${API_URL}/api/tickets/${ticketId}/actions/${actionId}/cancel`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    const err: any = new Error(data.message || data.error || "Unable to cancel action.");
+    err.status = response.status;
+    err.error = data.error;
+    err.currentVersion = data.currentVersion;
+    throw err;
+  }
+  return data;
+}
+
 
 

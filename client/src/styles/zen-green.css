@@ -26,7 +26,50 @@ body {
   padding: 0;
 }
 
+/* Lab 4 dashboards use the shared Zen Green palette and visible keyboard focus. */
+.dashboard a {
+  color: var(--zg-primary);
+}
+.dashboard .card {
+  background-color: var(--zg-surface);
+  border-color: var(--zg-border);
+}
+.dashboard a.card {
+  color: var(--zg-text-primary);
+}
+.dashboard a.card:hover {
+  background-color: var(--zg-pale-green);
+}
+.dashboard a:focus-visible, .dashboard button:focus-visible {
+  outline: 3px solid var(--zg-primary);
+  outline-offset: 3px;
+  box-shadow: 0 0 0 4px rgba(0, 107, 60, 0.25);
+}
+.dashboard .btn {
+  min-height: 44px;
+}
+
 /* Zen Green Bootstrap Overrides */
+.btn-action-pending {
+  /* Existing Pending badge colors from ui-spec §1.2; readable before selection. */
+  --bs-btn-color: #92400E;
+  --bs-btn-border-color: #92400E;
+  --bs-btn-hover-color: #92400E;
+  --bs-btn-hover-bg: var(--zg-warning-bg);
+  --bs-btn-hover-border-color: #92400E;
+  --bs-btn-active-color: #92400E;
+  --bs-btn-active-bg: var(--zg-warning-bg);
+  --bs-btn-active-border-color: #92400E;
+  --bs-btn-focus-shadow-rgb: 146, 64, 14;
+  --bs-btn-disabled-color: #92400E;
+  --bs-btn-disabled-border-color: #92400E;
+}
+
+.btn-check:focus-visible + .btn-action-pending {
+  outline: 3px solid #92400E;
+  outline-offset: 3px;
+}
+
 .navbar-zen {
   background-color: var(--zg-primary) !important;
   color: #FFFFFF;
@@ -37,6 +80,12 @@ body {
   color: #FFFFFF !important;
   font-weight: 700;
   font-size: 1.25rem;
+}
+
+.navbar-zen .navbar-brand:focus-visible {
+  outline: 3px solid var(--zg-surface);
+  outline-offset: 3px;
+  border-radius: 4px;
 }
 
 .nav-link-zen {

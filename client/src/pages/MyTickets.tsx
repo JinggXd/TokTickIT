@@ -4,11 +4,15 @@ import { useAuth } from "../context/AuthContext.js";
 import { fetchCategories, fetchMyTickets, Category, TicketListItem, PaginationMetadata } from "../api.js";
 
 interface MyTicketsProps {
+  queryString?: string;
+  onClearQuery?: () => void;
   onNavigateToCreate?: () => void;
   onSelectTicket?: (ticketId: number) => void;
 }
 
 export const MyTickets: React.FC<MyTicketsProps> = ({
+  queryString = "",
+  onClearQuery,
   onNavigateToCreate,
   onSelectTicket,
 }) => {
@@ -32,7 +36,9 @@ export const MyTickets: React.FC<MyTicketsProps> = ({
   const [selectedCategory, setSelectedCategory] = useState("ALL");
   const [selectedReqPriority, setSelectedReqPriority] = useState("ALL");
   const [selectedItPriority, setSelectedItPriority] = useState("ALL");
-  const [selectedStatus, setSelectedStatus] = useState("ALL");
+  const [selectedStatus, setSelectedStatus] = useState(() => new URLSearchParams(queryString).get("status") || "ALL");
+  const [statusGroup, setStatusGroup] = useState(() => new URLSearchParams(queryString).get("statusGroup") || "");
+  const [recent, setRecent] = useState(() => new URLSearchParams(queryString).get("recent") || "");
   const [sortBy, setSortBy] = useState("createdAt");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
   const [currentPage, setCurrentPage] = useState(1);
@@ -69,7 +75,7 @@ export const MyTickets: React.FC<MyTicketsProps> = ({
       selectedCategory !== "ALL" ||
       selectedReqPriority !== "ALL" ||
       selectedItPriority !== "ALL" ||
-      selectedStatus !== "ALL"
+      selectedStatus !== "ALL" || statusGroup || recent
   );
 
   // Load Categories on mount
@@ -103,6 +109,8 @@ export const MyTickets: React.FC<MyTicketsProps> = ({
           requestedPriority: selectedReqPriority !== "ALL" ? selectedReqPriority : undefined,
           itPriority: selectedItPriority !== "ALL" ? selectedItPriority : undefined,
           status: selectedStatus !== "ALL" ? selectedStatus : undefined,
+          statusGroup: statusGroup || undefined,
+          recent: recent || undefined,
           sortBy,
           sortOrder,
           page: currentPage,
@@ -132,6 +140,8 @@ export const MyTickets: React.FC<MyTicketsProps> = ({
     selectedReqPriority,
     selectedItPriority,
     selectedStatus,
+    statusGroup,
+    recent,
     sortBy,
     sortOrder,
     currentPage,
@@ -150,6 +160,9 @@ export const MyTickets: React.FC<MyTicketsProps> = ({
   };
 
   const handleClearFilters = () => {
+    setStatusGroup("");
+    setRecent("");
+    onClearQuery?.();
     setSearchInput("");
     setSearchTerm("");
     setSelectedCategory("ALL");
@@ -274,6 +287,7 @@ export const MyTickets: React.FC<MyTicketsProps> = ({
         </div>
       )}
 
+      {(statusGroup || recent) && <p className="small text-muted" role="status">Dashboard filter: {[statusGroup && "Open tickets", recent && "Updated in the last 7 days"].filter(Boolean).join(" · ")}</p>}
       {/* Search & Filter Bar (ui-spec.md Section 10.3: collapses to 1 column on mobile via col-12) */}
       <div className="card card-zen p-3 mb-4">
         <form onSubmit={handleSearchSubmit}>

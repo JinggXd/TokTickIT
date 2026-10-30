@@ -16,6 +16,7 @@ vi.mock("../../src/api.js", () => ({
   reassignTicket: vi.fn(),
   updateItPriority: vi.fn(),
   updateTicketStatus: vi.fn(),
+  fetchActionsTaken: vi.fn(),
 }));
 
 import { StaffTicketDetail } from "../../src/pages/StaffTicketDetail.js";
@@ -48,6 +49,7 @@ describe("StaffTicketDetail UI Tests (UI-06, UI-07, UI-08)", () => {
     ]);
     vi.mocked(api.fetchPublicComments).mockResolvedValue([]);
     vi.mocked(api.fetchInternalNotes).mockResolvedValue([]);
+    vi.mocked(api.fetchActionsTaken).mockResolvedValue({ ticketId: 1, actions: [] });
     vi.mocked(api.fetchStaffTicketDetail).mockResolvedValue(mockTicketDetail);
   });
 

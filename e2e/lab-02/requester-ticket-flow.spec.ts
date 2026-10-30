@@ -178,7 +178,8 @@ async function injectRequester(page: Page, requester: TestFixture["requester"]) 
   await page.getByLabel('Email address').fill(requester.email);
   await page.locator('#login-password').fill(fixturePassword);
   await page.getByRole('button', { name: 'Sign In', exact: true }).click();
-  await page.waitForURL('**/my-tickets');
+  await page.waitForURL('**/dashboard');
+  await page.goto('/my-tickets');
   await expect(page.getByTestId('user-profile-name')).toHaveText(requester.name);
 }
 

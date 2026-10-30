@@ -10,8 +10,12 @@ import { RequesterTicketDetail } from "./pages/RequesterTicketDetail.js";
 import { StaffTicketQueue } from "./pages/StaffTicketQueue.js";
 import { StaffTicketDetail } from "./pages/StaffTicketDetail.js";
 import { UserManagement } from "./pages/UserManagement.js";
+import { Dashboard } from "./pages/Dashboard.js";
 
 type TabType =
+  | "dashboard"
+  | "staff-dashboard"
+  | "admin-dashboard"
   | "login"
   | "change-password"
   | "my-tickets"
@@ -23,6 +27,9 @@ type TabType =
   | "admin-users";
 
 const TAB_PATHS: Record<TabType, string> = {
+  dashboard: "/dashboard",
+  "staff-dashboard": "/staff/dashboard",
+  "admin-dashboard": "/admin/dashboard",
   login: "/login",
   "change-password": "/change-password",
   "my-tickets": "/my-tickets",
@@ -35,6 +42,9 @@ const TAB_PATHS: Record<TabType, string> = {
 };
 
 function getRouteFromPath(pathname = window.location.pathname): { tab: TabType; ticketId: number | null } {
+  if (pathname === "/dashboard" || pathname === "/") return { tab: "dashboard", ticketId: null };
+  if (pathname === "/staff/dashboard") return { tab: "staff-dashboard", ticketId: null };
+  if (pathname === "/admin/dashboard") return { tab: "admin-dashboard", ticketId: null };
   if (pathname === "/login") return { tab: "login", ticketId: null };
   if (pathname === "/change-password") return { tab: "change-password", ticketId: null };
   if (pathname === "/create-ticket") return { tab: "create-ticket", ticketId: null };
@@ -57,7 +67,12 @@ function getRouteFromPath(pathname = window.location.pathname): { tab: TabType; 
 
 function MainContent() {
   const { user, isLoading: authLoading } = useAuth();
-  const [{ tab: activeTab, ticketId: selectedTicketId }, setRoute] = useState(() => getRouteFromPath());
+  const [{ tab: activeTab, ticketId: selectedTicketId, search }, setRoute] = useState(() => ({ ...getRouteFromPath(), search: window.location.search }));
+
+  const navigateUrl = useCallback((path: string, replace = false) => {
+    if (`${window.location.pathname}${window.location.search}` !== path) window.history[replace ? "replaceState" : "pushState"]({}, "", path);
+    setRoute({ ...getRouteFromPath(), search: window.location.search });
+  }, []);
 
   const navigate = useCallback((tab: TabType, replace = false, ticketId: number | null = null) => {
     let nextPath = TAB_PATHS[tab] || "/";
@@ -70,14 +85,11 @@ function MainContent() {
     if (tab === "admin-ticket-detail" && ticketId) {
       nextPath = `/admin/tickets/${ticketId}`;
     }
-    if (window.location.pathname !== nextPath) {
-      window.history[replace ? "replaceState" : "pushState"]({}, "", nextPath);
-    }
-    setRoute({ tab, ticketId });
-  }, []);
+    navigateUrl(nextPath, replace);
+  }, [navigateUrl]);
 
   useEffect(() => {
-    const handlePopState = () => setRoute(getRouteFromPath());
+    const handlePopState = () => setRoute({ ...getRouteFromPath(), search: window.location.search });
     window.addEventListener("popstate", handlePopState);
     return () => window.removeEventListener("popstate", handlePopState);
   }, []);
@@ -85,6 +97,7 @@ function MainContent() {
   // AC-13: In Lab 3, authentication is strictly session-based.
   // When user is unauthenticated or session is lost, effectiveUser is null.
   const effectiveUser = user;
+  const homeTab = effectiveUser?.role === "IT_STAFF" ? "staff-dashboard" : effectiveUser?.role === "ADMINISTRATOR" ? "admin-dashboard" : "dashboard";
 
   if (authLoading) {
     return (
@@ -109,13 +122,13 @@ function MainContent() {
           if (mustChange) {
             navigate("change-password", true);
           } else if (role === "REQUESTER") {
-            navigate("my-tickets", true);
+            navigate("dashboard", true);
           } else if (role === "IT_STAFF") {
-            navigate("staff-queue", true);
+            navigate("staff-dashboard", true);
           } else if (role === "ADMINISTRATOR") {
-            navigate("admin-users", true);
+            navigate("admin-dashboard", true);
           } else {
-            navigate("my-tickets", true);
+            navigate("dashboard", true);
           }
         }}
       />
@@ -127,13 +140,7 @@ function MainContent() {
     return (
       <ChangePassword
         onSuccess={() => {
-          if (effectiveUser.role === "REQUESTER") {
-            navigate("my-tickets", true);
-          } else if (effectiveUser.role === "IT_STAFF") {
-            navigate("staff-queue", true);
-          } else if (effectiveUser.role === "ADMINISTRATOR") {
-            navigate("admin-users", true);
-          }
+          navigate(homeTab, true);
         }}
       />
     );
@@ -145,14 +152,10 @@ function MainContent() {
       <AppShell currentTab="change-password" onTabChange={(t) => navigate(t as TabType)}>
         <ChangePassword
           onSuccess={() => {
-            if (effectiveUser.role === "REQUESTER") navigate("my-tickets");
-            else if (effectiveUser.role === "IT_STAFF") navigate("staff-queue");
-            else navigate("admin-users");
+            navigate(homeTab);
           }}
           onCancel={() => {
-            if (effectiveUser.role === "REQUESTER") navigate("my-tickets");
-            else if (effectiveUser.role === "IT_STAFF") navigate("staff-queue");
-            else navigate("admin-users");
+            navigate(homeTab);
           }}
         />
       </AppShell>
@@ -161,11 +164,15 @@ function MainContent() {
 
   return (
     <AppShell currentTab={activeTab} onTabChange={(t) => navigate(t as TabType)}>
+      {["dashboard", "staff-dashboard", "admin-dashboard", "login"].includes(activeTab) && <Dashboard key={`${effectiveUser.id}:${effectiveUser.role}`} user={effectiveUser} onNavigate={navigateUrl} />}
       {/* Requester Views (AC-13: Authenticated Requester navigates directly without dev selector) */}
       {effectiveUser.role === "REQUESTER" && (
         <>
           {activeTab === "my-tickets" && (
             <MyTickets
+              key={`${effectiveUser.id}:${search}`}
+              queryString={search}
+              onClearQuery={() => navigateUrl("/my-tickets")}
               onNavigateToCreate={() => navigate("create-ticket")}
               onSelectTicket={(id) => navigate("ticket-detail", false, id)}
             />
@@ -192,8 +199,11 @@ function MainContent() {
       {/* IT Staff Views */}
       {effectiveUser.role === "IT_STAFF" && (
         <>
-          {(activeTab === "staff-queue" || activeTab === "my-tickets") && (
+          {activeTab === "staff-queue" && (
             <StaffTicketQueue
+              key={`${effectiveUser.id}:${search}`}
+              queryString={search}
+              onClearQuery={() => navigateUrl("/staff/queue")}
               onSelectTicket={(id) => navigate("staff-ticket-detail", false, id)}
             />
           )}
@@ -210,13 +220,15 @@ function MainContent() {
       {/* Administrator Views (User Management in F4 + Read-only ticket detail) */}
       {effectiveUser.role === "ADMINISTRATOR" && (
         <>
-          {(activeTab === "admin-ticket-detail" || activeTab === "staff-ticket-detail") && selectedTicketId ? (
+          {activeTab === "staff-queue" && <StaffTicketQueue key={`${effectiveUser.id}:${search}`} queryString={search} onClearQuery={() => navigateUrl("/staff/queue")} onSelectTicket={id => navigate("admin-ticket-detail", false, id)} />}
+          {(activeTab === "admin-ticket-detail" || activeTab === "staff-ticket-detail") && selectedTicketId && (
             <StaffTicketDetail
               ticketId={selectedTicketId}
-              onBack={() => navigate("admin-users")}
+              onBack={() => navigate("admin-dashboard")}
               readOnly={true}
             />
-          ) : (
+          )}
+          {activeTab === "admin-users" && (
             <UserManagement onNavigateToLogin={() => navigate("login", true)} />
           )}
         </>

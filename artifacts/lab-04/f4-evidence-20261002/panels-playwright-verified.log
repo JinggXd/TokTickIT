@@ -1,0 +1,17 @@
+Verified disposable database: toktickit_test_f2_review_1790784843569
+[WebServer] (node:72360) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 3 tests using 1 worker
+
+(node:103300) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ok 1 [desktop] › e2e\lab-04\actions-taken-flow.spec.ts:139:3 › Phase F2 / L4-P05: Actions Taken Lifecycle Flow (E2E-L4-01) › E2E-L4-01: Log pending action, assign staff, complete with result, and verify requester read-only view (1.7s)
+(node:56636) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ok 2 [tablet] › e2e\lab-04\actions-taken-flow.spec.ts:139:3 › Phase F2 / L4-P05: Actions Taken Lifecycle Flow (E2E-L4-01) › E2E-L4-01: Log pending action, assign staff, complete with result, and verify requester read-only view (1.7s)
+(node:105652) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ok 3 [mobile] › e2e\lab-04\actions-taken-flow.spec.ts:139:3 › Phase F2 / L4-P05: Actions Taken Lifecycle Flow (E2E-L4-01) › E2E-L4-01: Log pending action, assign staff, complete with result, and verify requester read-only view (2.1s)
+
+  3 passed (9.5s)

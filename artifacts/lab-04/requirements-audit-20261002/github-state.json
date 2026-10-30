@@ -1,0 +1,88 @@
+{
+  "checkedAt": "2026-10-02T16:22:33.527Z",
+  "pullRequests": [
+    {
+      "number": 47,
+      "title": "docs(lab4): establish contracts and align test/pipeline gates (P00-P02)",
+      "url": "https://github.com/JinggXd/TokTickIT/pull/47",
+      "state": "closed",
+      "draft": false,
+      "merged": true,
+      "mergedAt": "2026-09-26T06:11:44Z",
+      "mergedBy": "yuminnini",
+      "head": "9af77834d12d1dab4bf58a1a1db679bb1349f2f0",
+      "base": "lab4-staging",
+      "baseSha": "baad45e09272d665bc0cf765236c456edcf0eff7",
+      "reviews": [
+        {
+          "reviewer": "yuminnini",
+          "state": "APPROVED",
+          "submittedAt": "2026-09-26T06:11:36Z",
+          "commit": "9af77834d12d1dab4bf58a1a1db679bb1349f2f0",
+          "url": "https://github.com/JinggXd/TokTickIT/pull/47#pullrequestreview-5324868804"
+        }
+      ]
+    },
+    {
+      "number": 49,
+      "title": "feat(f2): implement Actions Taken, workflow state machine & resolution gate (P03-P06)",
+      "url": "https://github.com/JinggXd/TokTickIT/pull/49",
+      "state": "closed",
+      "draft": false,
+      "merged": true,
+      "mergedAt": "2026-10-02T09:01:12Z",
+      "mergedBy": "yuminnini",
+      "head": "3e735a07c7e7063a73e4726ae7444a181dc8bade",
+      "base": "lab4-staging",
+      "baseSha": "82c08213bea893abfb6df4f69c935586d4449b01",
+      "reviews": [
+        {
+          "reviewer": "yuminnini",
+          "state": "APPROVED",
+          "submittedAt": "2026-10-02T08:16:23Z",
+          "commit": "3e735a07c7e7063a73e4726ae7444a181dc8bade",
+          "url": "https://github.com/JinggXd/TokTickIT/pull/49#pullrequestreview-5389621835"
+        }
+      ]
+    },
+    {
+      "number": 51,
+      "title": "feat(lab4): F3 role dashboards and six F2 review corrections",
+      "url": "https://github.com/JinggXd/TokTickIT/pull/51",
+      "state": "closed",
+      "draft": false,
+      "merged": true,
+      "mergedAt": "2026-10-02T13:38:33Z",
+      "mergedBy": "yuminnini",
+      "head": "e775d1b7f9d337330250627fe0903f176fac3245",
+      "base": "lab4-staging",
+      "baseSha": "8bbd1aa9c975183279c43fe64d47330f9bd94293",
+      "reviews": [
+        {
+          "reviewer": "yuminnini",
+          "state": "APPROVED",
+          "submittedAt": "2026-10-02T09:46:58Z",
+          "commit": "89d13134b03e3bb9357cf0d2ecb0b9bbac332e93",
+          "url": "https://github.com/JinggXd/TokTickIT/pull/51#pullrequestreview-5390413896"
+        }
+      ]
+    },
+    {
+      "number": 53,
+      "title": "Phase F4 (L4-P11–P12): recovery, performance and regression verification",
+      "url": "https://github.com/JinggXd/TokTickIT/pull/53",
+      "state": "open",
+      "draft": true,
+      "merged": false,
+      "mergedAt": null,
+      "mergedBy": null,
+      "head": "94f85c8dd631b04d9fe8f35d9610b616f61fbe99",
+      "base": "lab4-staging",
+      "baseSha": "1ee7786cda440c03f830ca2a271d45ce9eb45864",
+      "reviews": []
+    }
+  ],
+  "main": "baad45e09272d665bc0cf765236c456edcf0eff7",
+  "staging": "1ee7786cda440c03f830ca2a271d45ce9eb45864",
+  "f4ClosingIssues": []
+}

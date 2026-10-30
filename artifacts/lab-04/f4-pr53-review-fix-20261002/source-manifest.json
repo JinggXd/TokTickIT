@@ -1,0 +1,51 @@
+{
+  "sourceCheckpoint": "bde66e99e6bfeece12835a4beef85badcc0df6ba",
+  "redSourceCheckpoint": "66372bbbc0d86bcef32155f388c51d1f9b5d3ca3 plus the new regressions",
+  "files": [
+    {
+      "path": "server/scripts/verify-recovery.mjs",
+      "sha256": "bbf1f3313da8ee4d65fce1588d5751e8abb2a94147ca36495dccb18eeb0ed83f",
+      "gitBlob": "7a189a1304b3504f9f9b69a2c7bdcc3a6d07a8bd"
+    },
+    {
+      "path": "server/scripts/verify-recovery.d.mts",
+      "sha256": "16efccf3375fb8433c35153bd54329b79be03b7e9f74e62b4c44decac6edc03b",
+      "gitBlob": "613de46133ab0256b3a8942eb9b46ca9c247f73e"
+    },
+    {
+      "path": "server/tests/lab-04/database-recovery.test.ts",
+      "sha256": "5fa6777068baaeab941b2561f609a71bae5e0b222bd827ea05516d095facd300",
+      "gitBlob": "b3fa6e7300df1c857b02453bd84e8a620d61d16a"
+    }
+  ],
+  "logs": [
+    {
+      "path": "red.log",
+      "sha256": "726390d089672d39140eae57d64d75c46e329115bc47d63d3b3ab5b6ce74dda0"
+    },
+    {
+      "path": "green.log",
+      "sha256": "232e0934c5be0d38d155d285de21a6739636a3fc259951da694199fde795fdc2"
+    },
+    {
+      "path": "build.log",
+      "sha256": "1b599cb12dd98cd38ffc9f62d77a9494144a16af2c807685a60a47e26fa29701"
+    },
+    {
+      "path": "server-full.log",
+      "sha256": "a10067c200eab56b7d1782118ef800d941ff62927e7ccab266f867b47f8ee073"
+    },
+    {
+      "path": "client-full.log",
+      "sha256": "dca77beed7d55cb1b95b6d5066221e8828e0115a18729ea8181841d77a04f445"
+    },
+    {
+      "path": "client-build.log",
+      "sha256": "b46447f054817a555e7b3420b99053fbbb663794f147c26550bb463f14d8c0ef"
+    },
+    {
+      "path": "playwright-full.log",
+      "sha256": "65af4470e17f2c652b410869c784877d1fca888139fa9007fb3b53fca51e7795"
+    }
+  ]
+}

@@ -1,0 +1,111 @@
+Verified disposable database: toktickit_test_f2_review_1790784843569
+
+ RUN  v2.1.9 D:/toktickit/server
+
+stdout | tests/lab-04/database-recovery.test.ts > MIG-L4-02: disposable database and attachment recovery > restores schema, every row, sequence state and attachment bytes into a fresh database
+MIG-L4-02 {"sourceDatabase":"toktickit_test_f2_review_1790784843569","restoredDatabase":"toktickit_test_restore_1790956574213_21796c37","retainedForInspection":true,"databaseMatched":true,"filesMatched":true,"tables":[{"name":"ActionTaken","count":29,"sha256":"39fbd6117ef2bf7243bb6778a3d841f439a68db94d5398b1894bbb491893f1ee"},{"name":"Attachment","count":2,"sha256":"cfcd9ab5e1c6250ea20f3ccd733c7cae09ce6f28cdd98e89e8d6f97af1bb5aff"},{"name":"Category","count":6,"sha256":"98f715f6f261c957bdc80f3f213519764bc053052c0e580cd60fc662b404b4ea"},{"name":"InternalNote","count":6,"sha256":"9754ffb16a4de42cd49eb4fd52b7a4e1648770a32e2c0cac297e759a48147c9d"},{"name":"PublicComment","count":6,"sha256":"d13c1089ae424365ccfac65c2bad3f9b831587f78b6bcec79ba9b6cbbada4b8d"},{"name":"RelatedSystem","count":9,"sha256":"17d586a9686c0ec4ff76fc94b530ded94e2e9ba1f2ecf74ed1c970fc01805d75"},{"name":"RequesterUser","count":17,"sha256":"0378b09220674e6695b7e333a1e7936f5c2cd113ae3f7531b3104b80eb73cc2a"},{"name":"Session","count":41,"sha256":"b9ac2800d6faa47a6a946456f889724276e6f7936b574a58465968b07a83e227"},{"name":"Ticket","count":33,"sha256":"048666fade6f114c6b36133318081d4d74af6426355d2b998f55dd4e01e2250d"},{"name":"_prisma_migrations","count":5,"sha256":"ab551f9dbfafa130fc00a98f490180097b835bd815505c02165704063e004d77"}],"schemaSha256":"b1ee889a9a89fd7e9d5f78da85ea707c04437f4b9f0db4b4732c6e7b8a1c20e1","sequencesSha256":"d07990359662ff069926843b29ea882aa33e01c6826b3b43f1d87abdf30a44e8","files":[{"path":"recovery-3af190c2-9b26-466e-bee6-842b753f2e25-active.txt","sha256":"97bd54a31369bf17affd4cf2ca6402cb47390493ef85f25bcdc1cc7d8daf2544"},{"path":"recovery-3af190c2-9b26-466e-bee6-842b753f2e25-removed.txt","sha256":"50c3cd33e09b9c7f6f529b133a6826f90765c8efe97861b28426640f6b9aad41"}],"dumpSha256":"b82e8d9e41f83159b4cc9534c1b8de9d0a6b9ea0debb4005a53fb51affab7442","dumpVersion":"pg_dump (PostgreSQL) 18.1","restoreVersion":"pg_restore (PostgreSQL) 18.1","serverVersion":160014,"restoreMethod":"pg_restore SQL + psql --single-transaction; omitted unsupported SET transaction_timeout=0","durationMs":752}
+
+ ❯ tests/lab-04/database-recovery.test.ts (5 tests | 3 failed) 3975ms
+   ✓ MIG-L4-02: disposable database and attachment recovery > restores schema, every row, sequence state and attachment bytes into a fresh database 978ms
+   × MIG-L4-02: disposable database and attachment recovery > rejects 'missing active source file' instead of certifying recovery 771ms
+     → promise resolved "{ …(15) }" instead of rejecting
+   × MIG-L4-02: disposable database and attachment recovery > rejects 'missing soft-removed source file' instead of certifying recovery 777ms
+     → promise resolved "{ …(15) }" instead of rejecting
+   × MIG-L4-02: disposable database and attachment recovery > rejects 'source file size differs from Attachm…' instead of certifying recovery 701ms
+     → promise resolved "{ …(15) }" instead of rejecting
+   ✓ MIG-L4-02: disposable database and attachment recovery > rejects 'missing referenced file after restore' instead of certifying recovery 747ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  tests/lab-04/database-recovery.test.ts > MIG-L4-02: disposable database and attachment recovery > rejects 'missing active source file' instead of certifying recovery
+ FAIL  tests/lab-04/database-recovery.test.ts > MIG-L4-02: disposable database and attachment recovery > rejects 'missing soft-removed source file' instead of certifying recovery
+ FAIL  tests/lab-04/database-recovery.test.ts > MIG-L4-02: disposable database and attachment recovery > rejects 'source file size differs from Attachm…' instead of certifying recovery
+AssertionError: promise resolved "{ …(15) }" instead of rejecting
+
+- Expected
++ Received
+
+- [Error: rejected promise]
++ Object {
++   "databaseMatched": true,
++   "dumpSha256": "75734f675cf70ca09537bc948e96155992836754b681e4861129c5ad22091615",
++   "dumpVersion": "pg_dump (PostgreSQL) 18.1",
++   "durationMs": 649,
++   "files": Array [],
++   "filesMatched": true,
++   "restoreMethod": "pg_restore SQL + psql --single-transaction; omitted unsupported SET transaction_timeout=0",
++   "restoreVersion": "pg_restore (PostgreSQL) 18.1",
++   "restoredDatabase": "toktickit_test_restore_1790956575115_f3ceab25",
++   "retainedForInspection": true,
++   "schemaSha256": "b1ee889a9a89fd7e9d5f78da85ea707c04437f4b9f0db4b4732c6e7b8a1c20e1",
++   "sequencesSha256": "8c3735372afdd67c403b42e7dd991b20a435279b7cf0c2c2f8ea03114391b083",
++   "serverVersion": 160014,
++   "sourceDatabase": "toktickit_test_f2_review_1790784843569",
++   "tables": Array [
++     Object {
++       "count": 28,
++       "name": "ActionTaken",
++       "sha256": "da587fee931a4c6f1e8e54ff04208ade4099fcda026d26097b0246ace3e0f216",
++     },
++     Object {
++       "count": 1,
++       "name": "Attachment",
++       "sha256": "c4d36cd49cc2e7d6eb2b90e7038487ba6898ad4a2d94d2b5a5d102307c7af288",
++     },
++     Object {
++       "count": 6,
++       "name": "Category",
++       "sha256": "98f715f6f261c957bdc80f3f213519764bc053052c0e580cd60fc662b404b4ea",
++     },
++     Object {
++       "count": 5,
++       "name": "InternalNote",
++       "sha256": "639eeb803105825e9faab164096815dc2e08d4ae82a57775d9f03e01c222edb2",
++     },
++     Object {
++       "count": 5,
++       "name": "PublicComment",
++       "sha256": "69fbcca39e13321a6606efc533e6469b4ee69c35ffa406909c4e9369b0a68c74",
++     },
++     Object {
++       "count": 9,
++       "name": "RelatedSystem",
++       "sha256": "17d586a9686c0ec4ff76fc94b530ded94e2e9ba1f2ecf74ed1c970fc01805d75",
++     },
++     Object {
++       "count": 16,
++       "name": "RequesterUser",
++       "sha256": "1607a75535580e0afefed97c0b16ad5c86f3304a35064069ff6a6fa8ffbf989c",
++     },
++     Object {
++       "count": 40,
++       "name": "Session",
++       "sha256": "54dc706c56d5317cd9f64df193cd5ece977aacd898b741866d5d56af999192b0",
++     },
++     Object {
++       "count": 33,
++       "name": "Ticket",
++       "sha256": "9a92600c18a136a166db50cd7c7f5409e874237f003d911872462c1e67d4cd89",
++     },
++     Object {
++       "count": 5,
++       "name": "_prisma_migrations",
++       "sha256": "ab551f9dbfafa130fc00a98f490180097b835bd815505c02165704063e004d77",
++     },
++   ],
++ }
+
+ ❯ tests/lab-04/database-recovery.test.ts:100:82
+     98|         : /Attachment reference .* source uploads/;
+     99|       await expect(verifyRecovery({ databaseUrl: environment.databaseU…
+    100|         pgDump: process.env.PG_DUMP_BIN, pgRestore: process.env.PG_RES…
+       |                                                                                  ^
+    101|     } finally {
+    102|       copySpy?.mockRestore();
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/3]⎯
+
+ Test Files  1 failed (1)
+      Tests  3 failed | 2 passed (5)
+   Start at  22:56:13
+   Duration  4.34s (transform 57ms, setup 55ms, collect 76ms, tests 3.98s, environment 0ms, prepare 81ms)

@@ -1,0 +1,121 @@
+{
+  "sourceDatabase": "toktickit_test_f2_review_1790784843569",
+  "restoredDatabase": "toktickit_test_restore_1790956729149_33e8e226",
+  "retainedForInspection": true,
+  "databaseMatched": true,
+  "filesMatched": true,
+  "referencedFilesMatched": true,
+  "referencedAttachmentCount": 2,
+  "tables": [
+    {
+      "name": "ActionTaken",
+      "count": 31,
+      "sha256": "5b0ac60fc8a0fcb709d5d6ebb68bcbaa2ea4ea08b5657bc309cd3af807587595"
+    },
+    {
+      "name": "Attachment",
+      "count": 2,
+      "sha256": "6067226df7c6f4e6dec6bc8e5744502b8ef2135d697361bbd0dcff035660b449"
+    },
+    {
+      "name": "Category",
+      "count": 6,
+      "sha256": "98f715f6f261c957bdc80f3f213519764bc053052c0e580cd60fc662b404b4ea"
+    },
+    {
+      "name": "InternalNote",
+      "count": 6,
+      "sha256": "99583cd00a2d26e503df84c5f6d093dca3f4e46e948b0672ea45a419ead7d57b"
+    },
+    {
+      "name": "PublicComment",
+      "count": 6,
+      "sha256": "720f125bed7d3eabbd1d5f3e14f102702fccbc7c2dc18b5f533fe6679dd7e7dd"
+    },
+    {
+      "name": "RelatedSystem",
+      "count": 9,
+      "sha256": "17d586a9686c0ec4ff76fc94b530ded94e2e9ba1f2ecf74ed1c970fc01805d75"
+    },
+    {
+      "name": "RequesterUser",
+      "count": 17,
+      "sha256": "97bcc4afb4025d9ad706851f1eeeab9f6df5fe9ea11fbe666a7cfed1828a499e"
+    },
+    {
+      "name": "Session",
+      "count": 46,
+      "sha256": "a9b2d137af441956c4bd03012b440ea148cb817918623b04cc5ec8eda394d587"
+    },
+    {
+      "name": "Ticket",
+      "count": 34,
+      "sha256": "19f1da38f568591577f34638c9a0a55eb973c1debea9821cb63ec96cdb1a8a6b"
+    },
+    {
+      "name": "_prisma_migrations",
+      "count": 5,
+      "sha256": "ab551f9dbfafa130fc00a98f490180097b835bd815505c02165704063e004d77"
+    }
+  ],
+  "schemaSha256": "b1ee889a9a89fd7e9d5f78da85ea707c04437f4b9f0db4b4732c6e7b8a1c20e1",
+  "sequencesSha256": "776ca84dcd5bef5900e3452051b540f3fb56ca5754e373f29e972a59efc82379",
+  "files": [
+    {
+      "path": "1790956712157-5a8717-diagnostic_log.pdf",
+      "size": 109,
+      "sha256": "82594c41fdcb92df009edd76bafbf133b31289f39704132076ccda901f70feba"
+    },
+    {
+      "path": "1790956712178-8d36a9-image_2.png",
+      "size": 12,
+      "sha256": "218ad85a233eff829618a6865ab681222b734c62d35a32b3eabd5c37d8945f86"
+    },
+    {
+      "path": "1790956712192-91fc30-image_3.png",
+      "size": 12,
+      "sha256": "218ad85a233eff829618a6865ab681222b734c62d35a32b3eabd5c37d8945f86"
+    },
+    {
+      "path": "1790956712207-a86f4f-image_4.png",
+      "size": 12,
+      "sha256": "218ad85a233eff829618a6865ab681222b734c62d35a32b3eabd5c37d8945f86"
+    },
+    {
+      "path": "1790956712221-c42e80-image_5.png",
+      "size": 12,
+      "sha256": "218ad85a233eff829618a6865ab681222b734c62d35a32b3eabd5c37d8945f86"
+    },
+    {
+      "path": "1790956712259-aae71d-concurrent_a.png",
+      "size": 12,
+      "sha256": "218ad85a233eff829618a6865ab681222b734c62d35a32b3eabd5c37d8945f86"
+    },
+    {
+      "path": "1790956727999-06ceb0-sample.pdf",
+      "size": 47,
+      "sha256": "2ab94463e399ce58a21df28c88b429dd6c64637faadd1de7d8d44f10e4132415"
+    },
+    {
+      "path": "1790956728048-539055-secret.pdf",
+      "size": 47,
+      "sha256": "2ab94463e399ce58a21df28c88b429dd6c64637faadd1de7d8d44f10e4132415"
+    },
+    {
+      "path": "recovery-bc8ad087-c9e4-4363-b080-521f05c82235-active.txt",
+      "size": 54,
+      "sha256": "2c6f184b2dbeeb4fec2aacecfe32be2f7642845a25df2609fff8af1139a0e3a2"
+    },
+    {
+      "path": "recovery-bc8ad087-c9e4-4363-b080-521f05c82235-removed.txt",
+      "size": 54,
+      "sha256": "659b2e8992ad0d3b472421b05d7687ae8f95ba5da71440fcd5c72f78b6fc2a65"
+    }
+  ],
+  "dumpSha256": "c04ce809eacf6597f98dd99e35b005450a2c0e1ca3ef74e6650bb208bfb4fd90",
+  "dumpVersion": "pg_dump (PostgreSQL) 18.1",
+  "restoreVersion": "pg_restore (PostgreSQL) 18.1",
+  "serverVersion": 160014,
+  "restoreMethod": "pg_restore SQL + psql --single-transaction; omitted unsupported SET transaction_timeout=0",
+  "durationMs": 685
+}

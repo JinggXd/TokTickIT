@@ -1,5 +1,6 @@
 import express, { Request, Response } from "express";
 import { getPrisma } from "../prisma.js";
+import { OPEN_STATUSES, ACTIVE_STATUSES } from "../utils/dashboardFilters.js";
 import { requireAuth, requirePasswordChanged, requireRole } from "../middleware/sessionAuth.js";
 import {
   ALL_STATUSES,
@@ -16,6 +17,7 @@ const ALLOWED_QUERY_KEYS = new Set([
   "requestedPriority",
   "itPriority",
   "status",
+  "statusGroup",
   "owner",
   "sortBy",
   "sortOrder",
@@ -56,7 +58,7 @@ staffRouter.get(
   "/tickets",
   requireAuth,
   requirePasswordChanged,
-  requireRole("IT_STAFF"),
+  requireRole("IT_STAFF", "ADMINISTRATOR"),
   async (req: Request, res: Response): Promise<void> => {
     try {
       const details: Record<string, string> = {};
@@ -74,6 +76,7 @@ staffRouter.get(
         requestedPriority,
         itPriority,
         status,
+        statusGroup,
         owner,
         sortBy = "updatedAt",
         sortOrder = "desc",
@@ -115,6 +118,7 @@ staffRouter.get(
       if (status && !ALL_STATUSES.includes(status as TicketStatus)) {
         details.status = "Invalid query parameter";
       }
+      if (statusGroup !== undefined && statusGroup !== "open" && statusGroup !== "active") details.statusGroup = "Invalid query parameter";
 
       // Validate categoryId
       let catIdNum: number | undefined;
@@ -178,6 +182,7 @@ staffRouter.get(
       if (status) {
         where.currentStatus = status;
       }
+      if (statusGroup) where.AND = [{ currentStatus: { in: statusGroup === "open" ? OPEN_STATUSES : ACTIVE_STATUSES } }];
 
       if (targetOwnerId !== undefined) {
         where.ticketOwnerId = targetOwnerId;
@@ -268,7 +273,7 @@ staffRouter.get(
   "/ticket-owners",
   requireAuth,
   requirePasswordChanged,
-  requireRole("IT_STAFF"),
+  requireRole("IT_STAFF", "ADMINISTRATOR"),
   async (_req: Request, res: Response): Promise<void> => {
     try {
       const prisma = getPrisma();
@@ -719,83 +724,100 @@ staffRouter.patch(
 
     try {
       const prisma = getPrisma();
-      const ticket = await prisma.ticket.findUnique({ where: { id: ticketId } });
-      if (!ticket) {
-        res.status(404).json({ error: "Ticket not found" });
-        return;
-      }
 
-      if (ticket.version !== versionVal.expectedVersion) {
-        res.status(409).json({
-          error: "CONFLICT",
-          message: "The ticket was modified by another user. Please refresh and try again.",
-          currentVersion: ticket.version,
-        });
-        return;
-      }
+      const updatedStatus = await prisma.$transaction(async (tx) => {
+        // 1. Row-level lock FOR UPDATE
+        const ticketRows = await tx.$queryRaw<
+          Array<{
+            id: number;
+            ticketNo: string;
+            version: number;
+            currentStatus: TicketStatus;
+            ticketOwnerId: number | null;
+          }>
+        >`SELECT id, "ticketNo", version, "currentStatus", "ticketOwnerId" FROM "Ticket" WHERE id = ${ticketId} FOR UPDATE`;
 
-      const validation = validateStatusTransition(
-        ticket.currentStatus as TicketStatus,
-        status as TicketStatus,
-        { hasEligibleOwner: ticket.ticketOwnerId !== null },
-      );
-
-      if (!validation.isValid) {
-        if (validation.error === "ELIGIBLE_OWNER_REQUIRED") {
-          res.status(400).json({
-            error: "ELIGIBLE_OWNER_REQUIRED",
-            message: validation.message,
-          });
-          return;
+        if (ticketRows.length === 0) {
+          throw { status: 404, error: "Ticket not found" };
         }
-        res.status(400).json({
-          error: "ILLEGAL_STATUS_TRANSITION",
-          message: validation.message,
-        });
-        return;
-      }
+        const ticket = ticketRows[0];
 
-      const updateData: Record<string, any> = {
-        currentStatus: status,
-        version: ticket.version + 1,
-      };
-
-      if (shouldClearAppearsResolved(status as TicketStatus)) {
-        updateData.appearsResolvedAt = null;
-        updateData.appearsResolvedById = null;
-      }
-
-      // P2: Re-verify owner eligibility at write time (not just at read time)
-      // to prevent stale-role or deactivated-owner bypasses for owner-required transitions.
-      if (validation.ownerRequired && ticket.ticketOwnerId !== null) {
-        const currentOwner = await prisma.user.findUnique({ where: { id: ticket.ticketOwnerId } });
-        if (!currentOwner || !currentOwner.isActive || !["IT_STAFF", "ADMINISTRATOR"].includes(currentOwner.role)) {
-          res.status(400).json({
-            error: "ELIGIBLE_OWNER_REQUIRED",
-            message: "Ticket owner is no longer eligible (inactive or role changed). Reassign before progressing status.",
-          });
-          return;
-        }
-      }
-
-      let updatedStatus;
-      try {
-        updatedStatus = await prisma.ticket.update({
-          where: { id: ticketId, version: versionVal.expectedVersion },
-          data: updateData,
-        });
-      } catch (updateErr: any) {
-        if (updateErr?.code === "P2025") {
-          const fresh = await prisma.ticket.findUnique({ where: { id: ticketId } });
-          res.status(409).json({
+        if (ticket.version !== versionVal.expectedVersion) {
+          throw {
+            status: 409,
             error: "CONFLICT",
             message: "The ticket was modified by another user. Please refresh and try again.",
-            currentVersion: fresh?.version ?? ticket.version + 1,
-          });
-          return;
+            currentVersion: ticket.version,
+          };
         }
-        throw updateErr;
-      }
+
+        const validation = validateStatusTransition(
+          ticket.currentStatus as TicketStatus,
+          status as TicketStatus,
+          { hasEligibleOwner: ticket.ticketOwnerId !== null },
+        );
+
+        if (!validation.isValid) {
+          if (validation.error === "ELIGIBLE_OWNER_REQUIRED") {
+            throw {
+              status: 400,
+              error: "ELIGIBLE_OWNER_REQUIRED",
+              message: validation.message,
+            };
+          }
+          throw {
+            status: 400,
+            error: "ILLEGAL_STATUS_TRANSITION",
+            message: validation.message,
+          };
+        }
+
+        // P2: Re-verify owner eligibility at write time
+        if (validation.ownerRequired && ticket.ticketOwnerId !== null) {
+          const currentOwner = await tx.user.findUnique({ where: { id: ticket.ticketOwnerId } });
+          if (!currentOwner || !currentOwner.isActive || !["IT_STAFF", "ADMINISTRATOR"].includes(currentOwner.role)) {
+            throw {
+              status: 400,
+              error: "ELIGIBLE_OWNER_REQUIRED",
+              message: "Ticket owner is no longer eligible (inactive or role changed). Reassign before progressing status.",
+            };
+          }
+        }
+
+        // Resolution Gate validation (Lab 4 AC-14, AC-15, AC-16, BR-12)
+        if (status === "RESOLVED") {
+          const completedCount = await (tx as any).actionTaken.count({
+            where: { ticketId, status: "COMPLETED" },
+          });
+          const pendingCount = await (tx as any).actionTaken.count({
+            where: { ticketId, status: "PENDING" },
+          });
+
+          if (completedCount < 1 || pendingCount > 0) {
+            throw {
+              status: 422,
+              error: "RESOLUTION_GATE_FAILED",
+              message: "Ticket resolution requires at least one completed Action Taken and no pending actions.",
+            };
+          }
+        }
+
+        const updateData: Record<string, any> = {
+          currentStatus: status,
+          version: ticket.version + 1,
+          updatedAt: new Date(),
+        };
+
+        if (shouldClearAppearsResolved(status as TicketStatus)) {
+          updateData.appearsResolvedAt = null;
+          updateData.appearsResolvedById = null;
+        }
+
+        return await tx.ticket.update({
+          where: { id: ticketId },
+          data: updateData,
+        });
+      });
 
       res.status(200).json({
         id: updatedStatus.id,
@@ -803,7 +825,13 @@ staffRouter.patch(
         currentStatus: updatedStatus.currentStatus,
         version: updatedStatus.version,
       });
-    } catch (err) {
+    } catch (err: any) {
+      if (err.status) {
+        const body: any = { error: err.error, message: err.message };
+        if (err.currentVersion !== undefined) body.currentVersion = err.currentVersion;
+        res.status(err.status).json(body);
+        return;
+      }
       res.status(500).json({ error: "Unable to transition ticket status." });
     }
   },

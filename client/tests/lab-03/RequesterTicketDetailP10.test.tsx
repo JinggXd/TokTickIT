@@ -10,6 +10,7 @@ vi.mock("../../src/api.js", () => ({
   markAppearsResolved: vi.fn(),
   fetchCategories: vi.fn().mockResolvedValue([]),
   fetchRelatedSystems: vi.fn().mockResolvedValue([]),
+  fetchActionsTaken: vi.fn().mockResolvedValue({ ticketId: 101, actions: [] }),
 }));
 
 import { RequesterTicketDetail } from "../../src/pages/RequesterTicketDetail.js";

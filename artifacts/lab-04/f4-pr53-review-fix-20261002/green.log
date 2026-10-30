@@ -1,0 +1,16 @@
+Verified disposable database: toktickit_test_f2_review_1790784843569
+
+ RUN  v2.1.9 D:/toktickit/server
+
+stdout | tests/lab-04/database-recovery.test.ts > MIG-L4-02: disposable database and attachment recovery > restores schema, every row, sequence state and attachment bytes into a fresh database
+MIG-L4-02 {"sourceDatabase":"toktickit_test_f2_review_1790784843569","restoredDatabase":"toktickit_test_restore_1790956628871_3617ff25","retainedForInspection":true,"databaseMatched":true,"filesMatched":true,"referencedFilesMatched":true,"referencedAttachmentCount":2,"tables":[{"name":"ActionTaken","count":29,"sha256":"7cf2eeb0e3bfe022ef62e367e768ae1981e3c4fb6b74cf1c981c06595f44be3f"},{"name":"Attachment","count":2,"sha256":"e9c15bd5da463c60b32ded23e4dcad8ae378a255d26ce7dd6fb9ef6212fbaf9c"},{"name":"Category","count":6,"sha256":"98f715f6f261c957bdc80f3f213519764bc053052c0e580cd60fc662b404b4ea"},{"name":"InternalNote","count":6,"sha256":"7cc48643ae7c5f8773de6965fbd1cee9ff6397df5e9148aa495c8a6fc05c9b11"},{"name":"PublicComment","count":6,"sha256":"79d624eee677422d28112be78b48f9bc38585fa85c9f8a4e608ad50f99813936"},{"name":"RelatedSystem","count":9,"sha256":"17d586a9686c0ec4ff76fc94b530ded94e2e9ba1f2ecf74ed1c970fc01805d75"},{"name":"RequesterUser","count":17,"sha256":"389980e8b5cec6dd4991bb9fc4f9e9799a19e3da31484ff291d2d567ac5c0f7e"},{"name":"Session","count":41,"sha256":"6a24f05a64cf3753aeabea3a6f0e5d1d12a830dd83dd174f879fe7089d6c2364"},{"name":"Ticket","count":33,"sha256":"bc56450a3a4caa1fe5024a0088861f78952538264c1d90c7584111bdd2e8b8af"},{"name":"_prisma_migrations","count":5,"sha256":"ab551f9dbfafa130fc00a98f490180097b835bd815505c02165704063e004d77"}],"schemaSha256":"b1ee889a9a89fd7e9d5f78da85ea707c04437f4b9f0db4b4732c6e7b8a1c20e1","sequencesSha256":"7f1c3fa6f99520a969a9b9d1d4b2cda0c20b5b04b9e4b8c6913a7a0531be6360","files":[{"path":"recovery-17c23128-807e-4c60-b28f-b80d328e7bdb-active.txt","size":54,"sha256":"dcd379a151d3a3cb433d2c444315054949bffbf682c5ecf32ce3ecdcdf418227"},{"path":"recovery-17c23128-807e-4c60-b28f-b80d328e7bdb-removed.txt","size":54,"sha256":"f81ad7d3cd43a537a0e201d2a9540c6b9ec40eb0d04e591fd205d192b784b6a7"}],"dumpSha256":"ee63835bcc70bb0c4ec0ffe8c8ae19c9014969f06bb5f739a57b7089e5d27b62","dumpVersion":"pg_dump (PostgreSQL) 18.1","restoreVersion":"pg_restore (PostgreSQL) 18.1","serverVersion":160014,"restoreMethod":"pg_restore SQL + psql --single-transaction; omitted unsupported SET transaction_timeout=0","durationMs":655}
+
+ ✓ tests/lab-04/database-recovery.test.ts (5 tests) 2122ms
+   ✓ MIG-L4-02: disposable database and attachment recovery > restores schema, every row, sequence state and attachment bytes into a fresh database 873ms
+   ✓ MIG-L4-02: disposable database and attachment recovery > rejects 'missing referenced file after restore' instead of certifying recovery 660ms
+ ✓ tests/lab-04/recovery-safety.unit.test.ts (1 test) 2ms
+
+ Test Files  2 passed (2)
+      Tests  6 passed (6)
+   Start at  22:57:08
+   Duration  2.66s (transform 59ms, setup 57ms, collect 107ms, tests 2.12s, environment 0ms, prepare 128ms)

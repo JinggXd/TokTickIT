@@ -168,3 +168,43 @@ export const RoleBadge: React.FC<{ role: Role | string } & BadgeProps> = ({
       return <span className={`badge bg-secondary px-2 py-1 ${className}`}>{role}</span>;
   }
 };
+
+export const ActionStatusBadge: React.FC<{ status: "PENDING" | "COMPLETED" | "CANCELLED" | string } & BadgeProps> = ({
+  status,
+  className = "",
+}) => {
+  switch (status) {
+    case "PENDING":
+      return (
+        <span
+          data-testid="action-status-badge-PENDING"
+          className={`badge fw-medium px-2 py-1 ${className}`}
+          style={{ backgroundColor: "#FEF3C7", color: "#92400E" }}
+        >
+          🟡 Pending
+        </span>
+      );
+    case "COMPLETED":
+      return (
+        <span
+          data-testid="action-status-badge-COMPLETED"
+          className={`badge fw-medium px-2 py-1 ${className}`}
+          style={{ backgroundColor: "#DCFCE7", color: "#15803D" }}
+        >
+          🟢 Completed
+        </span>
+      );
+    case "CANCELLED":
+      return (
+        <span
+          data-testid="action-status-badge-CANCELLED"
+          className={`badge fw-medium px-2 py-1 ${className}`}
+          style={{ backgroundColor: "#F3F4F6", color: "#4B5563" }}
+        >
+          ⚪ Cancelled
+        </span>
+      );
+    default:
+      return <span className={`badge bg-secondary px-2 py-1 ${className}`}>{status}</span>;
+  }
+};
